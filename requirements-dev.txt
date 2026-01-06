@@ -1,0 +1,10 @@
+# Development and testing dependencies
+# Install with: pip install -r requirements-dev.txt
+
+# Include production requirements first
+-r requirements.txt
+
+# Testing frameworks
+pytest==7.4.3
+pytest-playwright==0.4.4
+playwright==1.40.0

@@ -51,6 +51,12 @@ python-dotenv==1.0.0
 gunicorn==21.2.0
 ```
 
+**Important**: The project uses separate requirements files:
+- `requirements.txt` - Production dependencies (used by Render)
+- `requirements-dev.txt` - Development/testing dependencies (local only)
+
+Render automatically installs only `requirements.txt`, keeping the production build lean and fast.
+
 ### ☐ 3. Update `app.py` - Database Path
 
 **Location**: `/Users/yilunzhang/side_project/household_tracker/app.py` (line ~17)

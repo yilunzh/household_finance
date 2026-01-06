@@ -16,14 +16,32 @@ python -m venv venv
 source venv/bin/activate  # Mac/Linux
 # venv\Scripts\activate   # Windows
 
-# Install dependencies
+# Install production dependencies
 pip install -r requirements.txt
+
+# For local development with testing tools:
+pip install -r requirements-dev.txt
 
 # Run the application (port 5001 to avoid macOS AirPlay conflict)
 python app.py
 ```
 
 Access at: http://localhost:5001
+
+### Playwright MCP Setup (Optional)
+
+The project includes Playwright MCP server integration for browser automation in Claude Code.
+
+**Installation:**
+```bash
+# Install development dependencies (includes Playwright)
+pip install -r requirements-dev.txt
+
+# Download Chromium browser binaries
+python -m playwright install chromium
+```
+
+**Note**: Playwright is only needed for local MCP integration, not for running the Flask app.
 
 ## Architecture
 
