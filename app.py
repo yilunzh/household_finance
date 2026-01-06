@@ -31,6 +31,18 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 
+# Initialize database tables when app starts (for production with Gunicorn)
+def init_db():
+    """Create database tables if they don't exist."""
+    with app.app_context():
+        db.create_all()
+        print('Database tables created (if not already existing)')
+
+
+# Call initialization when module is loaded
+init_db()
+
+
 @app.route('/')
 def index():
     """Main page with transaction form and list."""
