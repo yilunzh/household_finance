@@ -502,11 +502,26 @@ if os.environ.get('FLASK_ENV') == 'production':
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 
+# Database initialization (runs when module is loaded by Gunicorn)
+def init_db():
+    """Create database tables if they don't exist."""
+    with app.app_context():
+        db.create_all()
+        print('Database tables created (if not already existing)')
+
+init_db()  # Called when app starts
+
 # Port configuration
 port = int(os.environ.get('PORT', 5001))
 debug_mode = os.environ.get('FLASK_ENV') != 'production'
 app.run(debug=debug_mode, host='0.0.0.0', port=port)
 ```
+
+**Database Initialization:**
+- The `init_db()` function is called at module level when the app starts
+- Works with both development (`python app.py`) and production (Gunicorn)
+- `db.create_all()` is idempotent - safe to call multiple times, only creates missing tables
+- Ensures database tables exist before any requests are processed
 
 **Persistent Disk Configuration (Render):**
 - Disk name: `database-storage`
