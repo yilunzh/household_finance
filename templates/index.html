@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions - Zhang Estate Expense Tracker{% endblock %}
+
+{% block content %}
+<!-- Month Selector -->
+<div class="mb-6 flex justify-between items-center">
+    <div class="flex items-center gap-4">
+        <label for="month-select" class="text-gray-700 font-medium">Month:</label>
+        <select
+            id="month-select"
+            class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onchange="window.location.href = '/?month=' + this.value"
+        >
+            {% if not months %}
+                <option value="{{ current_month }}">{{ current_month }}</option>
+            {% else %}
+                {% for month in months %}
+                    <option value="{{ month }}" {% if month == current_month %}selected{% endif %}>
+                        {{ month }}
+                    </option>
+                {% endfor %}
+            {% endif %}
+        </select>
+    </div>
+
+    <a
+        href="/reconciliation/{{ current_month }}"
+        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+    >
+        View Reconciliation
+    </a>
+</div>
+
+<!-- Quick Summary Card -->
+{% if summary %}
+<div class="mb-6 bg-white rounded-lg shadow-sm border p-6">
+    <h2 class="text-lg font-semibold mb-4">Month Summary</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+            <p class="text-sm text-gray-600">Bibi paid</p>
+            <p class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.me_paid) }} USD</p>
+        </div>
+        <div>
+            <p class="text-sm text-gray-600">Pi paid</p>
+            <p class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.wife_paid) }} USD</p>
+        </div>
+        <div>
+            <p class="text-sm text-gray-600">Settlement</p>
+            <p class="text-xl font-bold text-green-600">{{ summary.settlement }}</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Add Transaction Form -->
+<div class="bg-white rounded-lg shadow-sm border p-6 mb-6 sticky top-4 z-10">
+    <h2 class="text-lg font-semibold mb-4">Add Transaction</h2>
+
+    <form id="add-transaction-form" class="grid grid-cols-1 md:grid-cols-7 gap-4">
+        <div class="md:col-span-1">
+            <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+            <input
+                type="date"
+                id="date"
+                name="date"
+                required
+                value="{{ current_month }}-01"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+        </div>
+
+        <div class="md:col-span-2">
+            <label for="merchant" class="block text-sm font-medium text-gray-700 mb-1">Merchant</label>
+            <input
+                type="text"
+                id="merchant"
+                name="merchant"
+                required
+                placeholder="e.g., Whole Foods"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+        </div>
+
+        <div class="md:col-span-1">
+            <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+            <input
+                type="number"
+                id="amount"
+                name="amount"
+                step="0.01"
+                required
+                placeholder="0.00"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+        </div>
+
+        <div class="md:col-span-1">
+            <label for="currency" class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+            <select
+                id="currency"
+                name="currency"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+                <option value="USD">USD</option>
+                <option value="CAD">CAD</option>
+            </select>
+        </div>
+
+        <div class="md:col-span-1">
+            <label for="paid_by" class="block text-sm font-medium text-gray-700 mb-1">Paid By</label>
+            <select
+                id="paid_by"
+                name="paid_by"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+                <option value="ME">Bibi</option>
+                <option value="WIFE">Pi</option>
+            </select>
+        </div>
+
+        <div class="md:col-span-1">
+            <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select
+                id="category"
+                name="category"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+                <option value="SHARED">Shared 50/50</option>
+                <option value="I_PAY_FOR_WIFE">Bibi pays for Pi</option>
+                <option value="WIFE_PAYS_FOR_ME">Pi pays for Bibi</option>
+                <option value="PERSONAL_ME">Personal (Bibi)</option>
+                <option value="PERSONAL_WIFE">Personal (Pi)</option>
+            </select>
+        </div>
+    </form>
+
+    <div class="mt-4">
+        <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+        <input
+            type="text"
+            id="notes"
+            name="notes"
+            placeholder="Additional notes..."
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+    </div>
+
+    <div class="mt-4">
+        <button
+            type="submit"
+            form="add-transaction-form"
+            class="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+        >
+            Add Transaction
+        </button>
+    </div>
+
+    <!-- Status messages -->
+    <div id="form-message" class="mt-4 hidden"></div>
+</div>
+
+<!-- Transaction List -->
+<div class="bg-white rounded-lg shadow-sm border p-6">
+    <h2 class="text-lg font-semibold mb-4">Transactions for {{ current_month }}</h2>
+
+    {% if transactions %}
+        <div class="overflow-x-auto">
+            <table class="w-full" id="transactions-table">
+                <thead>
+                    <tr class="border-b">
+                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date</th>
+                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Merchant</th>
+                        <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700">Amount</th>
+                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Paid By</th>
+                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Category</th>
+                        <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="transactions-body">
+                    {% for txn in transactions %}
+                    <tr class="border-b hover:bg-gray-50"
+                        data-id="{{ txn.id }}"
+                        data-date="{{ txn.date.strftime('%Y-%m-%d') }}"
+                        data-merchant="{{ txn.merchant }}"
+                        data-amount="{{ txn.amount }}"
+                        data-currency="{{ txn.currency }}"
+                        data-paid-by="{{ txn.paid_by }}"
+                        data-category="{{ txn.category }}"
+                        data-notes="{{ txn.notes or '' }}">
+                        <td class="py-3 px-4 text-sm">{{ txn.date.strftime('%Y-%m-%d') }}</td>
+                        <td class="py-3 px-4 text-sm">
+                            <div>{{ txn.merchant }}</div>
+                            {% if txn.notes %}
+                            <div class="text-xs text-gray-500">{{ txn.notes }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4 text-sm text-right">
+                            <div>${{ "%.2f"|format(txn.amount) }} {{ txn.currency }}</div>
+                            {% if txn.currency == 'CAD' %}
+                            <div class="text-xs text-gray-500">${{ "%.2f"|format(txn.amount_in_usd) }} USD</div>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4 text-sm">{{ txn.get_person_display_name(txn.paid_by) }}</td>
+                        <td class="py-3 px-4 text-sm">
+                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                                {{ txn.get_category_display_name(txn.category) }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-sm text-right">
+                            <button
+                                onclick="openEditModal({{ txn.id }})"
+                                class="text-blue-600 hover:text-blue-800 font-medium mr-4"
+                            >
+                                Edit
+                            </button>
+                            <button
+                                onclick="deleteTransaction({{ txn.id }})"
+                                class="text-red-600 hover:text-red-800 font-medium"
+                            >
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4 text-sm text-gray-600">
+            Total: {{ transactions|length }} transaction(s)
+        </div>
+    {% else %}
+        <div class="text-center py-8 text-gray-500">
+            <p class="text-lg">No transactions for this month yet.</p>
+            <p class="text-sm mt-2">Add your first transaction using the form above!</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Edit Transaction Modal -->
+<div id="edit-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+            <h2 class="text-xl font-semibold text-gray-800">Edit Transaction</h2>
+            <button
+                onclick="closeEditModal()"
+                class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            >
+                &times;
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="px-6 py-6">
+            <form id="edit-transaction-form" class="space-y-4">
+                <input type="hidden" id="edit-transaction-id" name="transaction_id">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input
+                            type="date"
+                            id="edit-date"
+                            name="date"
+                            required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="edit-currency" class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                        <select
+                            id="edit-currency"
+                            name="currency"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="USD">USD</option>
+                            <option value="CAD">CAD</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="edit-merchant" class="block text-sm font-medium text-gray-700 mb-1">Merchant</label>
+                    <input
+                        type="text"
+                        id="edit-merchant"
+                        name="merchant"
+                        required
+                        placeholder="e.g., Whole Foods"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                </div>
+
+                <div>
+                    <label for="edit-amount" class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                    <input
+                        type="number"
+                        id="edit-amount"
+                        name="amount"
+                        step="0.01"
+                        required
+                        placeholder="0.00"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-paid-by" class="block text-sm font-medium text-gray-700 mb-1">Paid By</label>
+                        <select
+                            id="edit-paid-by"
+                            name="paid_by"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="ME">Bibi</option>
+                            <option value="WIFE">Pi</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="edit-category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <select
+                            id="edit-category"
+                            name="category"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="SHARED">Shared 50/50</option>
+                            <option value="I_PAY_FOR_WIFE">Bibi pays for Pi</option>
+                            <option value="WIFE_PAYS_FOR_ME">Pi pays for Bibi</option>
+                            <option value="PERSONAL_ME">Personal (Bibi)</option>
+                            <option value="PERSONAL_WIFE">Personal (Pi)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="edit-notes" class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+                    <input
+                        type="text"
+                        id="edit-notes"
+                        name="notes"
+                        placeholder="Additional notes..."
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                </div>
+            </form>
+
+            <div id="edit-form-message" class="mt-4 hidden"></div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="sticky bottom-0 bg-gray-50 border-t px-6 py-4 flex justify-end gap-3">
+            <button
+                type="button"
+                onclick="closeEditModal()"
+                class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium"
+            >
+                Cancel
+            </button>
+            <button
+                type="submit"
+                form="edit-transaction-form"
+                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+            >
+                Save Changes
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Set today's date as default
+    document.getElementById('date').valueAsDate = new Date();
+
+    // Transaction form submission handler (defined in app.js)
+    document.getElementById('add-transaction-form').addEventListener('submit', handleTransactionSubmit);
+</script>
+{% endblock %}

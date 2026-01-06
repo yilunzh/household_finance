@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Zhang Estate Expense Tracker{% endblock %}</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-6xl mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-800">
+                    Zhang Estate Expense Tracker
+                </h1>
+                <div class="flex gap-4">
+                    <a href="/" class="text-gray-600 hover:text-gray-900">Transactions</a>
+                    <a href="/reconciliation" class="text-gray-600 hover:text-gray-900">Reconciliation</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 py-6">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 py-6 text-center text-gray-500 text-sm">
+        <p>Zhang Estate Expense Tracker &copy; 2026</p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

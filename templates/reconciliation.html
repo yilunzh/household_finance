@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Reconciliation - Zhang Estate Expense Tracker{% endblock %}
+
+{% block content %}
+<!-- Header with Month Selector -->
+<div class="mb-6 flex justify-between items-center">
+    <div class="flex items-center gap-4">
+        <a href="/" class="text-blue-600 hover:text-blue-800 font-medium">&larr; Back to Transactions</a>
+
+        <div class="flex items-center gap-2 ml-4">
+            <label for="month-select" class="text-gray-700 font-medium">Month:</label>
+            <select
+                id="month-select"
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onchange="window.location.href = '/reconciliation/' + this.value"
+            >
+                {% if not months %}
+                    <option value="{{ month }}">{{ month }}</option>
+                {% else %}
+                    {% for m in months %}
+                        <option value="{{ m }}" {% if m == month %}selected{% endif %}>
+                            {{ m }}
+                        </option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+    </div>
+
+    <a
+        href="/export/{{ month }}"
+        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+    >
+        Export CSV
+    </a>
+</div>
+
+<!-- Settlement Card (Most Important) -->
+<div class="mb-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg shadow-lg border-2 border-green-200 p-8">
+    <h2 class="text-2xl font-bold mb-4 text-gray-800">Monthly Settlement</h2>
+    <div class="text-4xl font-bold text-green-700">
+        {{ summary.settlement }}
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <!-- What We Paid -->
+    <div class="bg-white rounded-lg shadow-sm border p-6">
+        <h3 class="text-lg font-semibold mb-4 text-gray-800">What We Paid</h3>
+        <div class="space-y-3">
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">Bibi paid:</span>
+                <span class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.me_paid) }} USD</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">Pi paid:</span>
+                <span class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.wife_paid) }} USD</span>
+            </div>
+            <div class="pt-3 border-t">
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold text-gray-700">Total Expenses:</span>
+                    <span class="text-2xl font-bold text-blue-600">
+                        ${{ "%.2f"|format(summary.me_paid + summary.wife_paid) }} USD
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- What We Owe -->
+    <div class="bg-white rounded-lg shadow-sm border p-6">
+        <h3 class="text-lg font-semibold mb-4 text-gray-800">What We Should Pay</h3>
+        <div class="space-y-3">
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">Bibi's share:</span>
+                <span class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.me_share) }} USD</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">Pi's share:</span>
+                <span class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.wife_share) }} USD</span>
+            </div>
+            <div class="pt-3 border-t">
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold text-gray-700">Total:</span>
+                    <span class="text-2xl font-bold text-blue-600">
+                        ${{ "%.2f"|format(summary.me_share + summary.wife_share) }} USD
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Breakdown -->
+<div class="bg-white rounded-lg shadow-sm border p-6 mb-6">
+    <h3 class="text-lg font-semibold mb-4 text-gray-800">Breakdown by Category</h3>
+
+    {% if summary.breakdown %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b">
+                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Category</th>
+                        <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">Count</th>
+                        <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700">Total (USD)</th>
+                        <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700">Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set total_amount = summary.me_paid + summary.wife_paid %}
+                    {% for item in summary.breakdown %}
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="py-3 px-4 text-sm">
+                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                                {{ item.category_name }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-sm text-center">{{ item.count }}</td>
+                        <td class="py-3 px-4 text-sm text-right font-semibold">
+                            ${{ "%.2f"|format(item.total) }}
+                        </td>
+                        <td class="py-3 px-4 text-sm text-right">
+                            {{ "%.1f"|format((item.total / total_amount) * 100) }}%
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="border-t-2 font-bold">
+                        <td class="py-3 px-4 text-sm">Total</td>
+                        <td class="py-3 px-4 text-sm text-center">
+                            {{ summary.breakdown | sum(attribute='count') }}
+                        </td>
+                        <td class="py-3 px-4 text-sm text-right">
+                            ${{ "%.2f"|format(total_amount) }}
+                        </td>
+                        <td class="py-3 px-4 text-sm text-right">100.0%</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-gray-500 text-center py-4">No transactions for this month.</p>
+    {% endif %}
+</div>
+
+<!-- Transaction Details (Optional) -->
+<div class="bg-white rounded-lg shadow-sm border p-6">
+    <h3 class="text-lg font-semibold mb-4 text-gray-800">Transaction Details</h3>
+
+    {% if transactions %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b">
+                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date</th>
+                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Merchant</th>
+                        <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700">Amount</th>
+                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Paid By</th>
+                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Category</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for txn in transactions %}
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="py-3 px-4 text-sm">{{ txn.date.strftime('%Y-%m-%d') }}</td>
+                        <td class="py-3 px-4 text-sm">
+                            <div>{{ txn.merchant }}</div>
+                            {% if txn.notes %}
+                            <div class="text-xs text-gray-500">{{ txn.notes }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4 text-sm text-right">
+                            <div>${{ "%.2f"|format(txn.amount) }} {{ txn.currency }}</div>
+                            {% if txn.currency == 'CAD' %}
+                            <div class="text-xs text-gray-500">${{ "%.2f"|format(txn.amount_in_usd) }} USD</div>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4 text-sm">{{ txn.get_person_display_name(txn.paid_by) }}</td>
+                        <td class="py-3 px-4 text-sm">
+                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                                {{ txn.get_category_display_name(txn.category) }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4 text-sm text-gray-600">
+            Total: {{ transactions|length }} transaction(s)
+        </div>
+    {% else %}
+        <p class="text-gray-500 text-center py-4">No transactions for this month.</p>
+    {% endif %}
+</div>
+
+{% endblock %}
