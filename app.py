@@ -8,7 +8,7 @@ from flask import Flask, render_template, request, jsonify, Response
 from datetime import datetime
 from decimal import Decimal
 
-from models import db, Transaction
+from models import db, Transaction, Settlement
 from utils import get_exchange_rate, calculate_reconciliation
 
 # Initialize Flask app
@@ -58,17 +58,33 @@ def index():
     summary = calculate_reconciliation(transactions) if transactions else None
 
     # Get list of available months for dropdown
-    all_months = db.session.query(Transaction.month_year).distinct().order_by(
+    # Get months with existing transactions
+    existing_months = db.session.query(Transaction.month_year).distinct().order_by(
         Transaction.month_year.desc()
     ).all()
-    months = [m[0] for m in all_months]
+    months = [m[0] for m in existing_months]
+
+    # Always ensure current month is in list
+    current_month_str = datetime.now().strftime('%Y-%m')
+    if current_month_str not in months:
+        months.insert(0, current_month_str)
+
+    # If viewing a month not in list (manually typed URL), add it
+    if month not in months:
+        # Insert in correct chronological position
+        months.append(month)
+        months.sort(reverse=True)
+
+    # Check if month is settled
+    is_settled = Settlement.is_month_settled(month)
 
     return render_template(
         'index.html',
         transactions=transactions,
         current_month=month,
         months=months,
-        summary=summary
+        summary=summary,
+        is_settled=is_settled
     )
 
 
@@ -90,6 +106,14 @@ def add_transaction():
             amount_in_usd = amount * Decimal(str(rate))
         else:
             amount_in_usd = amount
+
+        # Check if month is settled (locked)
+        month_year_to_check = txn_date.strftime('%Y-%m')
+        if Settlement.is_month_settled(month_year_to_check):
+            return jsonify({
+                'success': False,
+                'error': f'Cannot add transaction to settled month {month_year_to_check}. This month is locked.'
+            }), 403
 
         # Create transaction
         transaction = Transaction(
@@ -126,6 +150,23 @@ def update_transaction(transaction_id):
     try:
         transaction = Transaction.query.get_or_404(transaction_id)
         data = request.json
+
+        # Check if OLD month is settled
+        if Settlement.is_month_settled(transaction.month_year):
+            return jsonify({
+                'success': False,
+                'error': f'Cannot edit transaction in settled month {transaction.month_year}. This month is locked.'
+            }), 403
+
+        # Also check if NEW month (if date changed) is settled
+        if 'date' in data:
+            new_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+            new_month_year = new_date.strftime('%Y-%m')
+            if new_month_year != transaction.month_year and Settlement.is_month_settled(new_month_year):
+                return jsonify({
+                    'success': False,
+                    'error': f'Cannot move transaction to settled month {new_month_year}. That month is locked.'
+                }), 403
 
         # Update fields
         if 'date' in data:
@@ -178,11 +219,96 @@ def delete_transaction(transaction_id):
     """Delete a transaction."""
     try:
         transaction = Transaction.query.get_or_404(transaction_id)
+
+        # Check if month is settled
+        if Settlement.is_month_settled(transaction.month_year):
+            return jsonify({
+                'success': False,
+                'error': f'Cannot delete transaction in settled month {transaction.month_year}. This month is locked.'
+            }), 403
+
         db.session.delete(transaction)
         db.session.commit()
 
         return jsonify({
             'success': True
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
+
+
+@app.route('/settlement', methods=['POST'])
+def mark_month_settled():
+    """Mark a month as settled and record the settlement snapshot."""
+    try:
+        data = request.json
+        month_year = data['month_year']
+
+        # Validation: Check if already settled
+        if Settlement.is_month_settled(month_year):
+            return jsonify({'success': False, 'error': 'This month has already been settled.'}), 400
+
+        # Validation: Must have transactions
+        transactions = Transaction.query.filter_by(month_year=month_year).all()
+        if not transactions:
+            return jsonify({'success': False, 'error': 'Cannot settle a month with no transactions.'}), 400
+
+        # Calculate reconciliation
+        summary = calculate_reconciliation(transactions)
+        me_balance = Decimal(str(summary['me_balance']))
+        wife_balance = Decimal(str(summary['wife_balance']))
+
+        # Determine direction of debt
+        if me_balance > Decimal('0.01'):  # Pi owes Bibi
+            from_person, to_person, settlement_amount = 'WIFE', 'ME', me_balance
+        elif wife_balance > Decimal('0.01'):  # Bibi owes Pi
+            from_person, to_person, settlement_amount = 'ME', 'WIFE', wife_balance
+        else:  # All settled up
+            from_person, to_person, settlement_amount = 'NONE', 'NONE', Decimal('0.00')
+
+        # Create settlement record
+        settlement = Settlement(
+            month_year=month_year,
+            settled_date=datetime.now().date(),
+            settlement_amount=settlement_amount,
+            from_person=from_person,
+            to_person=to_person,
+            settlement_message=summary['settlement']
+        )
+
+        db.session.add(settlement)
+        db.session.commit()
+
+        return jsonify({'success': True, 'settlement': settlement.to_dict()})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@app.route('/settlement/<month_year>', methods=['DELETE'])
+def unsettle_month(month_year):
+    """Remove settlement record to unlock a month for editing."""
+    try:
+        settlement = Settlement.query.filter_by(month_year=month_year).first()
+
+        if not settlement:
+            return jsonify({
+                'success': False,
+                'error': 'This month is not settled.'
+            }), 404
+
+        db.session.delete(settlement)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Month {month_year} has been unsettled and is now unlocked.'
         })
 
     except Exception as e:
@@ -212,12 +338,16 @@ def reconciliation(month=None):
     ).all()
     months = [m[0] for m in all_months]
 
+    # Check if month is settled
+    settlement = Settlement.get_settlement(month)
+
     return render_template(
         'reconciliation.html',
         summary=summary,
         month=month,
         months=months,
-        transactions=transactions
+        transactions=transactions,
+        settlement=settlement
     )
 
 

@@ -36,12 +36,76 @@
     </a>
 </div>
 
+<!-- Locked Month Banner (show if settled) -->
+{% if settlement %}
+<div class="mb-6 bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+        </svg>
+        <div>
+            <p class="font-semibold text-yellow-800">This month is locked</p>
+            <p class="text-sm text-yellow-700">Settled on {{ settlement.settled_date.strftime('%Y-%m-%d') }}. Transactions cannot be added or modified.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Settlement Card (Most Important) -->
 <div class="mb-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg shadow-lg border-2 border-green-200 p-8">
     <h2 class="text-2xl font-bold mb-4 text-gray-800">Monthly Settlement</h2>
-    <div class="text-4xl font-bold text-green-700">
-        {{ summary.settlement }}
-    </div>
+
+    {% if settlement %}
+        <!-- Settlement is recorded -->
+        <div class="space-y-3">
+            <div class="text-4xl font-bold text-green-700 mb-2">
+                {{ settlement.settlement_message }}
+            </div>
+            <div class="flex items-center gap-6 text-sm text-gray-600">
+                <div>
+                    <span class="font-semibold">Settled on:</span>
+                    {{ settlement.settled_date.strftime('%B %d, %Y') }}
+                </div>
+                <div>
+                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full font-medium">Locked</span>
+                </div>
+            </div>
+            <div class="pt-4 border-t border-gray-200 mt-4">
+                <button
+                    id="unsettle-btn"
+                    onclick="unsettleMonth()"
+                    class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-medium text-sm"
+                >
+                    Unsettle Month
+                </button>
+                <p class="text-xs text-gray-600 mt-2">
+                    Unlock this month to allow adding or editing transactions.
+                </p>
+            </div>
+        </div>
+    {% else %}
+        <!-- Settlement not yet recorded -->
+        <div class="space-y-4">
+            <div class="text-4xl font-bold text-green-700">
+                {{ summary.settlement }}
+            </div>
+
+            {% if summary.breakdown %}
+            <div class="pt-4 border-t border-green-200">
+                <button
+                    id="mark-settled-btn"
+                    onclick="markMonthSettled()"
+                    class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold shadow-md hover:shadow-lg"
+                >
+                    Mark {{ month }} as Settled
+                </button>
+                <p class="text-sm text-gray-600 mt-2">
+                    Once marked as settled, this month will be locked and transactions cannot be modified.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    {% endif %}
 </div>
 
 <!-- Summary Cards -->
@@ -197,5 +261,224 @@
         <p class="text-gray-500 text-center py-4">No transactions for this month.</p>
     {% endif %}
 </div>
+
+<!-- Confirm Modal -->
+<div id="confirm-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
+        <div class="p-6">
+            <div class="flex items-center gap-4 mb-4">
+                <div id="confirm-icon" class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center">
+                    <!-- Icon will be inserted via JS -->
+                </div>
+                <h3 id="confirm-title" class="text-xl font-bold text-gray-900"></h3>
+            </div>
+            <p id="confirm-message" class="text-gray-600 leading-relaxed mb-6 ml-16"></p>
+            <div class="flex gap-3 justify-end">
+                <button
+                    id="confirm-cancel"
+                    class="px-5 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
+                >
+                    Cancel
+                </button>
+                <button
+                    id="confirm-ok"
+                    class="px-5 py-2.5 text-white rounded-lg hover:opacity-90 transition font-medium shadow-md"
+                >
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast-notification" class="hidden fixed top-4 right-4 z-50 transform transition-all duration-300">
+    <div class="bg-white rounded-xl shadow-2xl border-2 p-4 flex items-center gap-3 min-w-[320px]">
+        <div id="toast-icon" class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center">
+            <!-- Icon will be inserted via JS -->
+        </div>
+        <div class="flex-1">
+            <p id="toast-title" class="font-semibold text-gray-900"></p>
+            <p id="toast-message" class="text-sm text-gray-600"></p>
+        </div>
+        <button onclick="hideToast()" class="text-gray-400 hover:text-gray-600 ml-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+// Custom confirm modal
+function showConfirm(title, message, type = 'warning') {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirm-modal');
+        const titleEl = document.getElementById('confirm-title');
+        const messageEl = document.getElementById('confirm-message');
+        const iconEl = document.getElementById('confirm-icon');
+        const okBtn = document.getElementById('confirm-ok');
+        const cancelBtn = document.getElementById('confirm-cancel');
+
+        // Set content
+        titleEl.textContent = title;
+        messageEl.innerHTML = message.replace(/\n/g, '<br>');
+
+        // Set icon and colors based on type
+        if (type === 'warning') {
+            iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-yellow-100';
+            iconEl.innerHTML = '<svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
+            okBtn.className = 'px-5 py-2.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-medium shadow-md';
+        } else if (type === 'success') {
+            iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-green-100';
+            iconEl.innerHTML = '<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+            okBtn.className = 'px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium shadow-md';
+        }
+
+        // Show modal
+        modal.classList.remove('hidden');
+
+        // Handle button clicks
+        const handleOk = () => {
+            modal.classList.add('hidden');
+            okBtn.removeEventListener('click', handleOk);
+            cancelBtn.removeEventListener('click', handleCancel);
+            resolve(true);
+        };
+
+        const handleCancel = () => {
+            modal.classList.add('hidden');
+            okBtn.removeEventListener('click', handleOk);
+            cancelBtn.removeEventListener('click', handleCancel);
+            resolve(false);
+        };
+
+        okBtn.addEventListener('click', handleOk);
+        cancelBtn.addEventListener('click', handleCancel);
+    });
+}
+
+// Custom toast notification
+function showToast(title, message, type = 'success') {
+    const toast = document.getElementById('toast-notification');
+    const titleEl = document.getElementById('toast-title');
+    const messageEl = document.getElementById('toast-message');
+    const iconEl = document.getElementById('toast-icon');
+    const containerEl = toast.querySelector('div');
+
+    // Set content
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+
+    // Set icon and colors based on type
+    if (type === 'success') {
+        containerEl.className = 'bg-white rounded-xl shadow-2xl border-2 border-green-200 p-4 flex items-center gap-3 min-w-[320px]';
+        iconEl.className = 'flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-green-100';
+        iconEl.innerHTML = '<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+    } else if (type === 'error') {
+        containerEl.className = 'bg-white rounded-xl shadow-2xl border-2 border-red-200 p-4 flex items-center gap-3 min-w-[320px]';
+        iconEl.className = 'flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-red-100';
+        iconEl.innerHTML = '<svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+    }
+
+    // Show toast
+    toast.classList.remove('hidden');
+
+    // Auto hide after 4 seconds
+    setTimeout(() => {
+        hideToast();
+    }, 4000);
+}
+
+function hideToast() {
+    document.getElementById('toast-notification').classList.add('hidden');
+}
+
+async function markMonthSettled() {
+    const month = '{{ month }}';
+
+    const confirmed = await showConfirm(
+        'Mark as Settled?',
+        `Are you sure you want to mark ${month} as settled?\n\nThis will lock the month (no more edits/additions/deletions) and record the current settlement amount.\n\nYou can unsettle it later if needed.`,
+        'success'
+    );
+
+    if (!confirmed) return;
+
+    const btn = document.getElementById('mark-settled-btn');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Marking as settled...';
+    btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+    try {
+        const response = await fetch('/settlement', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({month_year: month})
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showToast('Success', `Month ${month} has been marked as settled!`, 'success');
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            showToast('Error', result.error, 'error');
+            btn.disabled = false;
+            btn.textContent = originalText;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    } catch (error) {
+        showToast('Error', error.message, 'error');
+        btn.disabled = false;
+        btn.textContent = originalText;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+async function unsettleMonth() {
+    const month = '{{ month }}';
+
+    const confirmed = await showConfirm(
+        'Unsettle Month?',
+        `Are you sure you want to unsettle ${month}?\n\nThis will unlock the month for editing and remove the settlement record.\n\nYou can mark it as settled again later.`,
+        'warning'
+    );
+
+    if (!confirmed) return;
+
+    const btn = document.getElementById('unsettle-btn');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Unsettling...';
+    btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+    try {
+        const response = await fetch(`/settlement/${month}`, {
+            method: 'DELETE'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showToast('Success', `Month ${month} has been unsettled and is now unlocked!`, 'success');
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            showToast('Error', result.error, 'error');
+            btn.disabled = false;
+            btn.textContent = originalText;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    } catch (error) {
+        showToast('Error', error.message, 'error');
+        btn.disabled = false;
+        btn.textContent = originalText;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
+</script>
+{% endblock %}
 
 {% endblock %}

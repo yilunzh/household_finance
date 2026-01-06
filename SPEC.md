@@ -104,7 +104,26 @@ CREATE TABLE transactions (
 
 CREATE INDEX idx_month_year ON transactions(month_year);
 CREATE INDEX idx_date ON transactions(date);
+
+CREATE TABLE settlements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    month_year TEXT NOT NULL UNIQUE,  -- Format: "2026-01", UNIQUE to prevent duplicates
+    settled_date DATE NOT NULL,  -- When the month was marked as settled
+    settlement_amount DECIMAL(10, 2) NOT NULL,  -- Absolute amount owed (always positive)
+    from_person TEXT NOT NULL CHECK(from_person IN ('ME', 'WIFE', 'NONE')),  -- Who owes
+    to_person TEXT NOT NULL CHECK(to_person IN ('ME', 'WIFE', 'NONE')),  -- Who is owed
+    settlement_message TEXT NOT NULL,  -- "Pi owes Bibi $75.25" or "All settled up!"
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_settlement_month ON settlements(month_year);
 ```
+
+**Settlement Table Purpose:**
+- Records permanent snapshot when a month is marked as "settled"
+- Locks the month to prevent further transaction modifications
+- Preserves historical settlement records even if transactions change
+- UNIQUE constraint on month_year ensures only one settlement per month
 
 ### 3.2 Transaction Categories
 
@@ -133,6 +152,8 @@ CREATE INDEX idx_date ON transactions(date);
 | GET | `/reconciliation` | Monthly summary (default: current month) | - | HTML page | ✅ Implemented |
 | GET | `/reconciliation/<month>` | Monthly summary for specific month | - | HTML page | ✅ Implemented |
 | GET | `/export/<month>` | Export CSV | - | CSV file | ✅ Implemented |
+| POST | `/settlement` | Mark month as settled and lock it | `{month_year: "YYYY-MM"}` | `{success: bool, settlement: {...}}` | ✅ Implemented |
+| DELETE | `/settlement/<month>` | Unsettle month and unlock it | - | `{success: bool, message: string}` | ✅ Implemented |
 
 ### 4.2 Transaction JSON Schema
 
@@ -330,6 +351,7 @@ def get_exchange_rate(from_curr, to_curr, date):
 │  💰 Settlement                      │
 │  ┌─────────────────────────────┐   │
 │  │  Pi owes Bibi $247.50       │   │ ← Big, clear (uses nicknames)
+│  │  [Mark as Settled]          │   │ ← Button (if not settled)
 │  └─────────────────────────────┘   │
 ├─────────────────────────────────────┤
 │  Summary                            │
@@ -350,14 +372,69 @@ def get_exchange_rate(from_curr, to_curr, date):
 └─────────────────────────────────────┘
 ```
 
+**When Month is Settled:**
+```
+┌─────────────────────────────────────┐
+│  🔒 This month is locked            │
+│  Settled on 2026-01-15              │ ← Yellow banner
+├─────────────────────────────────────┤
+│  💰 Settlement                      │
+│  ┌─────────────────────────────┐   │
+│  │  Pi owes Bibi $247.50       │   │ ← Historical record
+│  │  Settled: January 15, 2026  │   │
+│  │  🔓 Locked                  │   │
+│  │  [Unsettle Month]           │   │ ← Button to unlock
+│  └─────────────────────────────┘   │
+└─────────────────────────────────────┘
+```
+
+### 6.3 Monthly Settlement Feature
+
+**Purpose**: Track when monthly reconciliations are settled and lock months to prevent accidental changes.
+
+**User Flow:**
+
+1. **Viewing Unsettled Month**:
+   - Reconciliation page shows calculated settlement
+   - "Mark as Settled" button is visible
+   - Transactions can be added/edited/deleted
+
+2. **Marking Month as Settled**:
+   - User clicks "Mark as Settled" button
+   - Confirmation dialog warns about locking
+   - POST `/settlement` creates permanent record
+   - Settlement record stores: date, amount, who owes whom, settlement message
+   - Month becomes locked
+
+3. **Locked Month Behavior**:
+   - Yellow "This month is locked" banner appears on both pages
+   - Add Transaction form is disabled (grayed out)
+   - Edit/Delete buttons show "Locked" instead
+   - API returns 403 Forbidden for add/edit/delete attempts
+   - Reconciliation page shows historical settlement record
+
+4. **Unsettling a Month**:
+   - User clicks "Unsettle Month" button on reconciliation page
+   - Confirmation dialog warns about unlocking
+   - DELETE `/settlement/<month>` removes settlement record
+   - Month becomes unlocked
+   - Transactions can be added/edited/deleted again
+   - Can re-settle later if needed
+
+**Validation Rules:**
+- Cannot settle a month with no transactions
+- Cannot settle the same month twice (UNIQUE constraint)
+- Cannot add/edit/delete transactions in settled months
+- Unsettling removes the settlement record completely
+
 ---
 
 ## 7. Project Structure
 
 ```
 household_tracker/
-├── app.py                    # Main Flask application (~280 lines)
-├── models.py                 # Database models (~80 lines)
+├── app.py                    # Main Flask application (~410 lines, includes settlement endpoints)
+├── models.py                 # Database models (~110 lines, includes Settlement model)
 ├── utils.py                  # Helper functions (~120 lines)
 ├── requirements.txt          # Python dependencies (includes gunicorn)
 ├── Procfile                  # Production server config for Render
@@ -373,8 +450,8 @@ household_tracker/
 │
 ├── templates/
 │   ├── base.html            # Base template (~60 lines)
-│   ├── index.html           # Main transaction page (~380 lines with edit modal)
-│   └── reconciliation.html  # Monthly summary (~120 lines)
+│   ├── index.html           # Main transaction page (~410 lines, includes locked month UI)
+│   └── reconciliation.html  # Monthly summary (~345 lines, includes settlement tracking)
 │
 ├── instance/
 │   └── database.db          # SQLite database (development, created at runtime)
@@ -433,8 +510,8 @@ open http://localhost:5000
 
 **✅ Backend Foundation (Completed)**
 - ✅ Project structure set up
-- ✅ Database models created (models.py with Transaction model)
-- ✅ Flask routes implemented (app.py with CRUD operations)
+- ✅ Database models created (models.py with Transaction and Settlement models)
+- ✅ Flask routes implemented (app.py with CRUD operations and settlement endpoints)
 - ✅ Utility functions built (utils.py with reconciliation and currency conversion)
 
 **✅ Frontend UI (Completed)**
@@ -459,8 +536,19 @@ open http://localhost:5000
 - ✅ Git repository initialized and pushed to GitHub
 - ✅ Deployment guide created (DEPLOYMENT.md)
 
+**✅ Settlement Tracking (Completed - January 2026)**
+- ✅ Settlement table added to database schema
+- ✅ POST /settlement endpoint to mark month as settled
+- ✅ DELETE /settlement/<month> endpoint to unsettle month
+- ✅ Settlement validation on all transaction endpoints (add/edit/delete)
+- ✅ Locked month UI on index page (disabled form, locked buttons)
+- ✅ Settlement tracking UI on reconciliation page
+- ✅ JavaScript functions for marking settled and unsettling
+- ✅ Database migration tested (Settlement table created successfully)
+
 ### 9.3 Testing Checklist
 
+**Core Functionality:**
 - ✅ Can add transaction manually
 - ✅ CAD transactions convert to USD correctly (USD is primary currency)
 - ✅ Can edit existing transaction via modal
@@ -471,6 +559,18 @@ open http://localhost:5000
 - ⏳ Works on mobile browser (not yet tested)
 - ✅ Exchange rate caching works (in-memory cache)
 - ✅ All 5 category types work correctly
+
+**Settlement Tracking:**
+- ✅ Can mark month as settled via reconciliation page
+- ✅ Settled month shows locked banner on both pages
+- ✅ Add Transaction form disabled in settled months
+- ✅ Edit/Delete buttons show "Locked" in settled months
+- ✅ API returns 403 Forbidden for add/edit/delete in settled months
+- ✅ Settlement record displays with date and amount
+- ✅ Can unsettle a month to unlock it
+- ✅ Cannot settle the same month twice (UNIQUE constraint)
+- ✅ Cannot settle month with no transactions
+- ✅ After unsettling, can add/edit/delete transactions again
 
 ---
 
@@ -740,8 +840,16 @@ def format_settlement(me_balance, wife_balance):
 
 ---
 
-**Document Version**: 1.1 (Updated to reflect implementation)
+**Document Version**: 1.2 (Updated to include Settlement Tracking feature)
 **Last Updated**: January 6, 2026
 **Author**: Claude (Sonnet 4.5)
 **GitHub Repository**: https://github.com/yilunzh/household_finance
 **Deployment Guide**: See DEPLOYMENT.md for production deployment instructions
+
+**Recent Updates (v1.2):**
+- Added Settlement table to database schema
+- Added POST /settlement and DELETE /settlement/<month> endpoints
+- Implemented month locking feature to prevent modifications to settled months
+- Added settlement tracking UI to reconciliation page
+- Added locked month UI to main transaction page
+- All settlement features tested and verified

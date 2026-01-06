@@ -32,6 +32,27 @@
     </a>
 </div>
 
+<!-- Locked Month Banner (show if settled) -->
+{% if is_settled %}
+<div class="mb-6 bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+        </svg>
+        <div>
+            <p class="font-semibold text-yellow-800">This month is locked</p>
+            <p class="text-sm text-yellow-700">This month has been settled. You cannot add, edit, or delete transactions.</p>
+        </div>
+    </div>
+    <button
+        onclick="unsettleMonth('{{ current_month }}')"
+        class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-medium text-sm whitespace-nowrap"
+    >
+        Unlock Month
+    </button>
+</div>
+{% endif %}
+
 <!-- Quick Summary Card -->
 {% if summary %}
 <div class="mb-6 bg-white rounded-lg shadow-sm border p-6">
@@ -54,111 +75,118 @@
 {% endif %}
 
 <!-- Add Transaction Form -->
-<div class="bg-white rounded-lg shadow-sm border p-6 mb-6 sticky top-4 z-10">
-    <h2 class="text-lg font-semibold mb-4">Add Transaction</h2>
+{% if is_settled %}
+    <div class="bg-gray-100 rounded-lg shadow-sm border p-6 mb-6 opacity-60">
+        <h2 class="text-lg font-semibold mb-4 text-gray-500">Add Transaction (Disabled - Month Locked)</h2>
+        <p class="text-gray-600">This month has been settled and is locked. To add transactions, please select a different month.</p>
+    </div>
+{% else %}
+    <div class="bg-white rounded-lg shadow-sm border p-6 mb-6 sticky top-4 z-10">
+        <h2 class="text-lg font-semibold mb-4">Add Transaction</h2>
 
-    <form id="add-transaction-form" class="grid grid-cols-1 md:grid-cols-7 gap-4">
-        <div class="md:col-span-1">
-            <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-            <input
-                type="date"
-                id="date"
-                name="date"
-                required
-                value="{{ current_month }}-01"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-        </div>
+        <form id="add-transaction-form" class="grid grid-cols-1 md:grid-cols-7 gap-4">
+            <div class="md:col-span-1">
+                <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <input
+                    type="date"
+                    id="date"
+                    name="date"
+                    required
+                    value="{{ current_month }}-01"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+            </div>
 
-        <div class="md:col-span-2">
-            <label for="merchant" class="block text-sm font-medium text-gray-700 mb-1">Merchant</label>
+            <div class="md:col-span-2">
+                <label for="merchant" class="block text-sm font-medium text-gray-700 mb-1">Merchant</label>
+                <input
+                    type="text"
+                    id="merchant"
+                    name="merchant"
+                    required
+                    placeholder="e.g., Whole Foods"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+            </div>
+
+            <div class="md:col-span-1">
+                <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                <input
+                    type="number"
+                    id="amount"
+                    name="amount"
+                    step="0.01"
+                    required
+                    placeholder="0.00"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+            </div>
+
+            <div class="md:col-span-1">
+                <label for="currency" class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                <select
+                    id="currency"
+                    name="currency"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                    <option value="USD">USD</option>
+                    <option value="CAD">CAD</option>
+                </select>
+            </div>
+
+            <div class="md:col-span-1">
+                <label for="paid_by" class="block text-sm font-medium text-gray-700 mb-1">Paid By</label>
+                <select
+                    id="paid_by"
+                    name="paid_by"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                    <option value="ME">Bibi</option>
+                    <option value="WIFE">Pi</option>
+                </select>
+            </div>
+
+            <div class="md:col-span-1">
+                <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select
+                    id="category"
+                    name="category"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                    <option value="SHARED">Shared 50/50</option>
+                    <option value="I_PAY_FOR_WIFE">Bibi pays for Pi</option>
+                    <option value="WIFE_PAYS_FOR_ME">Pi pays for Bibi</option>
+                    <option value="PERSONAL_ME">Personal (Bibi)</option>
+                    <option value="PERSONAL_WIFE">Personal (Pi)</option>
+                </select>
+            </div>
+        </form>
+
+        <div class="mt-4">
+            <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
             <input
                 type="text"
-                id="merchant"
-                name="merchant"
-                required
-                placeholder="e.g., Whole Foods"
+                id="notes"
+                name="notes"
+                placeholder="Additional notes..."
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
         </div>
 
-        <div class="md:col-span-1">
-            <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
-            <input
-                type="number"
-                id="amount"
-                name="amount"
-                step="0.01"
-                required
-                placeholder="0.00"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        <div class="mt-4">
+            <button
+                type="submit"
+                form="add-transaction-form"
+                class="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
             >
+                Add Transaction
+            </button>
         </div>
 
-        <div class="md:col-span-1">
-            <label for="currency" class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-            <select
-                id="currency"
-                name="currency"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-                <option value="USD">USD</option>
-                <option value="CAD">CAD</option>
-            </select>
-        </div>
-
-        <div class="md:col-span-1">
-            <label for="paid_by" class="block text-sm font-medium text-gray-700 mb-1">Paid By</label>
-            <select
-                id="paid_by"
-                name="paid_by"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-                <option value="ME">Bibi</option>
-                <option value="WIFE">Pi</option>
-            </select>
-        </div>
-
-        <div class="md:col-span-1">
-            <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-            <select
-                id="category"
-                name="category"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-                <option value="SHARED">Shared 50/50</option>
-                <option value="I_PAY_FOR_WIFE">Bibi pays for Pi</option>
-                <option value="WIFE_PAYS_FOR_ME">Pi pays for Bibi</option>
-                <option value="PERSONAL_ME">Personal (Bibi)</option>
-                <option value="PERSONAL_WIFE">Personal (Pi)</option>
-            </select>
-        </div>
-    </form>
-
-    <div class="mt-4">
-        <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
-        <input
-            type="text"
-            id="notes"
-            name="notes"
-            placeholder="Additional notes..."
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
+        <!-- Status messages -->
+        <div id="form-message" class="mt-4 hidden"></div>
     </div>
-
-    <div class="mt-4">
-        <button
-            type="submit"
-            form="add-transaction-form"
-            class="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
-        >
-            Add Transaction
-        </button>
-    </div>
-
-    <!-- Status messages -->
-    <div id="form-message" class="mt-4 hidden"></div>
-</div>
+{% endif %}
 
 <!-- Transaction List -->
 <div class="bg-white rounded-lg shadow-sm border p-6">
@@ -208,18 +236,22 @@
                             </span>
                         </td>
                         <td class="py-3 px-4 text-sm text-right">
-                            <button
-                                onclick="openEditModal({{ txn.id }})"
-                                class="text-blue-600 hover:text-blue-800 font-medium mr-4"
-                            >
-                                Edit
-                            </button>
-                            <button
-                                onclick="deleteTransaction({{ txn.id }})"
-                                class="text-red-600 hover:text-red-800 font-medium"
-                            >
-                                Delete
-                            </button>
+                            {% if is_settled %}
+                                <span class="text-gray-400 text-xs">Locked</span>
+                            {% else %}
+                                <button
+                                    onclick="openEditModal({{ txn.id }})"
+                                    class="text-blue-600 hover:text-blue-800 font-medium mr-4"
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    onclick="deleteTransaction({{ txn.id }})"
+                                    class="text-red-600 hover:text-red-800 font-medium"
+                                >
+                                    Delete
+                                </button>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -236,6 +268,53 @@
             <p class="text-sm mt-2">Add your first transaction using the form above!</p>
         </div>
     {% endif %}
+</div>
+
+<!-- Confirm Modal -->
+<div id="confirm-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
+        <div class="p-6">
+            <div class="flex items-center gap-4 mb-4">
+                <div id="confirm-icon" class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center">
+                    <!-- Icon will be inserted via JS -->
+                </div>
+                <h3 id="confirm-title" class="text-xl font-bold text-gray-900"></h3>
+            </div>
+            <p id="confirm-message" class="text-gray-600 leading-relaxed mb-6 ml-16"></p>
+            <div class="flex gap-3 justify-end">
+                <button
+                    id="confirm-cancel"
+                    class="px-5 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
+                >
+                    Cancel
+                </button>
+                <button
+                    id="confirm-ok"
+                    class="px-5 py-2.5 text-white rounded-lg hover:opacity-90 transition font-medium shadow-md"
+                >
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast-notification" class="hidden fixed top-4 right-4 z-50 transform transition-all duration-300">
+    <div class="bg-white rounded-xl shadow-2xl border-2 p-4 flex items-center gap-3 min-w-[320px]">
+        <div id="toast-icon" class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center">
+            <!-- Icon will be inserted via JS -->
+        </div>
+        <div class="flex-1">
+            <p id="toast-title" class="font-semibold text-gray-900"></p>
+            <p id="toast-message" class="text-sm text-gray-600"></p>
+        </div>
+        <button onclick="hideToast()" class="text-gray-400 hover:text-gray-600 ml-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    </div>
 </div>
 
 <!-- Edit Transaction Modal -->
@@ -375,6 +454,118 @@
 
 {% block extra_scripts %}
 <script>
+    // Custom confirm modal
+    function showConfirm(title, message, type = 'warning') {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('confirm-modal');
+            const titleEl = document.getElementById('confirm-title');
+            const messageEl = document.getElementById('confirm-message');
+            const iconEl = document.getElementById('confirm-icon');
+            const okBtn = document.getElementById('confirm-ok');
+            const cancelBtn = document.getElementById('confirm-cancel');
+
+            // Set content
+            titleEl.textContent = title;
+            messageEl.innerHTML = message.replace(/\n/g, '<br>');
+
+            // Set icon and colors based on type
+            if (type === 'warning') {
+                iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-yellow-100';
+                iconEl.innerHTML = '<svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
+                okBtn.className = 'px-5 py-2.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-medium shadow-md';
+            } else if (type === 'danger') {
+                iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-red-100';
+                iconEl.innerHTML = '<svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+                okBtn.className = 'px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium shadow-md';
+            }
+
+            // Show modal
+            modal.classList.remove('hidden');
+
+            // Handle button clicks
+            const handleOk = () => {
+                modal.classList.add('hidden');
+                okBtn.removeEventListener('click', handleOk);
+                cancelBtn.removeEventListener('click', handleCancel);
+                resolve(true);
+            };
+
+            const handleCancel = () => {
+                modal.classList.add('hidden');
+                okBtn.removeEventListener('click', handleOk);
+                cancelBtn.removeEventListener('click', handleCancel);
+                resolve(false);
+            };
+
+            okBtn.addEventListener('click', handleOk);
+            cancelBtn.addEventListener('click', handleCancel);
+        });
+    }
+
+    // Custom toast notification
+    function showToast(title, message, type = 'success') {
+        const toast = document.getElementById('toast-notification');
+        const titleEl = document.getElementById('toast-title');
+        const messageEl = document.getElementById('toast-message');
+        const iconEl = document.getElementById('toast-icon');
+        const containerEl = toast.querySelector('div');
+
+        // Set content
+        titleEl.textContent = title;
+        messageEl.textContent = message;
+
+        // Set icon and colors based on type
+        if (type === 'success') {
+            containerEl.className = 'bg-white rounded-xl shadow-2xl border-2 border-green-200 p-4 flex items-center gap-3 min-w-[320px]';
+            iconEl.className = 'flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-green-100';
+            iconEl.innerHTML = '<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+        } else if (type === 'error') {
+            containerEl.className = 'bg-white rounded-xl shadow-2xl border-2 border-red-200 p-4 flex items-center gap-3 min-w-[320px]';
+            iconEl.className = 'flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-red-100';
+            iconEl.innerHTML = '<svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+        }
+
+        // Show toast
+        toast.classList.remove('hidden');
+
+        // Auto hide after 4 seconds
+        setTimeout(() => {
+            hideToast();
+        }, 4000);
+    }
+
+    function hideToast() {
+        document.getElementById('toast-notification').classList.add('hidden');
+    }
+
+    // Unsettle month function
+    async function unsettleMonth(month) {
+        const confirmed = await showConfirm(
+            'Unlock Month?',
+            `Are you sure you want to unlock ${month}?\n\nThis will allow adding, editing, and deleting transactions and remove the settlement record.\n\nYou can mark it as settled again later from the reconciliation page.`,
+            'warning'
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(`/settlement/${month}`, {
+                method: 'DELETE'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast('Success', `Month ${month} has been unlocked!`, 'success');
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showToast('Error', result.error, 'error');
+            }
+        } catch (error) {
+            showToast('Error', error.message, 'error');
+        }
+    }
+
     // Set today's date as default
     document.getElementById('date').valueAsDate = new Date();
 

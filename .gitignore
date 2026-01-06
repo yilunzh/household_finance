@@ -33,3 +33,9 @@ data/
 # OS
 .DS_Store
 Thumbs.db
+
+# Playwright
+.pytest_cache/
+playwright-report/
+test-results/
+screenshots/
