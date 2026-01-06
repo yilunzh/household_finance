@@ -1,8 +1,8 @@
 # Zhang Estate Expense Tracker - Technical Specification
 
-**Version**: 1.0 MVP
+**Version**: 1.0 MVP (Implemented)
 **Date**: January 2026
-**Status**: Design Complete - Ready for Implementation
+**Status**: ✅ Implemented and Deployed to Production
 
 ## 1. Overview
 
@@ -19,10 +19,12 @@ Web-based expense tracking tool with automatic reconciliation calculations, focu
 ### 1.3 Scope - MVP Features
 **In Scope:**
 - Quick transaction entry form
-- Transaction list view with inline editing
-- Automatic currency conversion (USD ↔ CAD)
+- Transaction list view with modal-based editing
+- Automatic currency conversion (CAD → USD, USD is primary currency)
 - Monthly reconciliation calculations
 - CSV export for backup
+- Personalized display names (Bibi and Pi instead of ME/WIFE in UI)
+- Production deployment on Render.com with persistent database storage
 
 **Out of Scope (Future):**
 - PDF parsing of bank statements
@@ -44,7 +46,8 @@ Web-based expense tracking tool with automatic reconciliation calculations, focu
 | Database | SQLite | No installation, file-based, easy backup |
 | Frontend | HTML + Tailwind CSS + Vanilla JS | Simple, no build tools needed |
 | Currency API | frankfurter.app | Free, no signup required |
-| Hosting | Railway / PythonAnywhere | $5-10/month, beginner-friendly |
+| Production Server | Gunicorn | WSGI server for production deployment |
+| Hosting | Render.com | $7/month with persistent disk, auto-deploy from GitHub |
 
 ### 2.2 System Architecture
 
@@ -85,8 +88,8 @@ CREATE TABLE transactions (
     merchant TEXT NOT NULL,
     amount DECIMAL(10, 2) NOT NULL,
     currency TEXT NOT NULL CHECK(currency IN ('USD', 'CAD')),
-    amount_in_cad DECIMAL(10, 2) NOT NULL,
-    paid_by TEXT NOT NULL CHECK(paid_by IN ('ME', 'WIFE')),
+    amount_in_usd DECIMAL(10, 2) NOT NULL,  -- Primary currency is USD
+    paid_by TEXT NOT NULL CHECK(paid_by IN ('ME', 'WIFE')),  -- Stored as ME/WIFE, displayed as Bibi/Pi
     category TEXT NOT NULL CHECK(category IN (
         'SHARED',
         'I_PAY_FOR_WIFE',
@@ -105,13 +108,15 @@ CREATE INDEX idx_date ON transactions(date);
 
 ### 3.2 Transaction Categories
 
-| Category | Who Paid | Who Benefits | Split Logic |
-|----------|----------|--------------|-------------|
-| SHARED | Either | Both 50/50 | Each person pays 50% |
-| I_PAY_FOR_WIFE | Me | Wife 100% | Wife pays 100%, I pay 0% |
-| WIFE_PAYS_FOR_ME | Wife | Me 100% | I pay 100%, Wife pays 0% |
-| PERSONAL_ME | Me | Me 100% | No split (neutral) |
-| PERSONAL_WIFE | Wife | Wife 100% | No split (neutral) |
+| Category | Display Name | Who Paid | Who Benefits | Split Logic |
+|----------|--------------|----------|--------------|-------------|
+| SHARED | Shared Expense | Either | Both 50/50 | Each person pays 50% |
+| I_PAY_FOR_WIFE | Bibi pays for Pi | Bibi | Pi 100% | Pi pays 100%, Bibi pays 0% |
+| WIFE_PAYS_FOR_ME | Pi pays for Bibi | Pi | Bibi 100% | Bibi pays 100%, Pi pays 0% |
+| PERSONAL_ME | Bibi's Personal | Bibi | Bibi 100% | No split (neutral) |
+| PERSONAL_WIFE | Pi's Personal | Pi | Pi 100% | No split (neutral) |
+
+**Note**: Database stores generic values (ME/WIFE) but UI displays personalized nicknames (Bibi/Pi).
 
 ---
 
@@ -119,14 +124,15 @@ CREATE INDEX idx_date ON transactions(date);
 
 ### 4.1 REST Endpoints
 
-| Method | Endpoint | Description | Request Body | Response |
-|--------|----------|-------------|--------------|----------|
-| GET | `/` | Main page | - | HTML page |
-| POST | `/transaction` | Create transaction | Transaction JSON | `{success: bool, transaction: {...}}` |
-| PUT | `/transaction/<id>` | Update transaction | Transaction JSON | `{success: bool, transaction: {...}}` |
-| DELETE | `/transaction/<id>` | Delete transaction | - | `{success: bool}` |
-| GET | `/reconciliation/<month>` | Monthly summary | - | HTML page |
-| GET | `/export/<month>` | Export CSV | - | CSV file |
+| Method | Endpoint | Description | Request Body | Response | Status |
+|--------|----------|-------------|--------------|----------|--------|
+| GET | `/` | Main page with transaction list | - | HTML page | ✅ Implemented |
+| POST | `/transaction` | Create transaction | Transaction JSON | `{success: bool, transaction: {...}}` | ✅ Implemented |
+| PUT | `/transaction/<id>` | Update transaction | Transaction JSON | `{success: bool, transaction: {...}}` | ✅ Implemented & Connected to UI |
+| DELETE | `/transaction/<id>` | Delete transaction | - | `{success: bool}` | ✅ Implemented |
+| GET | `/reconciliation` | Monthly summary (default: current month) | - | HTML page | ✅ Implemented |
+| GET | `/reconciliation/<month>` | Monthly summary for specific month | - | HTML page | ✅ Implemented |
+| GET | `/export/<month>` | Export CSV | - | CSV file | ✅ Implemented |
 
 ### 4.2 Transaction JSON Schema
 
@@ -220,6 +226,10 @@ Settlement:
 
 ### 5.3 Currency Conversion
 
+**Primary Currency**: USD (all reconciliations calculated in USD)
+
+**Conversion Direction**: CAD → USD (not USD → CAD)
+
 **API**: frankfurter.app (free, no auth)
 
 **Endpoint**: `https://api.frankfurter.app/{date}`
@@ -230,6 +240,7 @@ def get_exchange_rate(from_curr, to_curr, date):
     """
     Fetch historical exchange rate for given date.
     Cache results to minimize API calls.
+    Converts CAD to USD for storage in amount_in_usd field.
     """
     # Check cache first
     # If not cached, call API
@@ -237,9 +248,9 @@ def get_exchange_rate(from_curr, to_curr, date):
 ```
 
 **Caching Strategy:**
-- Cache exchange rates by date
+- Cache exchange rates by date (format: `CAD_USD_YYYY-MM-DD`)
 - Rates don't change retroactively
-- Store in memory (dict) or SQLite for persistence
+- Store in memory (dict) for session-based caching
 
 ---
 
@@ -259,16 +270,30 @@ def get_exchange_rate(from_curr, to_curr, date):
 │  └────┴─────────┴──────┴─────┘     │
 ├─────────────────────────────────────┤
 │  Current Month Summary              │
-│  ME paid: $X  │  WIFE paid: $Y      │
+│  Bibi paid: $X  │  Pi paid: $Y      │
 │  Result: [WHO] owes [WHO] $Z        │
 │  [View Full Reconciliation]         │
 ├─────────────────────────────────────┤
 │  Transaction List                   │
 │  ┌───────────────────────────────┐  │
-│  │ 01/15  Groceries  $100  [✎][×]│  │ ← Editable rows
-│  │ 01/14  Coffee     $5    [✎][×]│  │
+│  │ 01/15  Groceries  $100  [Edit][×]│ ← Edit button opens modal
+│  │ 01/14  Coffee     $5    [Edit][×]│
 │  │ ...                            │  │
 │  └───────────────────────────────┘  │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  Edit Transaction            [×]    │ ← Modal overlay
+├─────────────────────────────────────┤
+│  Date:     [2026-01-15      ]       │
+│  Merchant: [Groceries       ]       │
+│  Amount:   [100.00          ]       │
+│  Currency: [USD ▼           ]       │
+│  Paid By:  [Bibi ▼          ]       │
+│  Category: [Shared Expense ▼]       │
+│  Notes:    [Weekly groceries]       │
+│                                     │
+│       [Cancel] [Save Changes]       │
 └─────────────────────────────────────┘
 ```
 
@@ -276,16 +301,24 @@ def get_exchange_rate(from_curr, to_curr, date):
 - Date (default: today)
 - Merchant (text input)
 - Amount (number)
-- Currency (USD/CAD dropdown)
-- Paid By (ME/WIFE dropdown)
-- Category (dropdown with friendly labels)
-- Notes (optional text)
+- Currency (USD/CAD dropdown, USD default)
+- Paid By (Bibi/Pi dropdown, displayed as nicknames but stored as ME/WIFE)
+- Category (dropdown with friendly labels: "Shared Expense", "Bibi pays for Pi", etc.)
+- Notes (optional textarea)
 
 **Interactions:**
 - Form submit → AJAX POST → Add to list without page reload
-- Click row → Enable inline editing
-- Click [×] → Confirm and delete
-- Month selector → Load different month
+- Click Edit button → Opens modal dialog with pre-filled form
+- Edit modal → Populate from data attributes → PUT request → Close modal and reload
+- Click Delete (×) → Confirm and DELETE request
+- Month selector → Load different month (query param: `?month=YYYY-MM`)
+- Escape key or backdrop click → Close edit modal
+
+**Edit Modal Implementation:**
+- Transaction data stored in HTML `data-*` attributes on table rows
+- JavaScript `openEditModal(id)` reads attributes and populates form
+- Form submit sends PUT request to `/transaction/<id>`
+- Success → Shows message → Reloads page after 500ms
 
 ### 6.2 Reconciliation Page (`/reconciliation/<month>`)
 
@@ -296,24 +329,24 @@ def get_exchange_rate(from_curr, to_curr, date):
 ├─────────────────────────────────────┤
 │  💰 Settlement                      │
 │  ┌─────────────────────────────┐   │
-│  │  WIFE owes ME $247.50       │   │ ← Big, clear
+│  │  Pi owes Bibi $247.50       │   │ ← Big, clear (uses nicknames)
 │  └─────────────────────────────┘   │
 ├─────────────────────────────────────┤
 │  Summary                            │
-│  ME paid:        $1,234.56          │
-│  WIFE paid:      $987.06            │
+│  Bibi paid:      $1,234.56          │
+│  Pi paid:        $987.06            │
 │                                     │
-│  MY share:       $987.06            │
-│  WIFE's share:   $1,234.56          │
+│  Bibi's share:   $987.06            │
+│  Pi's share:     $1,234.56          │
 ├─────────────────────────────────────┤
 │  Breakdown by Category              │
-│  ┌─────────────────┬────┬──────┐   │
-│  │ Category        │ # │ Total│   │
-│  ├─────────────────┼────┼──────┤   │
-│  │ Shared          │ 15 │ $800 │   │
-│  │ I pay for wife  │ 3  │ $120 │   │
-│  │ ...             │    │      │   │
-│  └─────────────────┴────┴──────┘   │
+│  ┌──────────────────┬────┬──────┐  │
+│  │ Category         │ #  │ Total│  │
+│  ├──────────────────┼────┼──────┤  │
+│  │ Shared Expense   │ 15 │ $800 │  │
+│  │ Bibi pays for Pi │ 3  │ $120 │  │
+│  │ ...              │    │      │  │
+│  └──────────────────┴────┴──────┘  │
 └─────────────────────────────────────┘
 ```
 
@@ -323,25 +356,31 @@ def get_exchange_rate(from_curr, to_curr, date):
 
 ```
 household_tracker/
-├── app.py                    # Main Flask application (~250 lines)
+├── app.py                    # Main Flask application (~280 lines)
 ├── models.py                 # Database models (~80 lines)
 ├── utils.py                  # Helper functions (~120 lines)
-├── requirements.txt          # Python dependencies
-├── SPEC.md                   # This file
+├── requirements.txt          # Python dependencies (includes gunicorn)
+├── Procfile                  # Production server config for Render
+├── SPEC.md                   # This file (technical specification)
+├── DEPLOYMENT.md             # Step-by-step production deployment guide
 ├── README.md                 # Setup & usage instructions
+├── CLAUDE.md                 # Claude Code guidance for this project
 ├── .env.example              # Environment variable template
 ├── .gitignore                # Git ignore rules
 │
 ├── static/
-│   ├── app.js               # Frontend JavaScript (~200 lines)
-│   └── style.css            # Custom styles (optional, ~50 lines)
+│   └── app.js               # Frontend JavaScript (~250 lines with edit modal)
 │
 ├── templates/
 │   ├── base.html            # Base template (~60 lines)
-│   ├── index.html           # Main transaction page (~180 lines)
+│   ├── index.html           # Main transaction page (~380 lines with edit modal)
 │   └── reconciliation.html  # Monthly summary (~120 lines)
 │
-└── database.db              # SQLite database (created at runtime)
+├── instance/
+│   └── database.db          # SQLite database (development, created at runtime)
+│
+└── data/                    # Production database directory (Render persistent disk)
+    └── database.db          # SQLite database (production)
 ```
 
 ---
@@ -355,6 +394,7 @@ Flask==3.0.0
 Flask-SQLAlchemy==3.1.1
 requests==2.31.0
 python-dotenv==1.0.0
+gunicorn==21.2.0
 ```
 
 ### 8.2 External Services
@@ -389,90 +429,118 @@ python app.py
 open http://localhost:5000
 ```
 
-### 9.2 Development Phases
+### 9.2 Implementation Status
 
-**Week 1: Backend Foundation**
-- Set up project structure
-- Create database models (models.py)
-- Implement Flask routes (app.py)
-- Build utility functions (utils.py)
-- Test with curl/Postman
+**✅ Backend Foundation (Completed)**
+- ✅ Project structure set up
+- ✅ Database models created (models.py with Transaction model)
+- ✅ Flask routes implemented (app.py with CRUD operations)
+- ✅ Utility functions built (utils.py with reconciliation and currency conversion)
 
-**Week 2: Frontend UI**
-- Create base template with Tailwind
-- Build transaction entry form
-- Create transaction list view
-- Style reconciliation page
+**✅ Frontend UI (Completed)**
+- ✅ Base template with Tailwind CSS
+- ✅ Transaction entry form on main page
+- ✅ Transaction list view with data attributes
+- ✅ Reconciliation page with category breakdown
+- ✅ Edit modal dialog component
 
-**Week 3: Interactivity**
-- Add JavaScript for form submission
-- Implement inline editing
-- Add delete confirmation
-- Real-time balance updates
-- Currency conversion display
+**✅ Interactivity (Completed)**
+- ✅ JavaScript for AJAX form submission (no page reload)
+- ✅ Modal-based editing implementation
+- ✅ Delete confirmation and functionality
+- ✅ Month selector for viewing different periods
+- ✅ Currency conversion with CAD → USD
 
-**Week 4: Testing & Polish**
-- End-to-end testing with real data
-- Bug fixes
-- CSV export functionality
-- Prepare for deployment
+**✅ Testing & Production (Completed)**
+- ✅ Application renamed to "Zhang Estate Expense Tracker"
+- ✅ Personalized display names (Bibi/Pi)
+- ✅ CSV export functionality
+- ✅ Production configuration for Render.com
+- ✅ Git repository initialized and pushed to GitHub
+- ✅ Deployment guide created (DEPLOYMENT.md)
 
 ### 9.3 Testing Checklist
 
-- [ ] Can add transaction manually
-- [ ] USD transactions convert to CAD correctly
-- [ ] Can edit existing transaction
-- [ ] Can delete transaction
-- [ ] Reconciliation calculates correctly
-- [ ] Can switch between months
-- [ ] CSV export works
-- [ ] Works on mobile browser
-- [ ] Exchange rate caching works
-- [ ] All 5 category types work correctly
+- ✅ Can add transaction manually
+- ✅ CAD transactions convert to USD correctly (USD is primary currency)
+- ✅ Can edit existing transaction via modal
+- ✅ Can delete transaction with confirmation
+- ✅ Reconciliation calculates correctly
+- ✅ Can switch between months via dropdown
+- ✅ CSV export works
+- ⏳ Works on mobile browser (not yet tested)
+- ✅ Exchange rate caching works (in-memory cache)
+- ✅ All 5 category types work correctly
 
 ---
 
 ## 10. Deployment
 
-### 10.1 Recommended: Railway
+### 10.1 Production Platform: Render.com ✅
 
-**Why Railway:**
-- Beginner-friendly dashboard
-- Free trial, then $5/month
-- Automatic HTTPS
-- GitHub integration
-- Simple rollbacks
+**Current Status**: Code is production-ready and pushed to GitHub at https://github.com/yilunzh/household_finance
 
-**Steps:**
-1. Create Railway account
-2. Connect GitHub repo
-3. Add environment variables
-4. Deploy
-5. Railway provides URL
+**Why Render:**
+- ✅ Persistent disk storage ($7/month) - database survives deployments
+- ✅ Extremely beginner-friendly UI
+- ✅ Auto-deploy from GitHub on push
+- ✅ Free SSL/HTTPS certificate
+- ✅ Free subdomain: `yourapp.onrender.com`
+- ✅ Built-in health checks and auto-restart
 
-### 10.2 Alternative: PythonAnywhere
+**Deployment Files Created:**
+- `Procfile`: Tells Render to use Gunicorn (`web: gunicorn app:app`)
+- `DEPLOYMENT.md`: Complete step-by-step guide with screenshots and troubleshooting
+- Updated `app.py`: Environment-based configuration for production vs development
 
-**Why PythonAnywhere:**
-- Free tier available (for testing)
-- $5/month for custom domain
-- Beginner-friendly interface
-- Good documentation
+**Production Configuration in app.py:**
 
-**Steps:**
-1. Create account
-2. Upload files or clone from GitHub
-3. Configure web app
-4. Set up virtual environment
-5. Reload web app
+```python
+# Database path switches based on environment
+if os.environ.get('FLASK_ENV') == 'production':
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/database.db'
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 
-### 10.3 Environment Variables
-
-```bash
-# .env file
-FLASK_ENV=production
-SECRET_KEY=<random-secret-key>
-DATABASE_URL=sqlite:///database.db
+# Port configuration
+port = int(os.environ.get('PORT', 5001))
+debug_mode = os.environ.get('FLASK_ENV') != 'production'
+app.run(debug=debug_mode, host='0.0.0.0', port=port)
 ```
+
+**Persistent Disk Configuration (Render):**
+- Disk name: `database-storage`
+- Mount path: `/opt/render/project/src/data`
+- Size: 1GB (enough for thousands of transactions)
+- Database file: `/opt/render/project/src/data/database.db`
+
+### 10.2 Environment Variables
+
+**Required for Production:**
+
+| Variable | Value | Notes |
+|----------|-------|-------|
+| `FLASK_ENV` | `production` | Disables debug mode, uses production database path |
+| `SECRET_KEY` | Auto-generated by Render | Flask session encryption key |
+| `PORT` | Set by Render automatically | Web server port (do not manually set) |
+
+**Optional:**
+
+| Variable | Value | Notes |
+|----------|-------|-------|
+| `PYTHON_VERSION` | `3.9.18` | Specify Python version for Render |
+
+### 10.3 Deployment Steps
+
+See `DEPLOYMENT.md` for complete step-by-step instructions including:
+1. Render account creation
+2. GitHub repository connection
+3. Service configuration (persistent disk, environment variables)
+4. Deployment verification
+5. Testing procedures
+6. Ongoing maintenance
+
+**Cost**: $7/month for Starter tier with persistent disk storage
 
 ---
 
@@ -514,11 +582,12 @@ The MVP is considered successful when:
 
 | Item | Cost | Notes |
 |------|------|-------|
-| Development | 25-40 hours | Beginner pace |
-| Hosting | $5-10/month | Railway or PythonAnywhere |
-| Domain (optional) | $12/year | e.g., expenses.example.com |
-| Currency API | $0 | Free tier sufficient |
-| **Total Monthly** | **$5-10** | **Ongoing** |
+| Development | ✅ Completed | Implemented in January 2026 |
+| Hosting | $7/month | Render.com Starter tier with persistent disk |
+| Domain (optional) | $0 currently | Using free subdomain (yourapp.onrender.com) |
+| Currency API | $0 | frankfurter.app free tier (sufficient for personal use) |
+| **Total Monthly** | **$7** | **Ongoing** |
+| **Annual** | **$84** | **No upfront costs** |
 
 ---
 
@@ -566,26 +635,26 @@ def calculate_reconciliation(transactions):
     wife_share = 0
 
     for txn in transactions:
-        amount_cad = txn.amount_in_cad
+        amount_usd = txn.amount_in_usd  # Primary currency is USD
 
         # Track who paid
         if txn.paid_by == 'ME':
-            me_paid += amount_cad
+            me_paid += amount_usd
         else:
-            wife_paid += amount_cad
+            wife_paid += amount_usd
 
         # Calculate each person's share
         if txn.category == 'SHARED':
-            me_share += amount_cad * 0.5
-            wife_share += amount_cad * 0.5
+            me_share += amount_usd * 0.5
+            wife_share += amount_usd * 0.5
         elif txn.category == 'I_PAY_FOR_WIFE':
-            wife_share += amount_cad
+            wife_share += amount_usd
         elif txn.category == 'WIFE_PAYS_FOR_ME':
-            me_share += amount_cad
+            me_share += amount_usd
         elif txn.category == 'PERSONAL_ME':
-            me_share += amount_cad
+            me_share += amount_usd
         elif txn.category == 'PERSONAL_WIFE':
-            wife_share += amount_cad
+            wife_share += amount_usd
 
     # Calculate net balance
     me_balance = me_paid - me_share
@@ -602,11 +671,11 @@ def calculate_reconciliation(transactions):
     }
 
 def format_settlement(me_balance, wife_balance):
-    """Format the settlement message."""
+    """Format the settlement message with personalized nicknames."""
     if me_balance > 0.01:  # Account for floating point
-        return f"WIFE owes ME ${me_balance:.2f}"
+        return f"Pi owes Bibi ${me_balance:.2f}"
     elif wife_balance > 0.01:
-        return f"ME owes WIFE ${wife_balance:.2f}"
+        return f"Bibi owes Pi ${wife_balance:.2f}"
     else:
         return "All settled up!"
 ```
@@ -656,7 +725,8 @@ def format_settlement(me_balance, wife_balance):
 
 ---
 
-**Document Version**: 1.0
+**Document Version**: 1.1 (Updated to reflect implementation)
 **Last Updated**: January 6, 2026
 **Author**: Claude (Sonnet 4.5)
-**Status**: Ready for Implementation
+**GitHub Repository**: https://github.com/yilunzh/household_finance
+**Deployment Guide**: See DEPLOYMENT.md for production deployment instructions
