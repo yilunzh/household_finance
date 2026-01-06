@@ -16,7 +16,15 @@ app = Flask(__name__)
 
 # Configuration
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
+
+# Use different database path for production (persistent disk) vs development
+if os.environ.get('FLASK_ENV') == 'production':
+    # Production: use /data directory which is mounted to persistent disk on Render
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/database.db'
+else:
+    # Development: use instance folder locally
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize database
@@ -263,5 +271,12 @@ def init_db():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    # Use port 5001 to avoid conflict with macOS AirPlay Receiver
-    app.run(debug=True, host='0.0.0.0', port=5001)
+
+    # Get port from environment variable (Render provides this)
+    # Default to 5001 for local development (avoids macOS AirPlay Receiver conflict)
+    port = int(os.environ.get('PORT', 5001))
+
+    # Disable debug mode in production for security
+    debug_mode = os.environ.get('FLASK_ENV') != 'production'
+
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)

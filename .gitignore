@@ -17,6 +17,7 @@ instance/
 *.sqlite
 *.sqlite3
 database.db
+data/
 
 # Environment
 .env
