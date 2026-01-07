@@ -3,14 +3,17 @@ Main Flask application for household expense tracker.
 """
 import os
 import csv
+import logging
 from io import StringIO
 from flask import Flask, render_template, request, jsonify, Response, flash, redirect, url_for
 from flask_wtf.csrf import CSRFProtect
 from flask_login import login_user, logout_user, current_user, login_required
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from models import db, Transaction, Settlement, User, Household, HouseholdMember
+from models import db, Transaction, Settlement, User, Household, HouseholdMember, Invitation
 from utils import get_exchange_rate, calculate_reconciliation
 from auth import login_manager
 from decorators import household_required
@@ -19,6 +22,12 @@ from household_context import (
     get_current_household,
     get_current_household_members
 )
+from email_service import init_mail, send_invitation_email, is_mail_configured
+import secrets
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -47,6 +56,62 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 db.init_app(app)
 csrf = CSRFProtect(app)
 login_manager.init_app(app)
+init_mail(app)  # Initialize Flask-Mail for invitations
+
+# Initialize rate limiter
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
+
+
+# ============================================================================
+# Security Middleware
+# ============================================================================
+
+@app.before_request
+def enforce_https():
+    """Redirect HTTP to HTTPS in production."""
+    if os.environ.get('FLASK_ENV') == 'production':
+        # Check X-Forwarded-Proto header (set by reverse proxies like Render)
+        if request.headers.get('X-Forwarded-Proto') == 'http':
+            url = request.url.replace('http://', 'https://', 1)
+            return redirect(url, code=301)
+
+
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to all responses."""
+    # Prevent clickjacking
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+
+    # Prevent MIME type sniffing
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+
+    # Enable XSS filter
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+
+    # Referrer policy
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+
+    # Content Security Policy (relaxed for CDN resources)
+    if os.environ.get('FLASK_ENV') == 'production':
+        response.headers['Content-Security-Policy'] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; "
+            "img-src 'self' data:; "
+            "font-src 'self'; "
+            "connect-src 'self';"
+        )
+
+    # Strict Transport Security (HTTPS only in production)
+    if os.environ.get('FLASK_ENV') == 'production':
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+
+    return response
 
 
 # Initialize database tables when app starts (for production with Gunicorn)
@@ -61,11 +126,19 @@ def init_db():
 init_db()
 
 
+# Context processor to make current_household available in all templates
+@app.context_processor
+def inject_current_household():
+    """Inject current_household into all templates."""
+    return {'current_household': get_current_household()}
+
+
 # ============================================================================
 # Authentication Routes
 # ============================================================================
 
 @app.route('/register', methods=['GET', 'POST'])
+@limiter.limit("5 per minute", methods=["POST"])
 def register():
     """User registration page."""
     # If user is already logged in, redirect to index
@@ -130,6 +203,7 @@ def register():
 
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute", methods=["POST"])
 def login():
     """User login page."""
     # If user is already logged in, redirect to index
@@ -151,6 +225,7 @@ def login():
 
         # Check password
         if user is None or not user.check_password(password):
+            logger.warning(f"Failed login attempt for email: {email} from IP: {request.remote_addr}")
             flash('Invalid email or password.', 'danger')
             return render_template('auth/login.html')
 
@@ -161,6 +236,7 @@ def login():
 
         # Login user
         login_user(user, remember=remember)
+        logger.info(f"Successful login for user: {user.email} (ID: {user.id}) from IP: {request.remote_addr}")
 
         # Update last login timestamp
         user.last_login = datetime.utcnow()
@@ -653,6 +729,492 @@ def export_csv(month):
     )
 
 
+# ============================================================================
+# Invitation Routes
+# ============================================================================
+
+@app.route('/household/invite', methods=['GET', 'POST'])
+@household_required
+def send_invitation():
+    """Send an invitation to join the household."""
+    household_id = get_current_household_id()
+    household = get_current_household()
+
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        display_name = request.form.get('display_name', '').strip()
+
+        # Validation
+        if not email:
+            flash('Email address is required.', 'danger')
+            return redirect(url_for('send_invitation'))
+
+        # Check if email is already a member of this household
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            existing_member = HouseholdMember.query.filter_by(
+                household_id=household_id,
+                user_id=existing_user.id
+            ).first()
+            if existing_member:
+                flash('This user is already a member of your household.', 'warning')
+                return redirect(url_for('send_invitation'))
+
+        # Check for existing pending invitation
+        existing_invite = Invitation.query.filter_by(
+            household_id=household_id,
+            email=email,
+            status='pending'
+        ).first()
+        if existing_invite:
+            if existing_invite.is_valid():
+                flash('An invitation has already been sent to this email.', 'warning')
+                return redirect(url_for('send_invitation'))
+            else:
+                # Mark old invitation as expired
+                existing_invite.status = 'expired'
+                db.session.commit()
+
+        # Generate secure token
+        token = secrets.token_urlsafe(32)
+
+        # Create invitation
+        invitation = Invitation(
+            household_id=household_id,
+            email=email,
+            token=token,
+            status='pending',
+            expires_at=datetime.utcnow() + timedelta(days=7),
+            invited_by_user_id=current_user.id
+        )
+
+        db.session.add(invitation)
+        db.session.commit()
+
+        # Send email
+        email_sent = send_invitation_email(invitation, household, current_user)
+
+        # Build invite URL for display if email not configured
+        site_url = os.environ.get('SITE_URL', 'http://localhost:5001')
+        invite_url = f"{site_url}/invite/accept?token={token}"
+
+        return render_template(
+            'household/invite_sent.html',
+            email=email,
+            email_sent=email_sent,
+            invite_url=invite_url
+        )
+
+    # GET request - show invite form
+    pending_invitations = Invitation.query.filter_by(
+        household_id=household_id,
+        status='pending'
+    ).order_by(Invitation.created_at.desc()).all()
+
+    # Filter to only valid (non-expired) invitations
+    pending_invitations = [inv for inv in pending_invitations if inv.is_valid()]
+
+    return render_template(
+        'household/invite.html',
+        household=household,
+        pending_invitations=pending_invitations,
+        mail_configured=is_mail_configured()
+    )
+
+
+@app.route('/household/invite/<int:invitation_id>/cancel', methods=['POST'])
+@household_required
+def cancel_invitation(invitation_id):
+    """Cancel a pending invitation."""
+    household_id = get_current_household_id()
+
+    invitation = Invitation.query.filter_by(
+        id=invitation_id,
+        household_id=household_id,
+        status='pending'
+    ).first_or_404()
+
+    invitation.status = 'cancelled'
+    db.session.commit()
+
+    flash('Invitation has been cancelled.', 'info')
+    return redirect(url_for('send_invitation'))
+
+
+@app.route('/invite/accept', methods=['GET', 'POST'])
+def accept_invitation():
+    """Accept an invitation to join a household."""
+    token = request.args.get('token') or request.form.get('token')
+
+    if not token:
+        return render_template('household/invite_invalid.html', reason='not_found')
+
+    # Find invitation by token
+    invitation = Invitation.query.filter_by(token=token).first()
+
+    if not invitation:
+        return render_template('household/invite_invalid.html', reason='not_found')
+
+    if invitation.status == 'accepted':
+        return render_template('household/invite_invalid.html', reason='used')
+
+    if not invitation.is_valid():
+        return render_template('household/invite_invalid.html', reason='expired')
+
+    # Get household and inviter info
+    household = Household.query.get(invitation.household_id)
+    inviter = User.query.get(invitation.invited_by_user_id)
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        display_name = request.form.get('display_name', '').strip()
+
+        if action == 'join' and current_user.is_authenticated:
+            # Logged-in user joining
+            if not display_name:
+                display_name = current_user.name
+
+            # Check if already a member
+            existing_member = HouseholdMember.query.filter_by(
+                household_id=invitation.household_id,
+                user_id=current_user.id
+            ).first()
+
+            if existing_member:
+                flash('You are already a member of this household.', 'warning')
+                return redirect(url_for('index'))
+
+            # Add user to household
+            member = HouseholdMember(
+                household_id=invitation.household_id,
+                user_id=current_user.id,
+                role='member',
+                display_name=display_name
+            )
+            db.session.add(member)
+
+            # Mark invitation as accepted
+            invitation.status = 'accepted'
+            invitation.accepted_at = datetime.utcnow()
+            db.session.commit()
+
+            flash(f'Welcome to {household.name}!', 'success')
+            return redirect(url_for('index'))
+
+        elif action == 'signup':
+            # New user signup
+            email = invitation.email  # Use invitation email
+            name = request.form.get('name', '').strip()
+            password = request.form.get('password', '')
+            confirm_password = request.form.get('confirm_password', '')
+
+            if not display_name:
+                display_name = name
+
+            # Validation
+            if not name or not password:
+                flash('Name and password are required.', 'danger')
+                return render_template(
+                    'household/accept_invite.html',
+                    invitation=invitation,
+                    household=household,
+                    inviter=inviter,
+                    token=token
+                )
+
+            if len(password) < 8:
+                flash('Password must be at least 8 characters.', 'danger')
+                return render_template(
+                    'household/accept_invite.html',
+                    invitation=invitation,
+                    household=household,
+                    inviter=inviter,
+                    token=token
+                )
+
+            if password != confirm_password:
+                flash('Passwords do not match.', 'danger')
+                return render_template(
+                    'household/accept_invite.html',
+                    invitation=invitation,
+                    household=household,
+                    inviter=inviter,
+                    token=token
+                )
+
+            # Check if user already exists
+            existing_user = User.query.filter_by(email=email).first()
+            if existing_user:
+                flash('An account with this email already exists. Please log in instead.', 'warning')
+                return redirect(url_for('login', next=url_for('accept_invitation', token=token)))
+
+            # Create new user
+            user = User(email=email, name=name)
+            user.set_password(password)
+            db.session.add(user)
+            db.session.flush()  # Get user ID
+
+            # Add user to household
+            member = HouseholdMember(
+                household_id=invitation.household_id,
+                user_id=user.id,
+                role='member',
+                display_name=display_name or name
+            )
+            db.session.add(member)
+
+            # Mark invitation as accepted
+            invitation.status = 'accepted'
+            invitation.accepted_at = datetime.utcnow()
+
+            db.session.commit()
+
+            # Auto-login
+            login_user(user, remember=True)
+
+            flash(f'Welcome to {household.name}!', 'success')
+            return redirect(url_for('index'))
+
+    # GET request - show accept form
+    return render_template(
+        'household/accept_invite.html',
+        invitation=invitation,
+        household=household,
+        inviter=inviter,
+        token=token,
+        suggested_name=None  # Could pre-fill from invitation if stored
+    )
+
+
+# ============================================================================
+# Household Management Routes
+# ============================================================================
+
+@app.route('/household/create', methods=['GET', 'POST'])
+@login_required
+def create_household():
+    """Create a new household."""
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        display_name = request.form.get('display_name', '').strip()
+
+        if not name:
+            flash('Household name is required.', 'danger')
+            return render_template('household/setup.html')
+
+        if not display_name:
+            display_name = current_user.name
+
+        # Create household
+        household = Household(
+            name=name,
+            created_by_user_id=current_user.id
+        )
+        db.session.add(household)
+        db.session.flush()  # Get household ID
+
+        # Add creator as owner
+        member = HouseholdMember(
+            household_id=household.id,
+            user_id=current_user.id,
+            role='owner',
+            display_name=display_name
+        )
+        db.session.add(member)
+        db.session.commit()
+
+        # Set as current household in session
+        from flask import session
+        session['current_household_id'] = household.id
+
+        flash(f'Household "{name}" created successfully!', 'success')
+        return redirect(url_for('index'))
+
+    return render_template('household/setup.html')
+
+
+@app.route('/household/select')
+@login_required
+def select_household():
+    """Show household selection page."""
+    households = current_user.household_memberships
+
+    if not households:
+        return redirect(url_for('create_household'))
+
+    return render_template('household/select.html', households=households)
+
+
+@app.route('/household/switch/<int:household_id>', methods=['POST'])
+@login_required
+def switch_household(household_id):
+    """Switch to a different household."""
+    # Verify user is a member of this household
+    membership = HouseholdMember.query.filter_by(
+        household_id=household_id,
+        user_id=current_user.id
+    ).first()
+
+    if not membership:
+        flash('You are not a member of this household.', 'danger')
+        return redirect(url_for('select_household'))
+
+    # Update session
+    from flask import session
+    session['current_household_id'] = household_id
+
+    flash(f'Switched to {membership.household.name}', 'success')
+    return redirect(url_for('index'))
+
+
+@app.route('/household/settings', methods=['GET'])
+@household_required
+def household_settings():
+    """View household settings."""
+    household_id = get_current_household_id()
+    household = get_current_household()
+
+    members = HouseholdMember.query.filter_by(household_id=household_id).all()
+
+    # Get current user's membership
+    current_member = HouseholdMember.query.filter_by(
+        household_id=household_id,
+        user_id=current_user.id
+    ).first()
+
+    is_owner = current_member and current_member.role == 'owner'
+
+    # Get pending invitations
+    pending_invitations = Invitation.query.filter_by(
+        household_id=household_id,
+        status='pending'
+    ).all()
+    pending_invitations = [inv for inv in pending_invitations if inv.is_valid()]
+
+    return render_template(
+        'household/settings.html',
+        household=household,
+        members=members,
+        current_member=current_member,
+        is_owner=is_owner,
+        member_count=len(members),
+        pending_invitations=pending_invitations
+    )
+
+
+@app.route('/household/settings', methods=['POST'])
+@household_required
+def update_household():
+    """Update household settings."""
+    household_id = get_current_household_id()
+    household = get_current_household()
+    action = request.form.get('action')
+
+    current_member = HouseholdMember.query.filter_by(
+        household_id=household_id,
+        user_id=current_user.id
+    ).first()
+
+    is_owner = current_member and current_member.role == 'owner'
+
+    if action == 'rename':
+        if not is_owner:
+            flash('Only the owner can rename the household.', 'danger')
+            return redirect(url_for('household_settings'))
+
+        new_name = request.form.get('name', '').strip()
+        if new_name:
+            household.name = new_name
+            db.session.commit()
+            flash('Household name updated.', 'success')
+
+    elif action == 'update_display_name':
+        new_display_name = request.form.get('display_name', '').strip()
+        if new_display_name and current_member:
+            current_member.display_name = new_display_name
+            db.session.commit()
+            flash('Your display name updated.', 'success')
+
+    return redirect(url_for('household_settings'))
+
+
+@app.route('/household/member/<int:member_id>/remove', methods=['POST'])
+@household_required
+def remove_member(member_id):
+    """Remove a member from the household (owner only)."""
+    household_id = get_current_household_id()
+
+    # Verify current user is owner
+    current_member = HouseholdMember.query.filter_by(
+        household_id=household_id,
+        user_id=current_user.id
+    ).first()
+
+    if not current_member or current_member.role != 'owner':
+        flash('Only the owner can remove members.', 'danger')
+        return redirect(url_for('household_settings'))
+
+    # Find member to remove
+    member = HouseholdMember.query.filter_by(
+        id=member_id,
+        household_id=household_id
+    ).first_or_404()
+
+    # Cannot remove yourself
+    if member.user_id == current_user.id:
+        flash('You cannot remove yourself. Use "Leave Household" instead.', 'warning')
+        return redirect(url_for('household_settings'))
+
+    db.session.delete(member)
+    db.session.commit()
+
+    flash(f'{member.display_name} has been removed from the household.', 'success')
+    return redirect(url_for('household_settings'))
+
+
+@app.route('/household/leave', methods=['POST'])
+@household_required
+def leave_household():
+    """Leave the current household."""
+    household_id = get_current_household_id()
+    household = get_current_household()
+
+    # Find current user's membership
+    member = HouseholdMember.query.filter_by(
+        household_id=household_id,
+        user_id=current_user.id
+    ).first()
+
+    if not member:
+        flash('You are not a member of this household.', 'danger')
+        return redirect(url_for('index'))
+
+    # Count remaining members
+    member_count = HouseholdMember.query.filter_by(household_id=household_id).count()
+
+    if member_count == 1:
+        # Last member - delete household and all data
+        household_name = household.name
+        db.session.delete(household)  # CASCADE deletes members, transactions, settlements
+        db.session.commit()
+        flash(f'Household "{household_name}" has been deleted.', 'info')
+    else:
+        # Just remove membership
+        db.session.delete(member)
+        db.session.commit()
+        flash(f'You have left {household.name}.', 'info')
+
+    # Clear session
+    from flask import session
+    session.pop('current_household_id', None)
+
+    # Check if user has other households
+    if current_user.household_memberships:
+        return redirect(url_for('select_household'))
+    else:
+        return redirect(url_for('create_household'))
+
+
 @app.cli.command()
 def init_db():
     """Initialize the database."""
@@ -671,4 +1233,7 @@ if __name__ == '__main__':
     # Disable debug mode in production for security
     debug_mode = os.environ.get('FLASK_ENV') != 'production'
 
-    app.run(debug=debug_mode, host='0.0.0.0', port=port)
+    # Allow disabling auto-reload for stable testing (NO_RELOAD=1 python app.py)
+    use_reloader = os.environ.get('NO_RELOAD') != '1'
+
+    app.run(debug=debug_mode, host='0.0.0.0', port=port, use_reloader=use_reloader)

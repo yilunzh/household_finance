@@ -2,6 +2,11 @@
  * JavaScript for Zhang Estate Expense Tracker
  */
 
+// Helper function to get CSRF token
+function getCSRFToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
 // Handle transaction form submission
 async function handleTransactionSubmit(event) {
     event.preventDefault();
@@ -24,7 +29,8 @@ async function handleTransactionSubmit(event) {
         const response = await fetch('/transaction', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
             },
             body: JSON.stringify(data)
         });
@@ -55,7 +61,10 @@ async function deleteTransaction(transactionId) {
 
     try {
         const response = await fetch(`/transaction/${transactionId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
         });
 
         const result = await response.json();
@@ -141,7 +150,8 @@ async function handleEditSubmit(event) {
         const response = await fetch(`/transaction/${transactionId}`, {
             method: 'PUT',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
             },
             body: JSON.stringify(data)
         });

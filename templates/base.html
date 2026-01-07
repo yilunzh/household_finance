@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Zhang Estate Expense Tracker{% endblock %}</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}Household Expense Tracker{% endblock %}</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js for dropdown interactions -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     {% block extra_head %}{% endblock %}
 </head>
@@ -22,9 +25,41 @@
                     <div class="flex gap-4">
                         <a href="/" class="text-gray-600 hover:text-gray-900 font-medium">Transactions</a>
                         <a href="/reconciliation" class="text-gray-600 hover:text-gray-900 font-medium">Reconciliation</a>
+                        <a href="/household/invite" class="text-gray-600 hover:text-gray-900 font-medium">Invite</a>
+                        <a href="/household/settings" class="text-gray-600 hover:text-gray-900 font-medium">Settings</a>
                     </div>
                     {% if current_user.is_authenticated %}
                         <div class="flex items-center gap-4 pl-4 border-l border-gray-300">
+                            <!-- Household Switcher -->
+                            {% if current_user.household_memberships|length > 1 %}
+                            <div class="relative" x-data="{ open: false }">
+                                <button @click="open = !open" class="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
+                                    <span class="font-medium">{{ current_household.name if current_household else 'Select Household' }}</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                                <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border py-1 z-50">
+                                    {% for membership in current_user.household_memberships %}
+                                    <form method="POST" action="{{ url_for('switch_household', household_id=membership.household.id) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            {{ membership.household.name }}
+                                            {% if current_household and membership.household.id == current_household.id %}
+                                            <span class="text-blue-600">&#10003;</span>
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                    {% endfor %}
+                                    <hr class="my-1">
+                                    <a href="{{ url_for('create_household') }}" class="block px-4 py-2 text-sm text-blue-600 hover:bg-gray-100">
+                                        + Create New Household
+                                    </a>
+                                </div>
+                            </div>
+                            {% else %}
+                            <span class="text-sm text-gray-500">{{ current_household.name if current_household else '' }}</span>
+                            {% endif %}
                             <span class="text-sm text-gray-600">{{ current_user.name }}</span>
                             <a href="/logout" class="text-sm text-gray-600 hover:text-gray-900 font-medium">Logout</a>
                         </div>
@@ -54,7 +89,7 @@
 
     <!-- Footer -->
     <footer class="mt-12 py-6 text-center text-gray-500 text-sm">
-        <p>Zhang Estate Expense Tracker &copy; 2026</p>
+        <p>Household Expense Tracker &copy; 2026</p>
     </footer>
 
     <!-- JavaScript -->

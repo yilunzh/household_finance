@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Create Your Household - Household Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <div class="bg-white rounded-xl shadow-lg p-8">
+        <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">Create Your Household</h2>
+            <p class="text-gray-600 mt-2">Set up a household to start tracking expenses together.</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('create_household') }}" class="space-y-6">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                    Household Name
+                </label>
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    maxlength="100"
+                    placeholder="e.g., Smith Family, Our Apartment"
+                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                >
+                <p class="mt-2 text-sm text-gray-500">
+                    Choose a name that identifies your household.
+                </p>
+            </div>
+
+            <div>
+                <label for="display_name" class="block text-sm font-medium text-gray-700 mb-2">
+                    Your Display Name
+                </label>
+                <input
+                    type="text"
+                    id="display_name"
+                    name="display_name"
+                    required
+                    maxlength="50"
+                    value="{{ current_user.name }}"
+                    placeholder="How you want to appear in this household"
+                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                >
+                <p class="mt-2 text-sm text-gray-500">
+                    This is how your name will appear in transactions.
+                </p>
+            </div>
+
+            <button
+                type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+            >
+                Create Household
+            </button>
+        </form>
+
+        {% if current_user.household_memberships %}
+        <div class="mt-6 pt-6 border-t border-gray-200 text-center">
+            <a href="/" class="text-gray-600 hover:text-gray-900">&larr; Back to Transactions</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
