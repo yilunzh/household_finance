@@ -1,15 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Transactions - Household Expense Tracker{% endblock %}
+{% block title %}Transactions - Lucky Ledger{% endblock %}
 
 {% block content %}
 <!-- Month Selector -->
-<div class="mb-6 flex justify-between items-center">
-    <div class="flex items-center gap-4">
-        <label for="month-select" class="text-gray-700 font-medium">Month:</label>
+<div class="mb-6 flex flex-wrap justify-between items-center gap-4">
+    <div class="flex items-center gap-3">
+        <span class="text-2xl">📅</span>
+        <label for="month-select" class="text-warm-700 font-semibold">Month:</label>
         <select
             id="month-select"
-            class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="px-4 py-2.5 bg-white border-2 border-warm-200 rounded-xl text-warm-800 font-medium
+                   focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                   cursor-pointer transition-all duration-200"
             onchange="window.location.href = '/?month=' + this.value"
         >
             {% if not months %}
@@ -26,47 +29,61 @@
 
     <a
         href="/reconciliation/{{ current_month }}"
-        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+        class="px-5 py-2.5 bg-sage-500 text-white rounded-xl font-semibold
+               hover:bg-sage-600 active:bg-sage-700
+               shadow-sm hover:shadow-md
+               transform hover:-translate-y-0.5 active:translate-y-0
+               transition-all duration-200 flex items-center gap-2"
     >
-        View Reconciliation
+        <span>🤝</span>
+        <span>View Reconciliation</span>
     </a>
 </div>
 
 <!-- Locked Month Banner (show if settled) -->
 {% if is_settled %}
-<div class="mb-6 bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-        </svg>
+<div class="mb-6 bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 flex items-center justify-between gap-4 animate-fade-in">
+    <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+            <span class="text-2xl">🔒</span>
+        </div>
         <div>
-            <p class="font-semibold text-yellow-800">This month is locked</p>
-            <p class="text-sm text-yellow-700">This month has been settled. You cannot add, edit, or delete transactions.</p>
+            <p class="font-bold text-amber-800 text-lg">This month is locked</p>
+            <p class="text-sm text-amber-700">Settled and sealed! Unlock to make changes.</p>
         </div>
     </div>
     <button
         onclick="unsettleMonth('{{ current_month }}')"
-        class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-medium text-sm whitespace-nowrap"
+        class="px-5 py-2.5 bg-amber-500 text-white rounded-xl font-semibold
+               hover:bg-amber-600 shadow-sm hover:shadow-md
+               transition-all duration-200 whitespace-nowrap"
     >
-        Unlock Month
+        🔓 Unlock Month
     </button>
 </div>
 {% endif %}
 
 <!-- Quick Summary Card -->
 {% if summary %}
-<div class="mb-6 bg-white rounded-lg shadow-sm border p-6">
-    <h2 class="text-lg font-semibold mb-4">Month Summary</h2>
-    <div class="grid grid-cols-1 md:grid-cols-{{ household_members|length + 1 }} gap-4">
+<div class="mb-6 bg-gradient-to-br from-white to-cream-200 rounded-2xl shadow-sm border border-warm-200 p-4 sm:p-6 relative overflow-hidden">
+    <!-- Decorative element -->
+    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-terracotta-100 to-transparent rounded-bl-full opacity-40"></div>
+
+    <h2 class="text-lg font-bold font-display text-warm-800 mb-4 flex items-center gap-2 relative">
+        <span>💰</span>
+        <span>Month Summary</span>
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-{{ household_members|length + 1 }} gap-6 relative">
         {% for member in household_members %}
-        <div>
-            <p class="text-sm text-gray-600">{{ member.display_name }} paid</p>
-            <p class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.user_payments.get(member.user_id, 0)) }} USD</p>
+        <div class="bg-white/70 rounded-xl p-4 border border-warm-100">
+            <p class="text-sm text-warm-500 mb-1">{{ member.display_name }} paid</p>
+            <p class="text-2xl font-bold text-warm-800">${{ "%.2f"|format(summary.user_payments.get(member.user_id, 0)) }}</p>
+            <p class="text-xs text-warm-400">USD</p>
         </div>
         {% endfor %}
-        <div>
-            <p class="text-sm text-gray-600">Settlement</p>
-            <p class="text-xl font-bold text-green-600">{{ summary.settlement }}</p>
+        <div class="bg-sage-50 rounded-xl p-4 border border-sage-200">
+            <p class="text-sm text-sage-600 mb-1">Settlement</p>
+            <p class="text-xl font-bold text-sage-700">{{ summary.settlement }}</p>
         </div>
     </div>
 </div>
@@ -74,41 +91,51 @@
 
 <!-- Add Transaction Form -->
 {% if is_settled %}
-    <div class="bg-gray-100 rounded-lg shadow-sm border p-6 mb-6 opacity-60">
-        <h2 class="text-lg font-semibold mb-4 text-gray-500">Add Transaction (Disabled - Month Locked)</h2>
-        <p class="text-gray-600">This month has been settled and is locked. To add transactions, please select a different month.</p>
+    <div class="bg-warm-100 rounded-2xl border-2 border-warm-200 border-dashed p-4 sm:p-6 mb-6">
+        <h2 class="text-lg font-semibold mb-2 text-warm-500 flex items-center gap-2">
+            <span>🚫</span>
+            <span>Add Transaction (Locked)</span>
+        </h2>
+        <p class="text-warm-400">This month has been settled. Unlock it or select a different month to add transactions.</p>
     </div>
 {% else %}
-    <div class="bg-white rounded-lg shadow-sm border p-6 mb-6 sticky top-4 z-10">
-        <h2 class="text-lg font-semibold mb-4">Add Transaction</h2>
+    <div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-4 sm:p-6 mb-6 md:sticky md:top-20 z-10">
+        <h2 class="text-lg font-bold font-display text-warm-800 mb-4 flex items-center gap-2">
+            <span>➕</span>
+            <span>Add Transaction</span>
+        </h2>
 
         <form id="add-transaction-form" class="grid grid-cols-1 md:grid-cols-7 gap-4">
             <div class="md:col-span-1">
-                <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <label for="date" class="block text-sm font-semibold text-warm-700 mb-1.5">Date</label>
                 <input
                     type="date"
                     id="date"
                     name="date"
                     required
                     value="{{ current_month }}-01"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                           focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                           text-warm-800 transition-all duration-200"
                 >
             </div>
 
             <div class="md:col-span-2">
-                <label for="merchant" class="block text-sm font-medium text-gray-700 mb-1">Merchant</label>
+                <label for="merchant" class="block text-sm font-semibold text-warm-700 mb-1.5">Merchant</label>
                 <input
                     type="text"
                     id="merchant"
                     name="merchant"
                     required
                     placeholder="e.g., Whole Foods"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                           focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                           placeholder-warm-400 text-warm-800 transition-all duration-200"
                 >
             </div>
 
             <div class="md:col-span-1">
-                <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                <label for="amount" class="block text-sm font-semibold text-warm-700 mb-1.5">Amount</label>
                 <input
                     type="number"
                     id="amount"
@@ -116,28 +143,34 @@
                     step="0.01"
                     required
                     placeholder="0.00"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                           focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                           placeholder-warm-400 text-warm-800 transition-all duration-200"
                 >
             </div>
 
             <div class="md:col-span-1">
-                <label for="currency" class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                <label for="currency" class="block text-sm font-semibold text-warm-700 mb-1.5">Currency</label>
                 <select
                     id="currency"
                     name="currency"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                           focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                           text-warm-800 cursor-pointer transition-all duration-200"
                 >
-                    <option value="USD">USD</option>
-                    <option value="CAD">CAD</option>
+                    <option value="USD">🇺🇸 USD</option>
+                    <option value="CAD">🇨🇦 CAD</option>
                 </select>
             </div>
 
             <div class="md:col-span-1">
-                <label for="paid_by" class="block text-sm font-medium text-gray-700 mb-1">Paid By</label>
+                <label for="paid_by" class="block text-sm font-semibold text-warm-700 mb-1.5">Paid By</label>
                 <select
                     id="paid_by"
                     name="paid_by"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                           focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                           text-warm-800 cursor-pointer transition-all duration-200"
                 >
                     {% for member in household_members %}
                     <option value="{{ member.user_id }}">{{ member.display_name }}</option>
@@ -146,41 +179,50 @@
             </div>
 
             <div class="md:col-span-1">
-                <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <label for="category" class="block text-sm font-semibold text-warm-700 mb-1.5">Category</label>
                 <select
                     id="category"
                     name="category"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                           focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                           text-warm-800 cursor-pointer transition-all duration-200"
                 >
-                    <option value="SHARED">Shared 50/50</option>
+                    <option value="SHARED">🤝 Shared 50/50</option>
                     {% if household_members|length == 2 %}
-                        <option value="I_PAY_FOR_WIFE">{{ household_members[0].display_name }} pays for {{ household_members[1].display_name }}</option>
-                        <option value="WIFE_PAYS_FOR_ME">{{ household_members[1].display_name }} pays for {{ household_members[0].display_name }}</option>
-                        <option value="PERSONAL_ME">Personal ({{ household_members[0].display_name }})</option>
-                        <option value="PERSONAL_WIFE">Personal ({{ household_members[1].display_name }})</option>
+                        <option value="I_PAY_FOR_WIFE">💝 {{ household_members[0].display_name }} → {{ household_members[1].display_name }}</option>
+                        <option value="WIFE_PAYS_FOR_ME">💝 {{ household_members[1].display_name }} → {{ household_members[0].display_name }}</option>
+                        <option value="PERSONAL_ME">👤 {{ household_members[0].display_name }} only</option>
+                        <option value="PERSONAL_WIFE">👤 {{ household_members[1].display_name }} only</option>
                     {% endif %}
                 </select>
             </div>
         </form>
 
         <div class="mt-4">
-            <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+            <label for="notes" class="block text-sm font-semibold text-warm-700 mb-1.5">Notes (optional)</label>
             <input
                 type="text"
                 id="notes"
                 name="notes"
-                placeholder="Additional notes..."
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Any extra details..."
+                class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                       focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                       placeholder-warm-400 text-warm-800 transition-all duration-200"
             >
         </div>
 
-        <div class="mt-4">
+        <div class="mt-5">
             <button
                 type="submit"
                 form="add-transaction-form"
-                class="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                class="w-full md:w-auto px-8 py-3 bg-terracotta-500 text-white rounded-xl
+                       hover:bg-terracotta-600 active:bg-terracotta-700
+                       focus:ring-4 focus:ring-terracotta-200
+                       font-semibold shadow-sm hover:shadow-md
+                       transform hover:-translate-y-0.5 active:translate-y-0
+                       transition-all duration-200"
             >
-                Add Transaction
+                Add Transaction ✨
             </button>
         </div>
 
@@ -190,25 +232,81 @@
 {% endif %}
 
 <!-- Transaction List -->
-<div class="bg-white rounded-lg shadow-sm border p-6">
-    <h2 class="text-lg font-semibold mb-4">Transactions for {{ current_month }}</h2>
+<div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-4 sm:p-6">
+    <h2 class="text-lg font-bold font-display text-warm-800 mb-4 flex items-center gap-2">
+        <span>📋</span>
+        <span>Transactions for {{ current_month }}</span>
+    </h2>
 
     {% if transactions %}
-        <div class="overflow-x-auto">
+        <!-- Mobile Card Layout -->
+        <div class="md:hidden space-y-3">
+            {% for txn in transactions %}
+            <div class="bg-cream-50 rounded-xl p-4 border border-warm-100"
+                 data-id="{{ txn.id }}"
+                 data-date="{{ txn.date.strftime('%Y-%m-%d') }}"
+                 data-merchant="{{ txn.merchant }}"
+                 data-amount="{{ txn.amount }}"
+                 data-currency="{{ txn.currency }}"
+                 data-paid-by="{{ txn.paid_by_user_id }}"
+                 data-category="{{ txn.category }}"
+                 data-notes="{{ txn.notes or '' }}">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <div class="font-semibold text-warm-800">{{ txn.merchant }}</div>
+                        <div class="text-xs text-warm-400">{{ txn.date.strftime('%Y-%m-%d') }} · {{ txn.get_paid_by_display_name() }}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold text-warm-800">${{ "%.2f"|format(txn.amount) }}</div>
+                        <div class="text-xs text-warm-400">{{ txn.currency }}</div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                 bg-terracotta-100 text-terracotta-700 border border-terracotta-200">
+                        {{ txn.get_category_display_name(txn.category, household_members) }}
+                    </span>
+                    {% if is_settled %}
+                        <span class="text-warm-300 text-xs flex items-center gap-1">
+                            <span>🔒</span>
+                            <span>Locked</span>
+                        </span>
+                    {% else %}
+                        <div class="flex gap-3">
+                            <button onclick="openEditModal({{ txn.id }})"
+                                    class="text-terracotta-600 hover:text-terracotta-700 text-sm font-medium">
+                                Edit
+                            </button>
+                            <button onclick="deleteTransaction({{ txn.id }})"
+                                    class="text-rose-500 hover:text-rose-600 text-sm font-medium">
+                                Delete
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+                {% if txn.notes %}
+                <div class="mt-2 text-xs text-warm-400 italic">{{ txn.notes }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Desktop Table Layout -->
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full" id="transactions-table">
                 <thead>
-                    <tr class="border-b">
-                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date</th>
-                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Merchant</th>
-                        <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700">Amount</th>
-                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Paid By</th>
-                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Category</th>
-                        <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700">Actions</th>
+                    <tr class="border-b-2 border-warm-100">
+                        <th class="text-left py-3 px-4 text-sm font-bold text-warm-600">Date</th>
+                        <th class="text-left py-3 px-4 text-sm font-bold text-warm-600">Merchant</th>
+                        <th class="text-right py-3 px-4 text-sm font-bold text-warm-600">Amount</th>
+                        <th class="text-left py-3 px-4 text-sm font-bold text-warm-600">Paid By</th>
+                        <th class="text-left py-3 px-4 text-sm font-bold text-warm-600">Category</th>
+                        <th class="text-right py-3 px-4 text-sm font-bold text-warm-600">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="transactions-body">
                     {% for txn in transactions %}
-                    <tr class="border-b hover:bg-gray-50"
+                    <tr class="border-b border-warm-100 hover:bg-cream-100 transition-colors duration-150"
                         data-id="{{ txn.id }}"
                         data-date="{{ txn.date.strftime('%Y-%m-%d') }}"
                         data-merchant="{{ txn.merchant }}"
@@ -217,38 +315,42 @@
                         data-paid-by="{{ txn.paid_by_user_id }}"
                         data-category="{{ txn.category }}"
                         data-notes="{{ txn.notes or '' }}">
-                        <td class="py-3 px-4 text-sm">{{ txn.date.strftime('%Y-%m-%d') }}</td>
-                        <td class="py-3 px-4 text-sm">
-                            <div>{{ txn.merchant }}</div>
+                        <td class="py-3.5 px-4 text-sm text-warm-700">{{ txn.date.strftime('%Y-%m-%d') }}</td>
+                        <td class="py-3.5 px-4">
+                            <div class="font-medium text-warm-800">{{ txn.merchant }}</div>
                             {% if txn.notes %}
-                            <div class="text-xs text-gray-500">{{ txn.notes }}</div>
+                            <div class="text-xs text-warm-400 mt-0.5">{{ txn.notes }}</div>
                             {% endif %}
                         </td>
-                        <td class="py-3 px-4 text-sm text-right">
-                            <div>${{ "%.2f"|format(txn.amount) }} {{ txn.currency }}</div>
+                        <td class="py-3.5 px-4 text-right">
+                            <div class="font-semibold text-warm-800">${{ "%.2f"|format(txn.amount) }} {{ txn.currency }}</div>
                             {% if txn.currency == 'CAD' %}
-                            <div class="text-xs text-gray-500">${{ "%.2f"|format(txn.amount_in_usd) }} USD</div>
+                            <div class="text-xs text-warm-400">${{ "%.2f"|format(txn.amount_in_usd) }} USD</div>
                             {% endif %}
                         </td>
-                        <td class="py-3 px-4 text-sm">{{ txn.get_paid_by_display_name() }}</td>
-                        <td class="py-3 px-4 text-sm">
-                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                        <td class="py-3.5 px-4 text-sm text-warm-700">{{ txn.get_paid_by_display_name() }}</td>
+                        <td class="py-3.5 px-4">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                                         bg-terracotta-100 text-terracotta-700 border border-terracotta-200">
                                 {{ txn.get_category_display_name(txn.category, household_members) }}
                             </span>
                         </td>
-                        <td class="py-3 px-4 text-sm text-right">
+                        <td class="py-3.5 px-4 text-right">
                             {% if is_settled %}
-                                <span class="text-gray-400 text-xs">Locked</span>
+                                <span class="text-warm-300 text-xs flex items-center justify-end gap-1">
+                                    <span>🔒</span>
+                                    <span>Locked</span>
+                                </span>
                             {% else %}
                                 <button
                                     onclick="openEditModal({{ txn.id }})"
-                                    class="text-blue-600 hover:text-blue-800 font-medium mr-4"
+                                    class="text-terracotta-600 hover:text-terracotta-700 font-medium mr-3 transition-colors"
                                 >
                                     Edit
                                 </button>
                                 <button
                                     onclick="deleteTransaction({{ txn.id }})"
-                                    class="text-red-600 hover:text-red-800 font-medium"
+                                    class="text-rose-500 hover:text-rose-600 font-medium transition-colors"
                                 >
                                     Delete
                                 </button>
@@ -260,38 +362,71 @@
             </table>
         </div>
 
-        <div class="mt-4 text-sm text-gray-600">
-            Total: {{ transactions|length }} transaction(s)
+        <div class="mt-4 text-sm text-warm-500 flex items-center gap-2">
+            <span>📊</span>
+            <span>Total: {{ transactions|length }} transaction(s)</span>
         </div>
     {% else %}
-        <div class="text-center py-8 text-gray-500">
-            <p class="text-lg">No transactions for this month yet.</p>
-            <p class="text-sm mt-2">Add your first transaction using the form above!</p>
+        <!-- Empty state with illustration -->
+        <div class="text-center py-12">
+            <svg class="w-32 h-32 mx-auto text-terracotta-300 mb-6 animate-bounce-gentle" viewBox="0 0 200 200" fill="none">
+                <!-- House outline -->
+                <path d="M100 30L20 90V170H180V90L100 30Z" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <!-- Roof detail -->
+                <path d="M100 30L20 90" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                <path d="M100 30L180 90" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                <!-- Chimney -->
+                <rect x="140" y="50" width="16" height="35" stroke="currentColor" stroke-width="3" fill="none"/>
+                <!-- Door -->
+                <rect x="80" y="115" width="40" height="55" rx="3" stroke="currentColor" stroke-width="3" fill="none"/>
+                <circle cx="110" cy="145" r="4" fill="currentColor"/>
+                <!-- Windows -->
+                <rect x="35" y="105" width="30" height="30" rx="2" stroke="currentColor" stroke-width="3" fill="currentColor" opacity="0.15"/>
+                <rect x="135" y="105" width="30" height="30" rx="2" stroke="currentColor" stroke-width="3" fill="currentColor" opacity="0.15"/>
+                <line x1="50" y1="105" x2="50" y2="135" stroke="currentColor" stroke-width="2"/>
+                <line x1="35" y1="120" x2="65" y2="120" stroke="currentColor" stroke-width="2"/>
+                <line x1="150" y1="105" x2="150" y2="135" stroke="currentColor" stroke-width="2"/>
+                <line x1="135" y1="120" x2="165" y2="120" stroke="currentColor" stroke-width="2"/>
+                <!-- Piggy bank at bottom -->
+                <ellipse cx="100" cy="185" rx="25" ry="12" stroke="currentColor" stroke-width="2" fill="currentColor" opacity="0.2"/>
+                <ellipse cx="100" cy="182" rx="18" ry="10" stroke="currentColor" stroke-width="2" fill="none"/>
+                <circle cx="108" cy="179" r="2" fill="currentColor"/>
+                <path d="M88 178C88 175 92 174 92 177" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <!-- Sparkles -->
+                <path d="M35 55L40 60L35 65L30 60Z" fill="currentColor" opacity="0.4"/>
+                <path d="M165 50L170 55L165 60L160 55Z" fill="currentColor" opacity="0.4"/>
+                <circle cx="50" cy="45" r="4" fill="currentColor" opacity="0.25"/>
+                <circle cx="155" cy="40" r="3" fill="currentColor" opacity="0.2"/>
+            </svg>
+            <p class="text-xl font-display font-semibold text-warm-600 mb-2">No transactions yet!</p>
+            <p class="text-warm-400">Start tracking by adding your first expense above ✨</p>
         </div>
     {% endif %}
 </div>
 
 <!-- Confirm Modal -->
-<div id="confirm-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
+<div id="confirm-modal" class="hidden fixed inset-0 bg-warm-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full transform animate-scale-in border border-warm-200">
         <div class="p-6">
             <div class="flex items-center gap-4 mb-4">
-                <div id="confirm-icon" class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center">
+                <div id="confirm-icon" class="flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center">
                     <!-- Icon will be inserted via JS -->
                 </div>
-                <h3 id="confirm-title" class="text-xl font-bold text-gray-900"></h3>
+                <h3 id="confirm-title" class="text-xl font-bold font-display text-warm-800"></h3>
             </div>
-            <p id="confirm-message" class="text-gray-600 leading-relaxed mb-6 ml-16"></p>
+            <p id="confirm-message" class="text-warm-600 leading-relaxed mb-6 ml-[4.5rem]"></p>
             <div class="flex gap-3 justify-end">
                 <button
                     id="confirm-cancel"
-                    class="px-5 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
+                    class="px-5 py-2.5 border-2 border-warm-200 text-warm-600 rounded-xl
+                           hover:bg-warm-50 transition-all duration-200 font-semibold"
                 >
                     Cancel
                 </button>
                 <button
                     id="confirm-ok"
-                    class="px-5 py-2.5 text-white rounded-lg hover:opacity-90 transition font-medium shadow-md"
+                    class="px-5 py-2.5 text-white rounded-xl font-semibold shadow-md
+                           transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
                 >
                     Confirm
                 </button>
@@ -301,16 +436,16 @@
 </div>
 
 <!-- Toast Notification -->
-<div id="toast-notification" class="hidden fixed top-4 right-4 z-50 transform transition-all duration-300">
-    <div class="bg-white rounded-xl shadow-2xl border-2 p-4 flex items-center gap-3 min-w-[320px]">
-        <div id="toast-icon" class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center">
+<div id="toast-notification" class="hidden fixed top-4 right-4 z-50 animate-slide-up">
+    <div class="bg-white rounded-2xl shadow-2xl border-2 p-4 flex items-center gap-3 min-w-[320px]">
+        <div id="toast-icon" class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center">
             <!-- Icon will be inserted via JS -->
         </div>
         <div class="flex-1">
-            <p id="toast-title" class="font-semibold text-gray-900"></p>
-            <p id="toast-message" class="text-sm text-gray-600"></p>
+            <p id="toast-title" class="font-bold text-warm-800"></p>
+            <p id="toast-message" class="text-sm text-warm-500"></p>
         </div>
-        <button onclick="hideToast()" class="text-gray-400 hover:text-gray-600 ml-2">
+        <button onclick="hideToast()" class="text-warm-300 hover:text-warm-500 ml-2 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
@@ -319,63 +454,74 @@
 </div>
 
 <!-- Edit Transaction Modal -->
-<div id="edit-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+<div id="edit-modal" class="hidden fixed inset-0 bg-warm-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-warm-200 animate-scale-in">
         <!-- Modal Header -->
-        <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-            <h2 class="text-xl font-semibold text-gray-800">Edit Transaction</h2>
+        <div class="sticky top-0 bg-white border-b border-warm-100 px-6 py-4 flex justify-between items-center rounded-t-3xl">
+            <h2 class="text-xl font-bold font-display text-warm-800 flex items-center gap-2">
+                <span>✏️</span>
+                <span>Edit Transaction</span>
+            </h2>
             <button
                 onclick="closeEditModal()"
-                class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                class="w-8 h-8 flex items-center justify-center rounded-full text-warm-400 hover:text-warm-600 hover:bg-warm-100 transition-colors"
             >
-                &times;
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
             </button>
         </div>
 
         <!-- Modal Body -->
         <div class="px-6 py-6">
-            <form id="edit-transaction-form" class="space-y-4">
+            <form id="edit-transaction-form" class="space-y-5">
                 <input type="hidden" id="edit-transaction-id" name="transaction_id">
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="edit-date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <label for="edit-date" class="block text-sm font-semibold text-warm-700 mb-1.5">Date</label>
                         <input
                             type="date"
                             id="edit-date"
                             name="date"
                             required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                                   focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                                   text-warm-800 transition-all duration-200"
                         >
                     </div>
 
                     <div>
-                        <label for="edit-currency" class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                        <label for="edit-currency" class="block text-sm font-semibold text-warm-700 mb-1.5">Currency</label>
                         <select
                             id="edit-currency"
                             name="currency"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                                   focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                                   text-warm-800 cursor-pointer transition-all duration-200"
                         >
-                            <option value="USD">USD</option>
-                            <option value="CAD">CAD</option>
+                            <option value="USD">🇺🇸 USD</option>
+                            <option value="CAD">🇨🇦 CAD</option>
                         </select>
                     </div>
                 </div>
 
                 <div>
-                    <label for="edit-merchant" class="block text-sm font-medium text-gray-700 mb-1">Merchant</label>
+                    <label for="edit-merchant" class="block text-sm font-semibold text-warm-700 mb-1.5">Merchant</label>
                     <input
                         type="text"
                         id="edit-merchant"
                         name="merchant"
                         required
                         placeholder="e.g., Whole Foods"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               placeholder-warm-400 text-warm-800 transition-all duration-200"
                     >
                 </div>
 
                 <div>
-                    <label for="edit-amount" class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                    <label for="edit-amount" class="block text-sm font-semibold text-warm-700 mb-1.5">Amount</label>
                     <input
                         type="number"
                         id="edit-amount"
@@ -383,17 +529,21 @@
                         step="0.01"
                         required
                         placeholder="0.00"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               placeholder-warm-400 text-warm-800 transition-all duration-200"
                     >
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="edit-paid-by" class="block text-sm font-medium text-gray-700 mb-1">Paid By</label>
+                        <label for="edit-paid-by" class="block text-sm font-semibold text-warm-700 mb-1.5">Paid By</label>
                         <select
                             id="edit-paid-by"
                             name="paid_by"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                                   focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                                   text-warm-800 cursor-pointer transition-all duration-200"
                         >
                             {% for member in household_members %}
                             <option value="{{ member.user_id }}">{{ member.display_name }}</option>
@@ -402,31 +552,35 @@
                     </div>
 
                     <div>
-                        <label for="edit-category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <label for="edit-category" class="block text-sm font-semibold text-warm-700 mb-1.5">Category</label>
                         <select
                             id="edit-category"
                             name="category"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                                   focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                                   text-warm-800 cursor-pointer transition-all duration-200"
                         >
-                            <option value="SHARED">Shared 50/50</option>
+                            <option value="SHARED">🤝 Shared 50/50</option>
                             {% if household_members|length == 2 %}
-                                <option value="I_PAY_FOR_WIFE">{{ household_members[0].display_name }} pays for {{ household_members[1].display_name }}</option>
-                                <option value="WIFE_PAYS_FOR_ME">{{ household_members[1].display_name }} pays for {{ household_members[0].display_name }}</option>
-                                <option value="PERSONAL_ME">Personal ({{ household_members[0].display_name }})</option>
-                                <option value="PERSONAL_WIFE">Personal ({{ household_members[1].display_name }})</option>
+                                <option value="I_PAY_FOR_WIFE">💝 {{ household_members[0].display_name }} → {{ household_members[1].display_name }}</option>
+                                <option value="WIFE_PAYS_FOR_ME">💝 {{ household_members[1].display_name }} → {{ household_members[0].display_name }}</option>
+                                <option value="PERSONAL_ME">👤 {{ household_members[0].display_name }} only</option>
+                                <option value="PERSONAL_WIFE">👤 {{ household_members[1].display_name }} only</option>
                             {% endif %}
                         </select>
                     </div>
                 </div>
 
                 <div>
-                    <label for="edit-notes" class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+                    <label for="edit-notes" class="block text-sm font-semibold text-warm-700 mb-1.5">Notes (optional)</label>
                     <input
                         type="text"
                         id="edit-notes"
                         name="notes"
-                        placeholder="Additional notes..."
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Any extra details..."
+                        class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               placeholder-warm-400 text-warm-800 transition-all duration-200"
                     >
                 </div>
             </form>
@@ -435,20 +589,25 @@
         </div>
 
         <!-- Modal Footer -->
-        <div class="sticky bottom-0 bg-gray-50 border-t px-6 py-4 flex justify-end gap-3">
+        <div class="sticky bottom-0 bg-cream-50 border-t border-warm-100 px-6 py-4 flex justify-end gap-3 rounded-b-3xl">
             <button
                 type="button"
                 onclick="closeEditModal()"
-                class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium"
+                class="px-5 py-2.5 border-2 border-warm-200 text-warm-600 rounded-xl
+                       hover:bg-white transition-all duration-200 font-semibold"
             >
                 Cancel
             </button>
             <button
                 type="submit"
                 form="edit-transaction-form"
-                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                class="px-6 py-2.5 bg-terracotta-500 text-white rounded-xl
+                       hover:bg-terracotta-600 active:bg-terracotta-700
+                       font-semibold shadow-sm hover:shadow-md
+                       transform hover:-translate-y-0.5 active:translate-y-0
+                       transition-all duration-200"
             >
-                Save Changes
+                Save Changes ✓
             </button>
         </div>
     </div>
@@ -474,13 +633,13 @@
 
             // Set icon and colors based on type
             if (type === 'warning') {
-                iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-yellow-100';
-                iconEl.innerHTML = '<svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
-                okBtn.className = 'px-5 py-2.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-medium shadow-md';
+                iconEl.className = 'flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center bg-amber-100';
+                iconEl.innerHTML = '<span class="text-2xl">⚠️</span>';
+                okBtn.className = 'px-5 py-2.5 bg-amber-500 text-white rounded-xl font-semibold shadow-md transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 hover:bg-amber-600';
             } else if (type === 'danger') {
-                iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-red-100';
-                iconEl.innerHTML = '<svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
-                okBtn.className = 'px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium shadow-md';
+                iconEl.className = 'flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center bg-rose-100';
+                iconEl.innerHTML = '<span class="text-2xl">🗑️</span>';
+                okBtn.className = 'px-5 py-2.5 bg-rose-500 text-white rounded-xl font-semibold shadow-md transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 hover:bg-rose-600';
             }
 
             // Show modal
@@ -520,13 +679,13 @@
 
         // Set icon and colors based on type
         if (type === 'success') {
-            containerEl.className = 'bg-white rounded-xl shadow-2xl border-2 border-green-200 p-4 flex items-center gap-3 min-w-[320px]';
-            iconEl.className = 'flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-green-100';
-            iconEl.innerHTML = '<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+            containerEl.className = 'bg-white rounded-2xl shadow-2xl border-2 border-sage-200 p-4 flex items-center gap-3 min-w-[320px]';
+            iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center bg-sage-100';
+            iconEl.innerHTML = '<span class="text-2xl">✅</span>';
         } else if (type === 'error') {
-            containerEl.className = 'bg-white rounded-xl shadow-2xl border-2 border-red-200 p-4 flex items-center gap-3 min-w-[320px]';
-            iconEl.className = 'flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-red-100';
-            iconEl.innerHTML = '<svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+            containerEl.className = 'bg-white rounded-2xl shadow-2xl border-2 border-rose-200 p-4 flex items-center gap-3 min-w-[320px]';
+            iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center bg-rose-100';
+            iconEl.innerHTML = '<span class="text-2xl">😟</span>';
         }
 
         // Show toast
@@ -546,7 +705,7 @@
     async function unsettleMonth(month) {
         const confirmed = await showConfirm(
             'Unlock Month?',
-            `Are you sure you want to unlock ${month}?\n\nThis will allow adding, editing, and deleting transactions and remove the settlement record.\n\nYou can mark it as settled again later from the reconciliation page.`,
+            `Are you sure you want to unlock ${month}?\n\nThis will allow adding, editing, and deleting transactions.\n\nYou can lock it again from the reconciliation page.`,
             'warning'
         );
 
@@ -560,10 +719,10 @@
             const result = await response.json();
 
             if (result.success) {
-                showToast('Success', `Month ${month} has been unlocked!`, 'success');
+                showToast('Unlocked!', `${month} is now open for changes`, 'success');
                 setTimeout(() => window.location.reload(), 1500);
             } else {
-                showToast('Error', result.error, 'error');
+                showToast('Oops!', result.error, 'error');
             }
         } catch (error) {
             showToast('Error', error.message, 'error');

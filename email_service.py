@@ -46,7 +46,7 @@ def send_invitation_email(invitation, household, inviter):
         invite_url = f"{site_url}/invite/accept?token={invitation.token}"
 
         # Create the email message
-        subject = f"{inviter.name} invited you to join {household.name} on Household Tracker"
+        subject = f"{inviter.name} invited you to join {household.name} on Lucky Ledger"
 
         # Build HTML body
         html_body = f"""
@@ -68,12 +68,12 @@ def send_invitation_email(invitation, household, inviter):
 <body>
     <div class="container">
         <div class="header">
-            <h1 style="margin: 0;">Household Tracker</h1>
+            <h1 style="margin: 0;">Lucky Ledger</h1>
         </div>
         <div class="content">
             <h2>You're invited!</h2>
-            <p><strong>{inviter.name}</strong> has invited you to join their household <strong>"{household.name}"</strong> on Household Tracker.</p>
-            <p>Household Tracker helps couples and roommates track shared expenses and calculate who owes what at the end of each month.</p>
+            <p><strong>{inviter.name}</strong> has invited you to join their household <strong>"{household.name}"</strong> on Lucky Ledger.</p>
+            <p>Lucky Ledger helps couples and roommates track shared expenses and calculate who owes what at the end of each month.</p>
             <p>Click the button below to accept the invitation:</p>
             <a href="{invite_url}" class="button">Accept Invitation</a>
             <p>Or copy and paste this link into your browser:</p>
@@ -84,7 +84,7 @@ def send_invitation_email(invitation, household, inviter):
         </div>
         <div class="footer">
             <p>If you didn't expect this invitation, you can safely ignore this email.</p>
-            <p>Household Tracker - Track expenses together</p>
+            <p>Lucky Ledger - Track expenses together</p>
         </div>
     </div>
 </body>
@@ -93,9 +93,9 @@ def send_invitation_email(invitation, household, inviter):
 
         # Plain text version
         text_body = f"""
-{inviter.name} invited you to join {household.name} on Household Tracker
+{inviter.name} invited you to join {household.name} on Lucky Ledger
 
-Household Tracker helps couples and roommates track shared expenses and calculate who owes what at the end of each month.
+Lucky Ledger helps couples and roommates track shared expenses and calculate who owes what at the end of each month.
 
 Click the link below to accept the invitation:
 {invite_url}

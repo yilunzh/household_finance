@@ -1,25 +1,58 @@
 {% extends "base.html" %}
 
-{% block title %}Create Your Household - Household Expense Tracker{% endblock %}
+{% block title %}Create Your Home Base - Lucky Ledger{% endblock %}
 
 {% block content %}
-<div class="max-w-lg mx-auto">
-    <div class="bg-white rounded-xl shadow-lg p-8">
-        <div class="text-center mb-6">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+<div class="max-w-lg mx-auto animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-lg border border-warm-200 p-8 relative overflow-hidden">
+        <!-- Decorative corners -->
+        <div class="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-terracotta-100 to-transparent rounded-bl-full opacity-50"></div>
+        <div class="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-sage-100 to-transparent rounded-tr-full opacity-50"></div>
+
+        <div class="text-center mb-8 relative">
+            <!-- House with welcome mat illustration -->
+            <div class="flex justify-center mb-6">
+                <svg class="w-32 h-28 text-terracotta-400" viewBox="0 0 140 120" fill="none">
+                    <!-- House -->
+                    <path d="M70 15L15 55V105H125V55L70 15Z" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Roof accent -->
+                    <path d="M70 15L15 55" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M70 15L125 55" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                    <!-- Chimney -->
+                    <rect x="95" y="30" width="14" height="25" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <!-- Smoke -->
+                    <circle cx="102" cy="22" r="4" fill="currentColor" opacity="0.25"/>
+                    <circle cx="106" cy="14" r="3" fill="currentColor" opacity="0.18"/>
+                    <circle cx="100" cy="8" r="2.5" fill="currentColor" opacity="0.12"/>
+                    <!-- Door -->
+                    <rect x="55" y="65" width="30" height="40" rx="3" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                    <!-- Door handle -->
+                    <circle cx="78" cy="85" r="3" fill="currentColor"/>
+                    <!-- Heart on door -->
+                    <path d="M70 75C70 72 66 70 64 73C63 75 63 78 70 83C77 78 77 75 76 73C74 70 70 72 70 75Z" fill="currentColor" opacity="0.4"/>
+                    <!-- Windows -->
+                    <rect x="25" y="62" width="20" height="20" rx="2" stroke="currentColor" stroke-width="2" fill="currentColor" opacity="0.12"/>
+                    <rect x="95" y="62" width="20" height="20" rx="2" stroke="currentColor" stroke-width="2" fill="currentColor" opacity="0.12"/>
+                    <!-- Window panes -->
+                    <line x1="35" y1="62" x2="35" y2="82" stroke="currentColor" stroke-width="1.5"/>
+                    <line x1="25" y1="72" x2="45" y2="72" stroke="currentColor" stroke-width="1.5"/>
+                    <line x1="105" y1="62" x2="105" y2="82" stroke="currentColor" stroke-width="1.5"/>
+                    <line x1="95" y1="72" x2="115" y2="72" stroke="currentColor" stroke-width="1.5"/>
+                    <!-- Welcome mat -->
+                    <rect x="50" y="105" width="40" height="8" rx="2" fill="currentColor" opacity="0.3"/>
+                    <text x="70" y="112" text-anchor="middle" font-size="5" fill="currentColor" font-weight="bold">WELCOME</text>
                 </svg>
             </div>
-            <h2 class="text-2xl font-bold text-gray-800">Create Your Household</h2>
-            <p class="text-gray-600 mt-2">Set up a household to start tracking expenses together.</p>
+
+            <h2 class="text-2xl font-bold font-display text-warm-800 mb-2">Create Your Home Base 🏡</h2>
+            <p class="text-warm-500">Set up a household to start tracking expenses together</p>
         </div>
 
-        <form method="POST" action="{{ url_for('create_household') }}" class="space-y-6">
+        <form method="POST" action="{{ url_for('create_household') }}" class="space-y-6 relative">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <div>
-                <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                <label for="name" class="block text-sm font-semibold text-warm-700 mb-2">
                     Household Name
                 </label>
                 <input
@@ -28,16 +61,19 @@
                     name="name"
                     required
                     maxlength="100"
-                    placeholder="e.g., Smith Family, Our Apartment"
-                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    placeholder="e.g., The Smiths, Our Cozy Apartment"
+                    class="w-full px-4 py-3 bg-cream-50 border-2 border-warm-200 rounded-xl
+                           focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                           placeholder-warm-400 text-warm-800 transition-all duration-200"
                 >
-                <p class="mt-2 text-sm text-gray-500">
-                    Choose a name that identifies your household.
+                <p class="mt-2 text-sm text-warm-400 flex items-center gap-1">
+                    <span>💡</span>
+                    <span>Pick something that feels like home!</span>
                 </p>
             </div>
 
             <div>
-                <label for="display_name" class="block text-sm font-medium text-gray-700 mb-2">
+                <label for="display_name" class="block text-sm font-semibold text-warm-700 mb-2">
                     Your Display Name
                 </label>
                 <input
@@ -48,24 +84,34 @@
                     maxlength="50"
                     value="{{ current_user.name }}"
                     placeholder="How you want to appear in this household"
-                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    class="w-full px-4 py-3 bg-cream-50 border-2 border-warm-200 rounded-xl
+                           focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                           placeholder-warm-400 text-warm-800 transition-all duration-200"
                 >
-                <p class="mt-2 text-sm text-gray-500">
-                    This is how your name will appear in transactions.
+                <p class="mt-2 text-sm text-warm-400 flex items-center gap-1">
+                    <span>👋</span>
+                    <span>This is how your name will show up in transactions</span>
                 </p>
             </div>
 
             <button
                 type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+                class="w-full bg-terracotta-500 text-white py-3.5 px-4 rounded-xl
+                       hover:bg-terracotta-600 active:bg-terracotta-700
+                       focus:ring-4 focus:ring-terracotta-200
+                       font-semibold text-lg shadow-sm hover:shadow-md
+                       transform hover:-translate-y-0.5 active:translate-y-0
+                       transition-all duration-200"
             >
-                Create Household
+                Create My Household ✨
             </button>
         </form>
 
         {% if current_user.household_memberships %}
-        <div class="mt-6 pt-6 border-t border-gray-200 text-center">
-            <a href="/" class="text-gray-600 hover:text-gray-900">&larr; Back to Transactions</a>
+        <div class="mt-8 pt-6 border-t border-warm-100 text-center">
+            <a href="/" class="text-warm-500 hover:text-terracotta-600 font-medium transition-colors">
+                ← Back to Transactions
+            </a>
         </div>
         {% endif %}
     </div>

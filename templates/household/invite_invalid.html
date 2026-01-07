@@ -1,46 +1,64 @@
 {% extends "base.html" %}
 
-{% block title %}Invalid Invitation - Household Expense Tracker{% endblock %}
+{% block title %}Invalid Invitation - Lucky Ledger{% endblock %}
 
 {% block content %}
-<div class="max-w-lg mx-auto">
-    <div class="bg-white rounded-xl shadow-lg p-8 text-center">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
-            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+<div class="max-w-lg mx-auto animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-lg border border-warm-200 p-8 text-center relative overflow-hidden">
+        <!-- Decorative corner -->
+        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-rose-100 to-transparent rounded-bl-full opacity-40"></div>
+
+        <!-- Confused envelope illustration -->
+        <div class="flex justify-center mb-6 relative">
+            <svg class="w-24 h-24 text-rose-400" viewBox="0 0 100 100" fill="none">
+                <!-- Envelope -->
+                <rect x="15" y="35" width="70" height="45" rx="4" stroke="currentColor" stroke-width="3" fill="none"/>
+                <path d="M15 40L50 60L85 40" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- Question marks -->
+                <text x="35" y="28" font-size="16" fill="currentColor" opacity="0.5">?</text>
+                <text x="55" y="22" font-size="20" fill="currentColor" opacity="0.6">?</text>
+                <text x="70" y="30" font-size="14" fill="currentColor" opacity="0.4">?</text>
+                <!-- Sad face on envelope -->
+                <circle cx="42" cy="55" r="2" fill="currentColor" opacity="0.4"/>
+                <circle cx="58" cy="55" r="2" fill="currentColor" opacity="0.4"/>
+                <path d="M45 65C47 63 53 63 55 65" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
             </svg>
         </div>
 
-        <h2 class="text-2xl font-bold text-gray-800 mb-2">Invalid Invitation</h2>
+        <h2 class="text-2xl font-bold font-display text-warm-800 mb-3">Oops! Invalid Invitation</h2>
 
         {% if reason == 'expired' %}
-            <p class="text-gray-600 mb-6">
-                This invitation has expired. Please ask the household owner to send you a new invitation.
+            <p class="text-warm-600 mb-6">
+                This invitation has expired ⏰
+                <br><span class="text-warm-400 text-sm">Please ask for a new invitation.</span>
             </p>
         {% elif reason == 'used' %}
-            <p class="text-gray-600 mb-6">
-                This invitation has already been used. If you've already joined, you can log in to access the household.
+            <p class="text-warm-600 mb-6">
+                This invitation has already been used ✅
+                <br><span class="text-warm-400 text-sm">If you've already joined, just log in!</span>
             </p>
         {% elif reason == 'not_found' %}
-            <p class="text-gray-600 mb-6">
-                This invitation link is invalid or has been cancelled.
+            <p class="text-warm-600 mb-6">
+                This invitation link is invalid or was cancelled 🚫
+                <br><span class="text-warm-400 text-sm">The link may have been typed incorrectly.</span>
             </p>
         {% else %}
-            <p class="text-gray-600 mb-6">
-                This invitation is no longer valid.
+            <p class="text-warm-600 mb-6">
+                This invitation is no longer valid 😕
+                <br><span class="text-warm-400 text-sm">Please request a new one.</span>
             </p>
         {% endif %}
 
         <div class="flex gap-4 justify-center">
             <a
                 href="{{ url_for('login') }}"
-                class="px-4 py-2 text-blue-600 hover:text-blue-800 font-medium"
+                class="px-5 py-2.5 border-2 border-warm-200 text-warm-600 hover:border-terracotta-300 hover:text-terracotta-600 rounded-xl font-semibold transition-all duration-200"
             >
                 Log In
             </a>
             <a
                 href="{{ url_for('register') }}"
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                class="px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-xl font-semibold transition-all duration-200"
             >
                 Create Account
             </a>
