@@ -1,0 +1,42 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Run unit tests
+        run: pytest tests/ -v -m unit --tb=short
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Install Playwright browsers
+        run: playwright install chromium --with-deps
+      - name: Start application
+        run: NO_RELOAD=1 python app.py &
+      - name: Wait for app to be ready
+        run: |
+          for i in {1..30}; do
+            curl -s http://127.0.0.1:5001/login && break
+            sleep 1
+          done
+      - name: Run E2E tests
+        run: pytest tests/ -v -m integration --tb=short

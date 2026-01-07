@@ -1,212 +1,410 @@
-#!/usr/bin/env python3
 """
-Quick authentication testing script.
+E2E tests for authentication flows.
+Tests registration, login, logout, and session persistence.
 """
-import requests
-from bs4 import BeautifulSoup
+import pytest
+from conftest import BASE_URL, TEST_USERS
 
-BASE_URL = "http://127.0.0.1:5001"
 
-def test_registration():
-    """Test user registration."""
-    print("=" * 60)
-    print("TEST 1: User Registration")
-    print("=" * 60)
+pytestmark = pytest.mark.integration
 
-    # Get CSRF token from registration page
-    session = requests.Session()
-    response = session.get(f"{BASE_URL}/register")
-    soup = BeautifulSoup(response.text, 'html.parser')
-    csrf_token = soup.find('input', {'name': 'csrf_token'})['value']
 
-    print(f"✓ Registration page loaded")
-    print(f"✓ CSRF token obtained: {csrf_token[:20]}...")
+class TestRegistration:
+    """User registration tests."""
 
-    # Register new user
-    data = {
-        'csrf_token': csrf_token,
-        'name': 'Test User',
-        'email': 'test@example.com',
-        'password': 'testpass123',
-        'confirm_password': 'testpass123'
-    }
+    def test_register_new_user_success(self, page, clean_test_data):
+        """New user can register with valid credentials."""
+        user = TEST_USERS['alice']
+        page.goto(f"{BASE_URL}/register")
+        page.wait_for_load_state('networkidle')
 
-    response = session.post(f"{BASE_URL}/register", data=data, allow_redirects=False)
+        page.fill('input[name="name"]', user['name'])
+        page.fill('input[name="email"]', user['email'])
+        page.fill('input[name="password"]', user['password'])
+        page.fill('input[name="confirm_password"]', user['password'])
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
 
-    if response.status_code == 302:  # Redirect after successful registration
-        print(f"✓ User registered successfully!")
-        print(f"✓ Redirected to: {response.headers.get('Location', 'N/A')}")
-        return session
-    else:
-        print(f"✗ Registration failed with status: {response.status_code}")
-        soup = BeautifulSoup(response.text, 'html.parser')
-        flash_messages = soup.find_all('div', class_='rounded-lg')
-        for msg in flash_messages:
-            print(f"  Message: {msg.get_text(strip=True)}")
-        return None
+        # Should redirect away from register page (to household setup or index)
+        assert '/register' not in page.url
 
-def test_login():
-    """Test user login."""
-    print("\n" + "=" * 60)
-    print("TEST 2: User Login")
-    print("=" * 60)
+    def test_register_duplicate_email_rejected(self, page, register_user, logout):
+        """Registration with existing email shows error."""
+        register_user('alice')
+        logout()
 
-    # Create new session (simulating new browser)
-    session = requests.Session()
-    response = session.get(f"{BASE_URL}/login")
-    soup = BeautifulSoup(response.text, 'html.parser')
-    csrf_token = soup.find('input', {'name': 'csrf_token'})['value']
+        user = TEST_USERS['alice']
+        page.goto(f"{BASE_URL}/register")
+        page.wait_for_load_state('networkidle')
 
-    print(f"✓ Login page loaded")
-    print(f"✓ CSRF token obtained: {csrf_token[:20]}...")
+        page.fill('input[name="name"]', 'Another Name')
+        page.fill('input[name="email"]', user['email'])  # Same email
+        page.fill('input[name="password"]', user['password'])
+        page.fill('input[name="confirm_password"]', user['password'])
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
 
-    # Login with registered user
-    data = {
-        'csrf_token': csrf_token,
-        'email': 'test@example.com',
-        'password': 'testpass123',
-        'remember': 'on'
-    }
+        # Should stay on register page with error
+        content = page.content().lower()
+        assert 'already' in content or 'exists' in content or '/register' in page.url
 
-    response = session.post(f"{BASE_URL}/login", data=data, allow_redirects=False)
+    def test_register_password_too_short_rejected(self, page, clean_test_data):
+        """Password under 8 characters shows error."""
+        page.goto(f"{BASE_URL}/register")
+        page.wait_for_load_state('networkidle')
 
-    if response.status_code == 302:
-        print(f"✓ Login successful!")
-        print(f"✓ Redirected to: {response.headers.get('Location', 'N/A')}")
+        page.fill('input[name="name"]', 'Test User')
+        page.fill('input[name="email"]', 'short@example.com')
+        page.fill('input[name="password"]', 'short')
+        page.fill('input[name="confirm_password"]', 'short')
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
 
-        # Check if session cookie is set
-        if 'session' in session.cookies:
-            print(f"✓ Session cookie set")
+        content = page.content().lower()
+        assert '8 character' in content or 'too short' in content or '/register' in page.url
 
-        return session
-    else:
-        print(f"✗ Login failed with status: {response.status_code}")
-        return None
+    def test_register_password_mismatch_rejected(self, page, clean_test_data):
+        """Mismatched passwords show error."""
+        page.goto(f"{BASE_URL}/register")
+        page.wait_for_load_state('networkidle')
 
-def test_invalid_login():
-    """Test login with invalid credentials."""
-    print("\n" + "=" * 60)
-    print("TEST 3: Invalid Login (should fail)")
-    print("=" * 60)
+        page.fill('input[name="name"]', 'Test User')
+        page.fill('input[name="email"]', 'mismatch@example.com')
+        page.fill('input[name="password"]', 'password123')
+        page.fill('input[name="confirm_password"]', 'differentpassword')
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
 
-    session = requests.Session()
-    response = session.get(f"{BASE_URL}/login")
-    soup = BeautifulSoup(response.text, 'html.parser')
-    csrf_token = soup.find('input', {'name': 'csrf_token'})['value']
+        content = page.content().lower()
+        assert 'match' in content or 'mismatch' in content or '/register' in page.url
 
-    # Try login with wrong password
-    data = {
-        'csrf_token': csrf_token,
-        'email': 'test@example.com',
-        'password': 'wrongpassword'
-    }
+    def test_register_missing_fields_rejected(self, page, clean_test_data):
+        """Missing required fields shows error."""
+        page.goto(f"{BASE_URL}/register")
+        page.wait_for_load_state('networkidle')
 
-    response = session.post(f"{BASE_URL}/login", data=data)
+        # Submit with only email filled
+        page.fill('input[name="email"]', 'incomplete@example.com')
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
 
-    if 'Invalid email or password' in response.text:
-        print(f"✓ Invalid credentials correctly rejected")
-        return True
-    else:
-        print(f"✗ Should have rejected invalid credentials")
-        return False
+        # Should stay on register page
+        assert '/register' in page.url
 
-def test_protected_route(session):
-    """Test accessing a protected route."""
-    print("\n" + "=" * 60)
-    print("TEST 4: Access Protected Route (logout)")
-    print("=" * 60)
 
-    if session is None:
-        print("✗ No valid session available")
-        return
+class TestLogin:
+    """User login tests."""
 
-    # Try to access logout (requires login)
-    response = session.get(f"{BASE_URL}/logout", allow_redirects=False)
+    def test_login_valid_credentials_success(self, page, clean_test_data):
+        """User can login with correct credentials."""
+        user = TEST_USERS['alice']
 
-    if response.status_code == 302:
-        print(f"✓ Logout successful!")
-        print(f"✓ Redirected to: {response.headers.get('Location', 'N/A')}")
-    else:
-        print(f"✗ Logout failed with status: {response.status_code}")
+        # First register the user
+        page.goto(f"{BASE_URL}/register")
+        page.wait_for_load_state('networkidle')
+        page.fill('input[name="name"]', user['name'])
+        page.fill('input[name="email"]', user['email'])
+        page.fill('input[name="password"]', user['password'])
+        page.fill('input[name="confirm_password"]', user['password'])
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
 
-def test_logout_without_login():
-    """Test accessing logout without being logged in."""
-    print("\n" + "=" * 60)
-    print("TEST 5: Logout Without Login (should redirect)")
-    print("=" * 60)
+        # Logout
+        page.goto(f"{BASE_URL}/logout")
+        page.wait_for_load_state('networkidle')
 
-    # New session (not logged in)
-    session = requests.Session()
-    response = session.get(f"{BASE_URL}/logout", allow_redirects=False)
+        # Now login
+        page.goto(f"{BASE_URL}/login")
+        page.wait_for_load_state('networkidle')
+        page.fill('input[name="email"]', user['email'])
+        page.fill('input[name="password"]', user['password'])
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
 
-    if response.status_code == 302 and 'login' in response.headers.get('Location', ''):
-        print(f"✓ Correctly redirected to login page")
-        print(f"✓ Location: {response.headers.get('Location', 'N/A')}")
-    else:
-        print(f"✗ Should have redirected to login")
+        # Should redirect away from login page
+        assert '/login' not in page.url
 
-def test_password_hashing():
-    """Check that password is hashed in database."""
-    print("\n" + "=" * 60)
-    print("TEST 6: Password Hashing in Database")
-    print("=" * 60)
+    def test_login_invalid_password_rejected(self, page, clean_test_data):
+        """Invalid password shows error."""
+        user = TEST_USERS['bob']
 
-    import sys
-    import os
-    sys.path.insert(0, os.path.dirname(__file__))
+        # First register the user
+        page.goto(f"{BASE_URL}/register")
+        page.wait_for_load_state('networkidle')
+        page.fill('input[name="name"]', user['name'])
+        page.fill('input[name="email"]', user['email'])
+        page.fill('input[name="password"]', user['password'])
+        page.fill('input[name="confirm_password"]', user['password'])
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
 
-    from app import app, db
-    from models import User
+        # Logout
+        page.goto(f"{BASE_URL}/logout")
+        page.wait_for_load_state('networkidle')
 
-    with app.app_context():
-        user = User.query.filter_by(email='test@example.com').first()
-        if user:
-            print(f"✓ User found in database: {user.email}")
-            print(f"✓ Name: {user.name}")
-            print(f"✓ Password hash (first 30 chars): {user.password_hash[:30]}...")
+        # Try login with wrong password
+        page.goto(f"{BASE_URL}/login")
+        page.wait_for_load_state('networkidle')
+        page.fill('input[name="email"]', user['email'])
+        page.fill('input[name="password"]', 'wrongpassword')
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
 
-            # Verify password hash is not plaintext
-            if user.password_hash.startswith('pbkdf2:sha256:'):
-                print(f"✓ Password is properly hashed (PBKDF2)")
-            else:
-                print(f"✗ Password hash format unexpected")
+        content = page.content().lower()
+        assert 'invalid' in content or 'incorrect' in content or '/login' in page.url
 
-            # Test password verification
-            if user.check_password('testpass123'):
-                print(f"✓ Password verification works correctly")
-            else:
-                print(f"✗ Password verification failed")
-        else:
-            print(f"✗ User not found in database")
+    def test_login_nonexistent_user_rejected(self, page, clean_test_data):
+        """Login with non-existent email shows error."""
+        page.goto(f"{BASE_URL}/login")
+        page.wait_for_load_state('networkidle')
 
-if __name__ == '__main__':
-    try:
-        # Install beautifulsoup4 if needed
-        import subprocess
-        try:
-            from bs4 import BeautifulSoup
-        except ImportError:
-            print("Installing beautifulsoup4...")
-            subprocess.check_call(['pip', 'install', 'beautifulsoup4'])
-            from bs4 import BeautifulSoup
+        page.fill('input[name="email"]', 'nonexistent@example.com')
+        page.fill('input[name="password"]', 'password123')
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
 
-        print("\n🧪 AUTHENTICATION TESTING SUITE")
-        print("=" * 60)
+        content = page.content().lower()
+        assert 'invalid' in content or 'incorrect' in content or '/login' in page.url
 
-        # Run tests
-        session = test_registration()
-        test_login()
-        test_invalid_login()
-        if session:
-            test_protected_route(session)
-        test_logout_without_login()
-        test_password_hashing()
+    def test_login_remember_me_checkbox(self, page, clean_test_data):
+        """Remember me checkbox is present and functional."""
+        user = TEST_USERS['charlie']
 
-        print("\n" + "=" * 60)
-        print("✅ ALL TESTS COMPLETED")
-        print("=" * 60)
+        # Register user
+        page.goto(f"{BASE_URL}/register")
+        page.wait_for_load_state('networkidle')
+        page.fill('input[name="name"]', user['name'])
+        page.fill('input[name="email"]', user['email'])
+        page.fill('input[name="password"]', user['password'])
+        page.fill('input[name="confirm_password"]', user['password'])
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
 
-    except Exception as e:
-        print(f"\n❌ ERROR: {e}")
-        import traceback
-        traceback.print_exc()
+        # Logout
+        page.goto(f"{BASE_URL}/logout")
+        page.wait_for_load_state('networkidle')
+
+        # Login with remember me
+        page.goto(f"{BASE_URL}/login")
+        page.wait_for_load_state('networkidle')
+
+        # Check remember me checkbox exists
+        remember_checkbox = page.locator('input[name="remember"], input[type="checkbox"]')
+        assert remember_checkbox.count() > 0
+
+        page.fill('input[name="email"]', user['email'])
+        page.fill('input[name="password"]', user['password'])
+        remember_checkbox.first.check()
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
+
+        assert '/login' not in page.url
+
+
+class TestLogout:
+    """Logout tests."""
+
+    def test_logout_success(self, page, clean_test_data):
+        """Logged in user can logout."""
+        user = TEST_USERS['alice']
+
+        # Register and create household
+        page.goto(f"{BASE_URL}/register")
+        page.wait_for_load_state('networkidle')
+        page.fill('input[name="name"]', user['name'])
+        page.fill('input[name="email"]', user['email'])
+        page.fill('input[name="password"]', user['password'])
+        page.fill('input[name="confirm_password"]', user['password'])
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
+
+        # Create household
+        page.goto(f"{BASE_URL}/household/create")
+        page.wait_for_load_state('networkidle')
+        page.fill('input[name="name"]', 'Test Household')
+        display_input = page.locator('input[name="display_name"]')
+        if display_input.count() > 0 and not display_input.input_value():
+            display_input.fill('Alice')
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
+
+        # Logout
+        page.goto(f"{BASE_URL}/logout")
+        page.wait_for_load_state('networkidle')
+
+        # Should redirect to login page
+        assert '/login' in page.url
+
+    def test_logout_clears_session(self, page, clean_test_data):
+        """After logout, accessing protected routes redirects to login."""
+        user = TEST_USERS['bob']
+
+        # Register
+        page.goto(f"{BASE_URL}/register")
+        page.wait_for_load_state('networkidle')
+        page.fill('input[name="name"]', user['name'])
+        page.fill('input[name="email"]', user['email'])
+        page.fill('input[name="password"]', user['password'])
+        page.fill('input[name="confirm_password"]', user['password'])
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
+
+        # Create household
+        page.goto(f"{BASE_URL}/household/create")
+        page.wait_for_load_state('networkidle')
+        page.fill('input[name="name"]', 'Test Household')
+        display_input = page.locator('input[name="display_name"]')
+        if display_input.count() > 0 and not display_input.input_value():
+            display_input.fill('Bob')
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
+
+        # Logout
+        page.goto(f"{BASE_URL}/logout")
+        page.wait_for_load_state('networkidle')
+
+        # Try to access protected route
+        page.goto(f"{BASE_URL}/")
+        page.wait_for_load_state('networkidle')
+
+        # Should redirect to login
+        assert '/login' in page.url
+
+
+class TestProtectedRoutes:
+    """Tests for protected route access."""
+
+    def test_unauthenticated_redirects_to_login(self, page, clean_test_data):
+        """Unauthenticated access to protected routes redirects to login."""
+        protected_routes = ['/', '/reconciliation', '/household/settings', '/household/invite']
+
+        for route in protected_routes:
+            page.goto(f"{BASE_URL}{route}")
+            page.wait_for_load_state('networkidle')
+
+            assert '/login' in page.url, f"Route {route} should redirect to login"
+
+    def test_authenticated_can_access_protected(self, page, clean_test_data):
+        """Authenticated user with household can access protected routes."""
+        user = TEST_USERS['charlie']
+
+        # Register
+        page.goto(f"{BASE_URL}/register")
+        page.wait_for_load_state('networkidle')
+        page.fill('input[name="name"]', user['name'])
+        page.fill('input[name="email"]', user['email'])
+        page.fill('input[name="password"]', user['password'])
+        page.fill('input[name="confirm_password"]', user['password'])
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
+
+        # Create household
+        page.goto(f"{BASE_URL}/household/create")
+        page.wait_for_load_state('networkidle')
+        page.fill('input[name="name"]', 'Test Household')
+        display_input = page.locator('input[name="display_name"]')
+        if display_input.count() > 0 and not display_input.input_value():
+            display_input.fill('Charlie')
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
+
+        page.goto(f"{BASE_URL}/")
+        page.wait_for_load_state('networkidle')
+
+        assert '/login' not in page.url
+
+
+class TestSessionPersistence:
+    """Session management tests."""
+
+    def test_session_persists_across_pages(self, page, clean_test_data):
+        """User remains logged in across page navigation."""
+        user = TEST_USERS['diana']
+
+        # Register
+        page.goto(f"{BASE_URL}/register")
+        page.wait_for_load_state('networkidle')
+        page.fill('input[name="name"]', user['name'])
+        page.fill('input[name="email"]', user['email'])
+        page.fill('input[name="password"]', user['password'])
+        page.fill('input[name="confirm_password"]', user['password'])
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
+
+        # Create household
+        page.goto(f"{BASE_URL}/household/create")
+        page.wait_for_load_state('networkidle')
+        page.fill('input[name="name"]', 'Test Household')
+        display_input = page.locator('input[name="display_name"]')
+        if display_input.count() > 0 and not display_input.input_value():
+            display_input.fill('Diana')
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
+
+        # Navigate to index
+        page.goto(f"{BASE_URL}/")
+        page.wait_for_load_state('networkidle')
+        assert '/login' not in page.url
+
+        # Navigate to reconciliation
+        page.goto(f"{BASE_URL}/reconciliation")
+        page.wait_for_load_state('networkidle')
+        assert '/login' not in page.url
+
+        # Navigate to settings
+        page.goto(f"{BASE_URL}/household/settings")
+        page.wait_for_load_state('networkidle')
+        assert '/login' not in page.url
+
+    def test_session_persists_on_refresh(self, page, clean_test_data):
+        """User remains logged in after page refresh."""
+        user = TEST_USERS['alice']
+
+        # Register
+        page.goto(f"{BASE_URL}/register")
+        page.wait_for_load_state('networkidle')
+        page.fill('input[name="name"]', user['name'])
+        page.fill('input[name="email"]', user['email'])
+        page.fill('input[name="password"]', user['password'])
+        page.fill('input[name="confirm_password"]', user['password'])
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
+
+        # Create household
+        page.goto(f"{BASE_URL}/household/create")
+        page.wait_for_load_state('networkidle')
+        page.fill('input[name="name"]', 'Test Household')
+        display_input = page.locator('input[name="display_name"]')
+        if display_input.count() > 0 and not display_input.input_value():
+            display_input.fill('Alice')
+        page.click('button[type="submit"]')
+        page.wait_for_load_state('networkidle')
+
+        page.goto(f"{BASE_URL}/")
+        page.wait_for_load_state('networkidle')
+        assert '/login' not in page.url
+
+        # Refresh page
+        page.reload()
+        page.wait_for_load_state('networkidle')
+        assert '/login' not in page.url
+
+
+class TestLoginPageUI:
+    """Tests for login page UI elements."""
+
+    def test_login_page_has_register_link(self, page, clean_test_data):
+        """Login page should have link to registration."""
+        page.goto(f"{BASE_URL}/login")
+        page.wait_for_load_state('networkidle')
+
+        register_link = page.locator('a[href*="register"]')
+        assert register_link.count() > 0
+
+    def test_register_page_has_login_link(self, page, clean_test_data):
+        """Registration page should have link to login."""
+        page.goto(f"{BASE_URL}/register")
+        page.wait_for_load_state('networkidle')
+
+        login_link = page.locator('a[href*="login"]')
+        assert login_link.count() > 0
