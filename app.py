@@ -38,7 +38,8 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-i
 # Use different database path for production (persistent disk) vs development
 if os.environ.get('FLASK_ENV') == 'production':
     # Production: use /data directory which is mounted to persistent disk on Render
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/database.db'
+    # Note: 4 slashes = sqlite:// + absolute path /data/database.db
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////data/database.db'
 else:
     # Development: use instance folder locally
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
