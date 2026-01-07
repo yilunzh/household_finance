@@ -25,8 +25,7 @@ def household_required(f):
         if not ensure_household_context():
             # User has no households - redirect to setup
             flash('Please create or join a household first.', 'info')
-            # TODO: Phase 6 - Create household_setup route
-            return redirect(url_for('register'))  # Temporary redirect
+            return redirect(url_for('create_household'))
 
         return f(*args, **kwargs)
     return decorated_function
@@ -49,7 +48,7 @@ def household_owner_required(f):
         # Ensure household context is set
         if not ensure_household_context():
             flash('Please create or join a household first.', 'info')
-            return redirect(url_for('register'))  # Temporary redirect
+            return redirect(url_for('create_household'))
 
         # Check if user is owner
         if not is_household_owner():
