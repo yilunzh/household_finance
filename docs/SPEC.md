@@ -567,8 +567,14 @@ household_tracker/
 ├── instance/
 │   └── database.db          # SQLite database (development)
 │
-└── data/                    # Production database directory (Render)
-    └── database.db          # SQLite database (production)
+├── data/                    # Production database directory (Render)
+│   └── database.db          # SQLite database (production)
+│
+└── .claude/                 # Claude Code configuration
+    ├── settings.json        # MCP servers and hooks config
+    └── hooks/
+        ├── spec-update-check.py  # Stop hook for SPEC.md updates
+        └── sync-structure.py     # Project tree generator utility
 ```
 
 ---
@@ -1016,9 +1022,10 @@ def format_settlement(me_balance, wife_balance):
 | 1.0 | Jan 2026 | Initial MVP - single tenant, hardcoded users |
 | 1.2 | Jan 2026 | Added settlement tracking and month locking |
 | 2.0 | Jan 2026 | Multi-user auth, multi-household, invitations, security |
+| 2.1 | Jan 2026 | Added Claude Code Stop hook for automated SPEC.md documentation updates |
 
 ---
 
-**Document Version**: 2.0
+**Document Version**: 2.1
 **Last Updated**: January 7, 2026
 **GitHub Repository**: https://github.com/yilunzh/household_finance
