@@ -4,12 +4,15 @@ Main Flask application for household expense tracker.
 import os
 import csv
 from io import StringIO
-from flask import Flask, render_template, request, jsonify, Response
-from datetime import datetime
+from flask import Flask, render_template, request, jsonify, Response, flash, redirect, url_for
+from flask_wtf.csrf import CSRFProtect
+from flask_login import login_user, logout_user, current_user, login_required
+from datetime import datetime, timedelta
 from decimal import Decimal
 
-from models import db, Transaction, Settlement
+from models import db, Transaction, Settlement, User
 from utils import get_exchange_rate, calculate_reconciliation
+from auth import login_manager
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -27,8 +30,17 @@ else:
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Initialize database
+# Session security configuration
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+# Only enable SECURE cookies in production (requires HTTPS)
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+
+# Initialize extensions
 db.init_app(app)
+csrf = CSRFProtect(app)
+login_manager.init_app(app)
 
 
 # Initialize database tables when app starts (for production with Gunicorn)
@@ -42,6 +54,129 @@ def init_db():
 # Call initialization when module is loaded
 init_db()
 
+
+# ============================================================================
+# Authentication Routes
+# ============================================================================
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """User registration page."""
+    # If user is already logged in, redirect to index
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        name = request.form.get('name', '').strip()
+
+        # Validation
+        if not email or not password or not name:
+            flash('All fields are required.', 'danger')
+            return render_template('auth/register.html')
+
+        if len(password) < 8:
+            flash('Password must be at least 8 characters long.', 'danger')
+            return render_template('auth/register.html')
+
+        if password != confirm_password:
+            flash('Passwords do not match.', 'danger')
+            return render_template('auth/register.html')
+
+        # Check if user already exists
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            flash('An account with this email already exists.', 'danger')
+            return render_template('auth/register.html')
+
+        # Create new user
+        user = User(email=email, name=name)
+        user.set_password(password)
+
+        try:
+            db.session.add(user)
+            db.session.commit()
+
+            # Auto-login after registration
+            login_user(user, remember=True)
+
+            flash(f'Welcome, {user.name}! Your account has been created.', 'success')
+            # TODO: Phase 2 - Redirect to household setup
+            return redirect(url_for('index'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred during registration. Please try again.', 'danger')
+            print(f'Registration error: {e}')
+            return render_template('auth/register.html')
+
+    return render_template('auth/register.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """User login page."""
+    # If user is already logged in, redirect to index
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        remember = request.form.get('remember', False) == 'on'
+
+        # Validation
+        if not email or not password:
+            flash('Email and password are required.', 'danger')
+            return render_template('auth/login.html')
+
+        # Find user by email
+        user = User.query.filter_by(email=email).first()
+
+        # Check password
+        if user is None or not user.check_password(password):
+            flash('Invalid email or password.', 'danger')
+            return render_template('auth/login.html')
+
+        # Check if account is active
+        if not user.is_active:
+            flash('Your account has been deactivated. Please contact support.', 'danger')
+            return render_template('auth/login.html')
+
+        # Login user
+        login_user(user, remember=remember)
+
+        # Update last login timestamp
+        user.last_login = datetime.utcnow()
+        db.session.commit()
+
+        # Handle 'next' parameter for redirect
+        next_page = request.args.get('next')
+        if next_page and next_page.startswith('/'):
+            flash(f'Welcome back, {user.name}!', 'success')
+            return redirect(next_page)
+
+        flash(f'Welcome back, {user.name}!', 'success')
+        # TODO: Phase 2 - Redirect to household selection if multiple households
+        return redirect(url_for('index'))
+
+    return render_template('auth/login.html')
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    """Logout current user."""
+    logout_user()
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('login'))
+
+
+# ============================================================================
+# Main Routes
+# ============================================================================
 
 @app.route('/')
 def index():
