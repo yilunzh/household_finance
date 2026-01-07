@@ -24,7 +24,8 @@ class User(db.Model, UserMixin):
 
     def set_password(self, password):
         """Hash and set the user's password."""
-        self.password_hash = generate_password_hash(password)
+        # Use pbkdf2:sha256 explicitly for Python 3.9 compatibility
+        self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
 
     def check_password(self, password):
         """Check if the provided password matches the hash."""
