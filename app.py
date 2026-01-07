@@ -10,9 +10,15 @@ from flask_login import login_user, logout_user, current_user, login_required
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from models import db, Transaction, Settlement, User
+from models import db, Transaction, Settlement, User, Household, HouseholdMember
 from utils import get_exchange_rate, calculate_reconciliation
 from auth import login_manager
+from decorators import household_required
+from household_context import (
+    get_current_household_id,
+    get_current_household,
+    get_current_household_members
+)
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -187,22 +193,28 @@ def logout():
 # ============================================================================
 
 @app.route('/')
+@household_required
 def index():
     """Main page with transaction form and list."""
+    household_id = get_current_household_id()
+    household_members = get_current_household_members()
+
     # Get month from query params, default to current month
     month = request.args.get('month', datetime.now().strftime('%Y-%m'))
 
-    # Get all transactions for the month
+    # Get all transactions for the month (FILTERED BY HOUSEHOLD)
     transactions = Transaction.query.filter_by(
+        household_id=household_id,
         month_year=month
     ).order_by(Transaction.date.desc()).all()
 
     # Calculate quick summary
-    summary = calculate_reconciliation(transactions) if transactions else None
+    summary = calculate_reconciliation(transactions, household_members) if transactions else None
 
-    # Get list of available months for dropdown
-    # Get months with existing transactions
-    existing_months = db.session.query(Transaction.month_year).distinct().order_by(
+    # Get list of available months for dropdown (FILTERED BY HOUSEHOLD)
+    existing_months = db.session.query(Transaction.month_year).distinct().filter(
+        Transaction.household_id == household_id
+    ).order_by(
         Transaction.month_year.desc()
     ).all()
     months = [m[0] for m in existing_months]
@@ -218,8 +230,8 @@ def index():
         months.append(month)
         months.sort(reverse=True)
 
-    # Check if month is settled
-    is_settled = Settlement.is_month_settled(month)
+    # Check if month is settled (HOUSEHOLD-SCOPED)
+    is_settled = Settlement.is_month_settled(household_id, month)
 
     return render_template(
         'index.html',
@@ -227,14 +239,17 @@ def index():
         current_month=month,
         months=months,
         summary=summary,
-        is_settled=is_settled
+        is_settled=is_settled,
+        household_members=household_members
     )
 
 
 @app.route('/transaction', methods=['POST'])
+@household_required
 def add_transaction():
     """Add a new transaction."""
     try:
+        household_id = get_current_household_id()
         data = request.json
 
         # Parse date
@@ -250,22 +265,36 @@ def add_transaction():
         else:
             amount_in_usd = amount
 
-        # Check if month is settled (locked)
+        # Check if month is settled (locked) - HOUSEHOLD-SCOPED
         month_year_to_check = txn_date.strftime('%Y-%m')
-        if Settlement.is_month_settled(month_year_to_check):
+        if Settlement.is_month_settled(household_id, month_year_to_check):
             return jsonify({
                 'success': False,
                 'error': f'Cannot add transaction to settled month {month_year_to_check}. This month is locked.'
             }), 403
 
-        # Create transaction
+        # Validate paid_by_user_id belongs to this household
+        paid_by_user_id = int(data['paid_by'])  # Now expects user_id instead of 'ME'/'WIFE'
+        member = HouseholdMember.query.filter_by(
+            household_id=household_id,
+            user_id=paid_by_user_id
+        ).first()
+
+        if not member:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid user selected. User is not a member of this household.'
+            }), 400
+
+        # Create transaction (NEW SCHEMA)
         transaction = Transaction(
+            household_id=household_id,
             date=txn_date,
             merchant=data['merchant'],
             amount=amount,
             currency=currency,
             amount_in_usd=amount_in_usd,
-            paid_by=data['paid_by'],
+            paid_by_user_id=paid_by_user_id,
             category=data['category'],
             notes=data.get('notes', ''),
             month_year=txn_date.strftime('%Y-%m')
@@ -288,14 +317,22 @@ def add_transaction():
 
 
 @app.route('/transaction/<int:transaction_id>', methods=['PUT'])
+@household_required
 def update_transaction(transaction_id):
     """Update an existing transaction."""
     try:
-        transaction = Transaction.query.get_or_404(transaction_id)
+        household_id = get_current_household_id()
+
+        # Verify ownership: transaction must belong to current household
+        transaction = Transaction.query.filter_by(
+            id=transaction_id,
+            household_id=household_id
+        ).first_or_404()
+
         data = request.json
 
-        # Check if OLD month is settled
-        if Settlement.is_month_settled(transaction.month_year):
+        # Check if OLD month is settled (HOUSEHOLD-SCOPED)
+        if Settlement.is_month_settled(household_id, transaction.month_year):
             return jsonify({
                 'success': False,
                 'error': f'Cannot edit transaction in settled month {transaction.month_year}. This month is locked.'
@@ -305,7 +342,7 @@ def update_transaction(transaction_id):
         if 'date' in data:
             new_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
             new_month_year = new_date.strftime('%Y-%m')
-            if new_month_year != transaction.month_year and Settlement.is_month_settled(new_month_year):
+            if new_month_year != transaction.month_year and Settlement.is_month_settled(household_id, new_month_year):
                 return jsonify({
                     'success': False,
                     'error': f'Cannot move transaction to settled month {new_month_year}. That month is locked.'
@@ -334,7 +371,20 @@ def update_transaction(transaction_id):
                 transaction.amount_in_usd = amount
 
         if 'paid_by' in data:
-            transaction.paid_by = data['paid_by']
+            # Validate user belongs to household
+            paid_by_user_id = int(data['paid_by'])
+            member = HouseholdMember.query.filter_by(
+                household_id=household_id,
+                user_id=paid_by_user_id
+            ).first()
+
+            if not member:
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid user selected.'
+                }), 400
+
+            transaction.paid_by_user_id = paid_by_user_id
 
         if 'category' in data:
             transaction.category = data['category']
@@ -358,13 +408,20 @@ def update_transaction(transaction_id):
 
 
 @app.route('/transaction/<int:transaction_id>', methods=['DELETE'])
+@household_required
 def delete_transaction(transaction_id):
     """Delete a transaction."""
     try:
-        transaction = Transaction.query.get_or_404(transaction_id)
+        household_id = get_current_household_id()
 
-        # Check if month is settled
-        if Settlement.is_month_settled(transaction.month_year):
+        # Verify ownership: transaction must belong to current household
+        transaction = Transaction.query.filter_by(
+            id=transaction_id,
+            household_id=household_id
+        ).first_or_404()
+
+        # Check if month is settled (HOUSEHOLD-SCOPED)
+        if Settlement.is_month_settled(household_id, transaction.month_year):
             return jsonify({
                 'success': False,
                 'error': f'Cannot delete transaction in settled month {transaction.month_year}. This month is locked.'
@@ -386,41 +443,64 @@ def delete_transaction(transaction_id):
 
 
 @app.route('/settlement', methods=['POST'])
+@household_required
 def mark_month_settled():
     """Mark a month as settled and record the settlement snapshot."""
     try:
+        household_id = get_current_household_id()
+        household_members = get_current_household_members()
         data = request.json
         month_year = data['month_year']
 
-        # Validation: Check if already settled
-        if Settlement.is_month_settled(month_year):
+        # Validation: Check if already settled (HOUSEHOLD-SCOPED)
+        if Settlement.is_month_settled(household_id, month_year):
             return jsonify({'success': False, 'error': 'This month has already been settled.'}), 400
 
-        # Validation: Must have transactions
-        transactions = Transaction.query.filter_by(month_year=month_year).all()
+        # Validation: Must have transactions (HOUSEHOLD-SCOPED)
+        transactions = Transaction.query.filter_by(
+            household_id=household_id,
+            month_year=month_year
+        ).all()
+
         if not transactions:
             return jsonify({'success': False, 'error': 'Cannot settle a month with no transactions.'}), 400
 
-        # Calculate reconciliation
-        summary = calculate_reconciliation(transactions)
-        me_balance = Decimal(str(summary['me_balance']))
-        wife_balance = Decimal(str(summary['wife_balance']))
+        # Calculate reconciliation with household members
+        summary = calculate_reconciliation(transactions, household_members)
 
-        # Determine direction of debt
-        if me_balance > Decimal('0.01'):  # Pi owes Bibi
-            from_person, to_person, settlement_amount = 'WIFE', 'ME', me_balance
-        elif wife_balance > Decimal('0.01'):  # Bibi owes Pi
-            from_person, to_person, settlement_amount = 'ME', 'WIFE', wife_balance
+        # Extract balances (NEW: use dynamic user balances)
+        # For now, assume 2-person household (will be enhanced in Phase 4)
+        user_balances = summary.get('user_balances', {})
+
+        if len(user_balances) != 2:
+            return jsonify({
+                'success': False,
+                'error': 'Settlement currently only supports 2-person households.'
+            }), 400
+
+        # Get the two users and their balances
+        user_ids = list(user_balances.keys())
+        user1_id = user_ids[0]
+        user2_id = user_ids[1]
+        user1_balance = Decimal(str(user_balances[user1_id]))
+        user2_balance = Decimal(str(user_balances[user2_id]))
+
+        # Determine direction of debt (NEW SCHEMA)
+        if user1_balance > Decimal('0.01'):  # User2 owes User1
+            from_user_id, to_user_id, settlement_amount = user2_id, user1_id, user1_balance
+        elif user2_balance > Decimal('0.01'):  # User1 owes User2
+            from_user_id, to_user_id, settlement_amount = user1_id, user2_id, user2_balance
         else:  # All settled up
-            from_person, to_person, settlement_amount = 'NONE', 'NONE', Decimal('0.00')
+            from_user_id, to_user_id, settlement_amount = user1_id, user2_id, Decimal('0.00')
 
-        # Create settlement record
+        # Create settlement record (NEW SCHEMA)
         settlement = Settlement(
+            household_id=household_id,
             month_year=month_year,
             settled_date=datetime.now().date(),
             settlement_amount=settlement_amount,
-            from_person=from_person,
-            to_person=to_person,
+            from_user_id=from_user_id,
+            to_user_id=to_user_id,
             settlement_message=summary['settlement']
         )
 
@@ -435,10 +515,17 @@ def mark_month_settled():
 
 
 @app.route('/settlement/<month_year>', methods=['DELETE'])
+@household_required
 def unsettle_month(month_year):
     """Remove settlement record to unlock a month for editing."""
     try:
-        settlement = Settlement.query.filter_by(month_year=month_year).first()
+        household_id = get_current_household_id()
+
+        # Get settlement for this household (HOUSEHOLD-SCOPED)
+        settlement = Settlement.query.filter_by(
+            household_id=household_id,
+            month_year=month_year
+        ).first()
 
         if not settlement:
             return jsonify({
@@ -464,25 +551,34 @@ def unsettle_month(month_year):
 
 @app.route('/reconciliation')
 @app.route('/reconciliation/<month>')
+@household_required
 def reconciliation(month=None):
     """Show monthly reconciliation summary."""
+    household_id = get_current_household_id()
+    household_members = get_current_household_members()
+
     if month is None:
         month = datetime.now().strftime('%Y-%m')
 
-    # Get all transactions for the month
-    transactions = Transaction.query.filter_by(month_year=month).all()
+    # Get all transactions for the month (FILTERED BY HOUSEHOLD)
+    transactions = Transaction.query.filter_by(
+        household_id=household_id,
+        month_year=month
+    ).all()
 
-    # Calculate reconciliation
-    summary = calculate_reconciliation(transactions)
+    # Calculate reconciliation with household members
+    summary = calculate_reconciliation(transactions, household_members)
 
-    # Get list of available months
-    all_months = db.session.query(Transaction.month_year).distinct().order_by(
+    # Get list of available months (FILTERED BY HOUSEHOLD)
+    all_months = db.session.query(Transaction.month_year).distinct().filter(
+        Transaction.household_id == household_id
+    ).order_by(
         Transaction.month_year.desc()
     ).all()
     months = [m[0] for m in all_months]
 
-    # Check if month is settled
-    settlement = Settlement.get_settlement(month)
+    # Check if month is settled (HOUSEHOLD-SCOPED)
+    settlement = Settlement.get_settlement(household_id, month)
 
     return render_template(
         'reconciliation.html',
@@ -490,14 +586,21 @@ def reconciliation(month=None):
         month=month,
         months=months,
         transactions=transactions,
-        settlement=settlement
+        settlement=settlement,
+        household_members=household_members
     )
 
 
 @app.route('/export/<month>')
+@household_required
 def export_csv(month):
     """Export transactions for a month as CSV."""
+    household_id = get_current_household_id()
+    household_members = get_current_household_members()
+
+    # Get transactions for this household (FILTERED BY HOUSEHOLD)
     transactions = Transaction.query.filter_by(
+        household_id=household_id,
         month_year=month
     ).order_by(Transaction.date).all()
 
@@ -507,7 +610,7 @@ def export_csv(month):
 
     # Write header
     writer.writerow([
-        'Date', 'Merchant', 'Amount', 'Currency', 'Amount (CAD)',
+        'Date', 'Merchant', 'Amount', 'Currency', 'Amount (USD)',
         'Paid By', 'Category', 'Notes'
     ])
 
@@ -518,20 +621,24 @@ def export_csv(month):
             txn.merchant,
             f'{float(txn.amount):.2f}',
             txn.currency,
-            f'{float(txn.amount_in_cad):.2f}',
-            txn.paid_by,
+            f'{float(txn.amount_in_usd):.2f}',  # FIXED: was amount_in_cad
+            txn.get_paid_by_display_name(),  # NEW: Use household member display name
             Transaction.get_category_display_name(txn.category),
             txn.notes or ''
         ])
 
-    # Add summary
-    summary = calculate_reconciliation(transactions)
+    # Add summary (with household members)
+    summary = calculate_reconciliation(transactions, household_members)
     writer.writerow([])
     writer.writerow(['SUMMARY'])
-    writer.writerow(['I paid', f"${summary['me_paid']:.2f}"])
-    writer.writerow(['Wife paid', f"${summary['wife_paid']:.2f}"])
-    writer.writerow(['My share', f"${summary['me_share']:.2f}"])
-    writer.writerow(['Wife\'s share', f"${summary['wife_share']:.2f}"])
+
+    # Dynamic member names in summary
+    for member in household_members:
+        user_id = member.user_id
+        if user_id in summary.get('user_payments', {}):
+            paid_amount = summary['user_payments'][user_id]
+            writer.writerow([f'{member.display_name} paid', f'${paid_amount:.2f}'])
+
     writer.writerow([])
     writer.writerow(['Settlement', summary['settlement']])
 
