@@ -81,13 +81,8 @@ Then open your browser to `http://localhost:5001`
 
 ## Development
 
-See `SPEC.md` for detailed technical specification.
+See `docs/SPEC.md` for detailed technical specification.
 
 ## Deployment
 
-Recommended options:
-- Railway: $5/month
-- PythonAnywhere: $5/month
-- DigitalOcean: $6/month
-
-See `SPEC.md` for deployment instructions.
+See `docs/DEPLOYMENT.md` for step-by-step deployment instructions.

@@ -172,9 +172,15 @@ Transaction.query.filter_by(...)
 # Run with auto-reload disabled for stable browser tests
 NO_RELOAD=1 python app.py
 
-# Run Playwright tests
-python test_phase5_invitations.py
-python test_phase4_sync.py
+# Run all tests with pytest
+pytest tests/
+
+# Run specific test file
+pytest tests/test_auth.py
+
+# Run Playwright browser tests
+python tests/test_phase5_invitations.py
+python tests/test_phase4_sync.py
 ```
 
 ## Production Deployment (Render)
@@ -196,3 +202,25 @@ python test_phase4_sync.py
 - **Alpine.js**: Loaded from CDN (for dropdowns)
 - **SQLite**: File-based database
 - **Flask-Mail**: SMTP email sending (optional)
+
+## Documentation
+
+```
+docs/
+├── SPEC.md                    # Technical specification (source of truth)
+├── DEPLOYMENT.md              # Production deployment guide
+├── archive/
+│   └── AUTHENTICATION_PLAN.md # Completed implementation plan
+└── testing/
+    ├── TESTING_PHASE3.md      # Phase 3 testing notes
+    └── TESTING_PHASE4.md      # Phase 4 testing notes
+
+tests/                         # Python test scripts
+├── test_auth.py               # Authentication unit tests
+├── test_auth_playwright.py    # Playwright browser tests
+├── test_schema.py             # Database schema tests
+├── test_phase3_isolation.py   # Data isolation tests
+├── test_phase4_dynamic_ui.py  # Dynamic UI tests
+├── test_phase4_sync.py        # Sync tests
+└── test_phase5_invitations.py # Invitation flow tests
+```

@@ -4,5 +4,9 @@
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest"]
     }
+  },
+  "permissions": {
+    "allow": ["mcp__playwright"],
+    "deny": []
   }
 }
