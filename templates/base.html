@@ -16,11 +16,19 @@
         <div class="max-w-6xl mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
                 <h1 class="text-2xl font-bold text-gray-800">
-                    Zhang Estate Expense Tracker
+                    Household Expense Tracker
                 </h1>
-                <div class="flex gap-4">
-                    <a href="/" class="text-gray-600 hover:text-gray-900">Transactions</a>
-                    <a href="/reconciliation" class="text-gray-600 hover:text-gray-900">Reconciliation</a>
+                <div class="flex items-center gap-6">
+                    <div class="flex gap-4">
+                        <a href="/" class="text-gray-600 hover:text-gray-900 font-medium">Transactions</a>
+                        <a href="/reconciliation" class="text-gray-600 hover:text-gray-900 font-medium">Reconciliation</a>
+                    </div>
+                    {% if current_user.is_authenticated %}
+                        <div class="flex items-center gap-4 pl-4 border-l border-gray-300">
+                            <span class="text-sm text-gray-600">{{ current_user.name }}</span>
+                            <a href="/logout" class="text-sm text-gray-600 hover:text-gray-900 font-medium">Logout</a>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
