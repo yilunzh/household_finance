@@ -1,8 +1,8 @@
 # Zhang Estate Expense Tracker - Technical Specification
 
-**Version**: 1.0 MVP (Implemented)
+**Version**: 2.0 (Multi-User, Multi-Household)
 **Date**: January 2026
-**Status**: ✅ Implemented and Deployed to Production
+**Status**: Implemented and Deployed to Production
 
 ## 1. Overview
 
@@ -16,20 +16,26 @@ Manual expense reconciliation between two people sharing household expenses is t
 ### 1.2 Solution
 Web-based expense tracking tool with automatic reconciliation calculations, focusing on ease and speed of transaction entry.
 
-### 1.3 Scope - MVP Features
-**In Scope:**
+### 1.3 Scope
+**In Scope (v2.0):**
+- Multi-user authentication (registration, login, logout)
+- Multi-household support - users can belong to multiple households
+- Email-based invitations for partner onboarding
 - Quick transaction entry form
 - Transaction list view with modal-based editing
 - Automatic currency conversion (CAD → USD, USD is primary currency)
 - Monthly reconciliation calculations
+- Settlement locking (mark months as settled)
 - CSV export for backup
-- Personalized display names (Bibi and Pi instead of ME/WIFE in UI)
+- Dynamic member display names per household
+- Production security (HTTPS enforcement, rate limiting, security headers)
 - Production deployment on Render.com with persistent database storage
 
 **Out of Scope (Future):**
 - PDF parsing of bank statements
 - Banking API integration
-- User authentication
+- Password reset flow
+- Two-factor authentication
 - Mobile app
 - Advanced charts/analytics
 - Smart categorization rules
@@ -44,7 +50,12 @@ Web-based expense tracking tool with automatic reconciliation calculations, focu
 |-----------|------------|-----------|
 | Backend | Python 3.9+ + Flask | Beginner-friendly, minimal setup |
 | Database | SQLite | No installation, file-based, easy backup |
-| Frontend | HTML + Tailwind CSS + Vanilla JS | Simple, no build tools needed |
+| ORM | Flask-SQLAlchemy | Database abstraction layer |
+| Authentication | Flask-Login | Session management, user authentication |
+| CSRF Protection | Flask-WTF | Form protection, CSRF tokens |
+| Email | Flask-Mail | Sending invitation emails |
+| Rate Limiting | Flask-Limiter | Protecting authentication routes |
+| Frontend | HTML + Tailwind CSS + Alpine.js | Simple, no build tools needed |
 | Currency API | frankfurter.app | Free, no signup required |
 | Production Server | Gunicorn | WSGI server for production deployment |
 | Hosting | Render.com | $7/month with persistent disk, auto-deploy from GitHub |
@@ -82,88 +93,174 @@ Web-based expense tracking tool with automatic reconciliation calculations, focu
 ### 3.1 Database Schema
 
 ```sql
+-- Users table (authentication)
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email VARCHAR(120) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP
+);
+CREATE INDEX idx_users_email ON users(email);
+
+-- Households table (multi-tenancy)
+CREATE TABLE households (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by_user_id INTEGER NOT NULL REFERENCES users(id)
+);
+
+-- Household members (many-to-many association)
+CREATE TABLE household_members (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL,  -- 'owner' or 'member'
+    display_name VARCHAR(50) NOT NULL,  -- e.g., "Bibi", "Pi"
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(household_id, user_id)
+);
+CREATE INDEX idx_hm_household ON household_members(household_id);
+CREATE INDEX idx_hm_user ON household_members(user_id);
+
+-- Invitations table (partner onboarding)
+CREATE TABLE invitations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id) ON DELETE CASCADE,
+    email VARCHAR(120) NOT NULL,
+    token VARCHAR(64) UNIQUE NOT NULL,  -- 48-char random token
+    status VARCHAR(20) DEFAULT 'pending',  -- 'pending', 'accepted', 'expired'
+    expires_at TIMESTAMP NOT NULL,  -- 7 days from creation
+    invited_by_user_id INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    accepted_at TIMESTAMP
+);
+CREATE INDEX idx_invitations_token ON invitations(token);
+CREATE INDEX idx_invitations_email ON invitations(email);
+
+-- Transactions table (expense records)
 CREATE TABLE transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id) ON DELETE CASCADE,
     date DATE NOT NULL,
-    merchant TEXT NOT NULL,
+    merchant VARCHAR(200) NOT NULL,
     amount DECIMAL(10, 2) NOT NULL,
-    currency TEXT NOT NULL CHECK(currency IN ('USD', 'CAD')),
+    currency VARCHAR(3) NOT NULL,  -- 'USD' or 'CAD'
     amount_in_usd DECIMAL(10, 2) NOT NULL,  -- Primary currency is USD
-    paid_by TEXT NOT NULL CHECK(paid_by IN ('ME', 'WIFE')),  -- Stored as ME/WIFE, displayed as Bibi/Pi
-    category TEXT NOT NULL CHECK(category IN (
-        'SHARED',
-        'I_PAY_FOR_WIFE',
-        'WIFE_PAYS_FOR_ME',
-        'PERSONAL_ME',
-        'PERSONAL_WIFE'
-    )),
+    paid_by_user_id INTEGER NOT NULL REFERENCES users(id),
+    category VARCHAR(20) NOT NULL,  -- SHARED, I_PAY_FOR_WIFE, etc.
     notes TEXT,
-    month_year TEXT NOT NULL,  -- Format: "2025-01"
+    month_year VARCHAR(7) NOT NULL,  -- Format: "2026-01"
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE INDEX idx_month_year ON transactions(month_year);
+CREATE INDEX idx_household_month ON transactions(household_id, month_year);
 CREATE INDEX idx_date ON transactions(date);
 
+-- Settlements table (monthly settlement snapshots)
 CREATE TABLE settlements (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    month_year TEXT NOT NULL UNIQUE,  -- Format: "2026-01", UNIQUE to prevent duplicates
+    household_id INTEGER NOT NULL REFERENCES households(id) ON DELETE CASCADE,
+    month_year VARCHAR(7) NOT NULL,  -- Format: "2026-01"
     settled_date DATE NOT NULL,  -- When the month was marked as settled
     settlement_amount DECIMAL(10, 2) NOT NULL,  -- Absolute amount owed (always positive)
-    from_person TEXT NOT NULL CHECK(from_person IN ('ME', 'WIFE', 'NONE')),  -- Who owes
-    to_person TEXT NOT NULL CHECK(to_person IN ('ME', 'WIFE', 'NONE')),  -- Who is owed
-    settlement_message TEXT NOT NULL,  -- "Pi owes Bibi $75.25" or "All settled up!"
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    from_user_id INTEGER NOT NULL REFERENCES users(id),  -- Who owes
+    to_user_id INTEGER NOT NULL REFERENCES users(id),  -- Who is owed
+    settlement_message VARCHAR(200) NOT NULL,  -- "Pi owes Bibi $75.25"
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(household_id, month_year)
 );
-
-CREATE INDEX idx_settlement_month ON settlements(month_year);
+CREATE INDEX idx_settlement_household_month ON settlements(household_id, month_year);
 ```
 
-**Settlement Table Purpose:**
-- Records permanent snapshot when a month is marked as "settled"
-- Locks the month to prevent further transaction modifications
-- Preserves historical settlement records even if transactions change
-- UNIQUE constraint on month_year ensures only one settlement per month
+**Key Design Decisions:**
+- **Multi-tenancy**: All data (transactions, settlements) is isolated by `household_id`
+- **Dynamic members**: Users have a `display_name` per household (not hardcoded)
+- **Invitations**: Secure 48-char tokens with 7-day expiration
+- **Settlements**: One per household per month (UNIQUE constraint)
 
 ### 3.2 Transaction Categories
 
-| Category | Display Name | Who Paid | Who Benefits | Split Logic |
-|----------|--------------|----------|--------------|-------------|
-| SHARED | Shared Expense | Either | Both 50/50 | Each person pays 50% |
-| I_PAY_FOR_WIFE | Bibi pays for Pi | Bibi | Pi 100% | Pi pays 100%, Bibi pays 0% |
-| WIFE_PAYS_FOR_ME | Pi pays for Bibi | Pi | Bibi 100% | Bibi pays 100%, Pi pays 0% |
-| PERSONAL_ME | Bibi's Personal | Bibi | Bibi 100% | No split (neutral) |
-| PERSONAL_WIFE | Pi's Personal | Pi | Pi 100% | No split (neutral) |
+| Category | Display Name | Split Logic |
+|----------|--------------|-------------|
+| SHARED | Shared 50/50 | Each member pays 50% |
+| I_PAY_FOR_WIFE | Member 1 pays for Member 2 | Member 2 owes 100% |
+| WIFE_PAYS_FOR_ME | Member 2 pays for Member 1 | Member 1 owes 100% |
+| PERSONAL_ME | Personal (Member 1) | No split (neutral) |
+| PERSONAL_WIFE | Personal (Member 2) | No split (neutral) |
 
-**Note**: Database stores generic values (ME/WIFE) but UI displays personalized nicknames (Bibi/Pi).
+**Note**: Category names are legacy from v1.0. Display names in the UI are dynamic based on household member `display_name` fields.
+
+### 3.3 Entity Relationships
+
+```
+User ──< HouseholdMember >── Household
+                                │
+                                ├──< Transaction
+                                ├──< Settlement
+                                └──< Invitation
+```
 
 ---
 
 ## 4. API Design
 
-### 4.1 REST Endpoints
+### 4.1 Authentication Routes
 
-| Method | Endpoint | Description | Request Body | Response | Status |
-|--------|----------|-------------|--------------|----------|--------|
-| GET | `/` | Main page with transaction list | - | HTML page | ✅ Implemented |
-| POST | `/transaction` | Create transaction | Transaction JSON | `{success: bool, transaction: {...}}` | ✅ Implemented |
-| PUT | `/transaction/<id>` | Update transaction | Transaction JSON | `{success: bool, transaction: {...}}` | ✅ Implemented & Connected to UI |
-| DELETE | `/transaction/<id>` | Delete transaction | - | `{success: bool}` | ✅ Implemented |
-| GET | `/reconciliation` | Monthly summary (default: current month) | - | HTML page | ✅ Implemented |
-| GET | `/reconciliation/<month>` | Monthly summary for specific month | - | HTML page | ✅ Implemented |
-| GET | `/export/<month>` | Export CSV | - | CSV file | ✅ Implemented |
-| POST | `/settlement` | Mark month as settled and lock it | `{month_year: "YYYY-MM"}` | `{success: bool, settlement: {...}}` | ✅ Implemented |
-| DELETE | `/settlement/<month>` | Unsettle month and unlock it | - | `{success: bool, message: string}` | ✅ Implemented |
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET/POST | `/register` | User registration | No (public) |
+| GET/POST | `/login` | User login | No (public) |
+| GET | `/logout` | User logout | Yes |
 
-### 4.2 Transaction JSON Schema
+### 4.2 Transaction Routes
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/` | Main page with transaction list | @household_required |
+| POST | `/transaction` | Create transaction | @household_required |
+| PUT | `/transaction/<id>` | Update transaction | @household_required |
+| DELETE | `/transaction/<id>` | Delete transaction | @household_required |
+
+### 4.3 Reconciliation Routes
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/reconciliation` | Monthly summary (current month) | @household_required |
+| GET | `/reconciliation/<month>` | Monthly summary for specific month | @household_required |
+| GET | `/export/<month>` | Export CSV | @household_required |
+| POST | `/settlement` | Mark month as settled | @household_required |
+| DELETE | `/settlement/<month>` | Unsettle month | @household_required |
+
+### 4.4 Invitation Routes
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET/POST | `/household/invite` | Send invitation | @household_required |
+| POST | `/household/invite/<id>/cancel` | Cancel pending invitation | @household_required |
+| GET/POST | `/invite/accept` | Accept invitation | No (public) |
+
+### 4.5 Household Management Routes
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET/POST | `/household/create` | Create new household | @login_required |
+| GET | `/household/select` | Select household (multi-household users) | @login_required |
+| POST | `/household/switch/<id>` | Switch to different household | @login_required |
+| GET/POST | `/household/settings` | Manage household settings | @household_required |
+| POST | `/household/leave` | Leave current household | @household_required |
+
+### 4.6 Transaction JSON Schema
 
 ```json
 {
-  "date": "2025-01-15",
+  "date": "2026-01-15",
   "merchant": "Whole Foods",
   "amount": 125.50,
   "currency": "CAD",
-  "paid_by": "ME",
+  "paid_by": 1,  // user_id of the member who paid
   "category": "SHARED",
   "notes": "Weekly groceries"
 }
@@ -433,30 +530,44 @@ def get_exchange_rate(from_curr, to_curr, date):
 
 ```
 household_tracker/
-├── app.py                    # Main Flask application (~410 lines, includes settlement endpoints)
-├── models.py                 # Database models (~110 lines, includes Settlement model)
-├── utils.py                  # Helper functions (~120 lines)
-├── requirements.txt          # Python dependencies (includes gunicorn)
+├── app.py                    # Main Flask application (~700 lines)
+├── models.py                 # SQLAlchemy models (~240 lines)
+├── auth.py                   # Flask-Login configuration
+├── decorators.py             # @household_required decorator
+├── household_context.py      # Household session helpers
+├── email_service.py          # Flask-Mail integration
+├── utils.py                  # Helper functions (~150 lines)
+├── requirements.txt          # Python dependencies
+├── requirements-dev.txt      # Dev dependencies (playwright)
 ├── Procfile                  # Production server config for Render
 ├── SPEC.md                   # This file (technical specification)
-├── DEPLOYMENT.md             # Step-by-step production deployment guide
-├── README.md                 # Setup & usage instructions
 ├── CLAUDE.md                 # Claude Code guidance for this project
 ├── .env.example              # Environment variable template
 ├── .gitignore                # Git ignore rules
 │
 ├── static/
-│   └── app.js               # Frontend JavaScript (~250 lines with edit modal)
+│   └── app.js               # Frontend JavaScript (~300 lines)
 │
 ├── templates/
-│   ├── base.html            # Base template (~60 lines)
-│   ├── index.html           # Main transaction page (~410 lines, includes locked month UI)
-│   └── reconciliation.html  # Monthly summary (~345 lines, includes settlement tracking)
+│   ├── auth/
+│   │   ├── login.html       # Login form
+│   │   └── register.html    # Registration form
+│   ├── household/
+│   │   ├── setup.html       # Create household wizard
+│   │   ├── select.html      # Household switcher
+│   │   ├── settings.html    # Manage household
+│   │   ├── invite.html      # Send invitations
+│   │   ├── invite_sent.html # Invitation success
+│   │   ├── accept_invite.html # Accept invitation
+│   │   └── invite_invalid.html # Invalid token
+│   ├── base.html            # Base template with nav
+│   ├── index.html           # Main transaction page
+│   └── reconciliation.html  # Monthly summary
 │
 ├── instance/
-│   └── database.db          # SQLite database (development, created at runtime)
+│   └── database.db          # SQLite database (development)
 │
-└── data/                    # Production database directory (Render persistent disk)
+└── data/                    # Production database directory (Render)
     └── database.db          # SQLite database (production)
 ```
 
@@ -469,6 +580,11 @@ household_tracker/
 ```
 Flask==3.0.0
 Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+Flask-WTF==1.2.1
+Flask-Mail==0.10.0
+Flask-Limiter==3.5.0
+email-validator==2.1.0
 requests==2.31.0
 python-dotenv==1.0.0
 gunicorn==21.2.0
@@ -480,12 +596,67 @@ gunicorn==21.2.0
 |---------|---------|------|-----|
 | frankfurter.app | Currency exchange rates | Free | https://www.frankfurter.app |
 | Tailwind CSS CDN | UI styling | Free | https://cdn.tailwindcss.com |
+| Alpine.js CDN | Dropdown interactions | Free | https://cdn.jsdelivr.net/npm/alpinejs |
 
 ---
 
-## 9. Development Workflow
+## 9. Security
 
-### 9.1 Setup Steps
+### 9.1 Authentication Security
+
+- **Password hashing**: werkzeug PBKDF2:SHA256
+- **Minimum password length**: 8 characters
+- **Session cookies**: HTTPOnly, Secure (production), SameSite=Lax
+
+### 9.2 Rate Limiting
+
+| Route | Limit |
+|-------|-------|
+| POST /login | 10/minute |
+| POST /register | 5/minute |
+
+### 9.3 Security Headers (Production)
+
+```python
+response.headers['X-Frame-Options'] = 'DENY'
+response.headers['X-Content-Type-Options'] = 'nosniff'
+response.headers['X-XSS-Protection'] = '1; mode=block'
+response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+response.headers['Content-Security-Policy'] = "default-src 'self' ..."
+response.headers['Strict-Transport-Security'] = 'max-age=31536000'
+```
+
+### 9.4 HTTPS Enforcement
+
+Production automatically redirects HTTP to HTTPS via `X-Forwarded-Proto` header check.
+
+### 9.5 Data Isolation
+
+**Critical**: Every database query MUST filter by `household_id`:
+
+```python
+# CORRECT - Isolated to current household
+Transaction.query.filter_by(
+    household_id=get_current_household_id(),
+    month_year=month
+).all()
+
+# WRONG - Leaks data between households
+Transaction.query.filter_by(month_year=month).all()
+```
+
+### 9.6 Invitation Security
+
+- 48-character random tokens (secrets.token_urlsafe)
+- 7-day expiration
+- One-time use only
+- Tokens invalidated after acceptance
+
+---
+
+## 10. Development Workflow
+
+### 10.1 Setup Steps
 
 ```bash
 # 1. Navigate to project
@@ -506,47 +677,34 @@ python app.py
 open http://localhost:5000
 ```
 
-### 9.2 Implementation Status
+### 10.2 Implementation Status
 
-**✅ Backend Foundation (Completed)**
-- ✅ Project structure set up
-- ✅ Database models created (models.py with Transaction and Settlement models)
-- ✅ Flask routes implemented (app.py with CRUD operations and settlement endpoints)
-- ✅ Utility functions built (utils.py with reconciliation and currency conversion)
-
-**✅ Frontend UI (Completed)**
-- ✅ Base template with Tailwind CSS
-- ✅ Transaction entry form on main page
-- ✅ Transaction list view with data attributes
-- ✅ Reconciliation page with category breakdown
-- ✅ Edit modal dialog component
-
-**✅ Interactivity (Completed)**
-- ✅ JavaScript for AJAX form submission (no page reload)
-- ✅ Modal-based editing implementation
-- ✅ Delete confirmation and functionality
-- ✅ Month selector for viewing different periods
-- ✅ Currency conversion with CAD → USD
-
-**✅ Testing & Production (Completed)**
-- ✅ Application renamed to "Zhang Estate Expense Tracker"
-- ✅ Personalized display names (Bibi/Pi)
+**✅ v1.0 - Core Features (Completed)**
+- ✅ Project structure and database models
+- ✅ Transaction CRUD operations
+- ✅ Currency conversion (CAD → USD)
+- ✅ Monthly reconciliation calculations
 - ✅ CSV export functionality
-- ✅ Production configuration for Render.com
-- ✅ Git repository initialized and pushed to GitHub
-- ✅ Deployment guide created (DEPLOYMENT.md)
 
-**✅ Settlement Tracking (Completed - January 2026)**
-- ✅ Settlement table added to database schema
-- ✅ POST /settlement endpoint to mark month as settled
-- ✅ DELETE /settlement/<month> endpoint to unsettle month
-- ✅ Settlement validation on all transaction endpoints (add/edit/delete)
-- ✅ Locked month UI on index page (disabled form, locked buttons)
-- ✅ Settlement tracking UI on reconciliation page
-- ✅ JavaScript functions for marking settled and unsettling
-- ✅ Database migration tested (Settlement table created successfully)
+**✅ v1.2 - Settlement Tracking (Completed)**
+- ✅ Settlement table and month locking
+- ✅ Locked month UI (disabled forms)
+- ✅ Unsettle functionality
 
-### 9.3 Testing Checklist
+**✅ v2.0 - Multi-User & Multi-Household (Completed)**
+- ✅ User authentication (registration, login, logout)
+- ✅ Flask-Login session management
+- ✅ Multi-household support with switching
+- ✅ Email invitation system with secure tokens
+- ✅ Household management (create, settings, leave)
+- ✅ Dynamic member display names per household
+- ✅ Data isolation by household_id
+- ✅ Rate limiting on auth routes (Flask-Limiter)
+- ✅ Security headers (CSP, X-Frame-Options, HSTS)
+- ✅ HTTPS enforcement in production
+- ✅ CSRF protection on all forms
+
+### 10.3 Testing Checklist
 
 **Core Functionality:**
 - ✅ Can add transaction manually
@@ -574,9 +732,9 @@ open http://localhost:5000
 
 ---
 
-## 10. Deployment
+## 11. Deployment
 
-### 10.1 Production Platform: Render.com ✅
+### 11.1 Production Platform: Render.com
 
 **Current Status**: Code is production-ready and pushed to GitHub at https://github.com/yilunzh/household_finance
 
@@ -629,23 +787,30 @@ app.run(debug=debug_mode, host='0.0.0.0', port=port)
 - Size: 1GB (enough for thousands of transactions)
 - Database file: `/opt/render/project/src/data/database.db`
 
-### 10.2 Environment Variables
+### 11.2 Environment Variables
 
 **Required for Production:**
 
 | Variable | Value | Notes |
 |----------|-------|-------|
-| `FLASK_ENV` | `production` | Disables debug mode, uses production database path |
-| `SECRET_KEY` | Auto-generated by Render | Flask session encryption key |
-| `PORT` | Set by Render automatically | Web server port (do not manually set) |
+| `FLASK_ENV` | `production` | Disables debug mode, enables security features |
+| `SECRET_KEY` | 64-char hex string | Flask session encryption key |
+| `SITE_URL` | `https://your-app.onrender.com` | Base URL for invitation links |
 
-**Optional:**
+**Email Configuration (Optional - for invitations):**
 
 | Variable | Value | Notes |
 |----------|-------|-------|
-| `PYTHON_VERSION` | `3.9.18` | Specify Python version for Render |
+| `MAIL_SERVER` | `smtp.gmail.com` | SMTP server |
+| `MAIL_PORT` | `587` | TLS port |
+| `MAIL_USE_TLS` | `True` | Enable TLS |
+| `MAIL_USERNAME` | Your email | SMTP username |
+| `MAIL_PASSWORD` | App-specific password | For Gmail, create at myaccount.google.com |
+| `MAIL_DEFAULT_SENDER` | `noreply@example.com` | From address |
 
-### 10.3 Deployment Steps
+**Note:** If email is not configured, invitation links are displayed on-screen instead of emailed.
+
+### 11.3 Deployment Steps
 
 See `DEPLOYMENT.md` for complete step-by-step instructions including:
 1. Render account creation
@@ -659,7 +824,7 @@ See `DEPLOYMENT.md` for complete step-by-step instructions including:
 
 ---
 
-## 11. Success Criteria
+## 12. Success Criteria
 
 The MVP is considered successful when:
 
@@ -671,29 +836,31 @@ The MVP is considered successful when:
 
 ---
 
-## 12. Future Enhancements
+## 13. Future Enhancements
 
-### Phase 2 (After 1-2 months of use)
+### Phase 3 (Next)
+- Password reset flow
+- Email verification on signup
+- Two-factor authentication
 - Smart categorization rules
 - Bulk CSV import
-- Historical reconciliation view
 - Transaction search/filter
 
-### Phase 3 (Advanced)
+### Phase 4 (Advanced)
 - PDF bank statement parsing
 - Receipt photo upload
 - Spending trends charts
 - Custom split percentages
+- Audit log of changes
 
-### Phase 4 (Enterprise)
+### Phase 5 (Enterprise)
 - Banking API integration (Plaid)
-- Multi-user support
 - Mobile app
 - Automated monthly settlements
 
 ---
 
-## 13. Cost Breakdown
+## 14. Cost Breakdown
 
 | Item | Cost | Notes |
 |------|------|-------|
@@ -706,9 +873,9 @@ The MVP is considered successful when:
 
 ---
 
-## 14. Key Code Snippets
+## 15. Key Code Snippets
 
-### 14.1 Exchange Rate Function
+### 15.1 Exchange Rate Function
 
 ```python
 # utils.py
@@ -738,7 +905,7 @@ def get_exchange_rate(from_curr, to_curr, date):
     return get_current_exchange_rate(from_curr, to_curr)
 ```
 
-### 14.2 Reconciliation Calculation
+### 15.2 Reconciliation Calculation
 
 ```python
 # utils.py
@@ -840,16 +1007,18 @@ def format_settlement(me_balance, wife_balance):
 
 ---
 
-**Document Version**: 1.2 (Updated to include Settlement Tracking feature)
-**Last Updated**: January 6, 2026
-**Author**: Claude (Sonnet 4.5)
-**GitHub Repository**: https://github.com/yilunzh/household_finance
-**Deployment Guide**: See DEPLOYMENT.md for production deployment instructions
+---
 
-**Recent Updates (v1.2):**
-- Added Settlement table to database schema
-- Added POST /settlement and DELETE /settlement/<month> endpoints
-- Implemented month locking feature to prevent modifications to settled months
-- Added settlement tracking UI to reconciliation page
-- Added locked month UI to main transaction page
-- All settlement features tested and verified
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | Jan 2026 | Initial MVP - single tenant, hardcoded users |
+| 1.2 | Jan 2026 | Added settlement tracking and month locking |
+| 2.0 | Jan 2026 | Multi-user auth, multi-household, invitations, security |
+
+---
+
+**Document Version**: 2.0
+**Last Updated**: January 7, 2026
+**GitHub Repository**: https://github.com/yilunzh/household_finance
