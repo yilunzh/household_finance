@@ -157,6 +157,11 @@ Transaction.query.filter_by(household_id=get_current_household_id(), ...)
 Transaction.query.filter_by(...)
 ```
 
+## CI/CD
+
+- **Security Review**: All PRs trigger an automated Claude security review via GitHub Actions
+- Review checks: auth, data isolation, injection attacks, input validation, security headers
+
 ## Common Gotchas
 
 1. **Port 5001**: Avoids macOS AirPlay conflict on port 5000
