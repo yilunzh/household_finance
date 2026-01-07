@@ -162,6 +162,24 @@ Transaction.query.filter_by(...)
 - **Security Review**: All PRs trigger an automated Claude security review via GitHub Actions
 - Review checks: auth, data isolation, injection attacks, input validation, security headers
 
+## Claude Code Workflow
+
+### Documentation Updates
+After completing a feature, trigger SPEC.md updates by saying:
+- `/spec-update`
+- "feature complete"
+- "update spec"
+- "update documentation"
+
+The Stop hook gathers context (git changes, conversation, plan) and prompts for documentation updates.
+
+### Hooks
+Custom hooks are in `.claude/hooks/`:
+- `spec-update-check.py` - Triggers SPEC.md updates on key phrases
+- `sync-structure.py` - Generates project tree for SPEC.md
+
+See `docs/archive/HOOKS_SPEC_UPDATE.md` for details.
+
 ## Common Gotchas
 
 1. **Port 5001**: Avoids macOS AirPlay conflict on port 5000
@@ -170,6 +188,7 @@ Transaction.query.filter_by(...)
 4. **Currency direction**: System converts CAD→USD, not USD→CAD
 5. **Session management**: `current_household_id` stored in Flask session
 6. **Rate limiting**: Auth routes have request limits (10 login/min, 5 register/min)
+7. **Render persistent disk**: `FLASK_ENV=production` must be set or database uses ephemeral storage and gets wiped on deploy
 
 ## Testing
 
@@ -190,13 +209,16 @@ python tests/test_phase4_sync.py
 
 ## Production Deployment (Render)
 
+**CRITICAL**: `FLASK_ENV=production` must be set for persistent disk to work!
+Without it, the app uses `instance/database.db` (ephemeral) instead of `/data/database.db` (persistent).
+
 1. Set environment variables:
-   - `FLASK_ENV=production`
+   - `FLASK_ENV=production` ← **Required for persistent disk**
    - `SECRET_KEY=<generate-secure-key>`
    - `SITE_URL=https://your-app.onrender.com`
    - Configure `MAIL_*` for email invitations
 
-2. Database persists in `instance/database.db`
+2. Database persists in `/data/database.db` (requires persistent disk mount at `/data`)
 
 3. Security features activate automatically in production mode
 
@@ -215,10 +237,17 @@ docs/
 ├── SPEC.md                    # Technical specification (source of truth)
 ├── DEPLOYMENT.md              # Production deployment guide
 ├── archive/
-│   └── AUTHENTICATION_PLAN.md # Completed implementation plan
+│   ├── AUTHENTICATION_PLAN.md # Completed implementation plan
+│   └── HOOKS_SPEC_UPDATE.md   # SPEC.md auto-update hook docs
 └── testing/
     ├── TESTING_PHASE3.md      # Phase 3 testing notes
     └── TESTING_PHASE4.md      # Phase 4 testing notes
+
+.claude/                       # Claude Code configuration
+├── settings.json              # MCP servers and hooks config
+└── hooks/                     # Custom hooks
+    ├── spec-update-check.py   # SPEC.md update trigger
+    └── sync-structure.py      # Project tree generator
 
 tests/                         # Python test scripts
 ├── test_auth.py               # Authentication unit tests

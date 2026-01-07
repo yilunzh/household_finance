@@ -1,18 +1,36 @@
 {% extends "base.html" %}
 
-{% block title %}Invite to Household - Household Expense Tracker{% endblock %}
+{% block title %}Invite Partner - Lucky Ledger{% endblock %}
 
 {% block content %}
-<div class="max-w-lg mx-auto">
-    <div class="bg-white rounded-xl shadow-lg p-8">
-        <h2 class="text-2xl font-bold text-gray-800 mb-2">Invite Partner</h2>
-        <p class="text-gray-600 mb-6">Send an email invitation to add someone to your household "{{ household.name }}".</p>
+<div class="max-w-lg mx-auto animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-lg border border-warm-200 p-8 relative overflow-hidden">
+        <!-- Decorative corner -->
+        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-terracotta-100 to-transparent rounded-bl-full opacity-60"></div>
 
-        <form method="POST" action="{{ url_for('send_invitation') }}" class="space-y-6">
+        <!-- Illustration -->
+        <div class="flex justify-center mb-6 relative">
+            <svg class="w-24 h-24 text-terracotta-400" viewBox="0 0 100 100" fill="none">
+                <!-- Envelope -->
+                <rect x="15" y="30" width="70" height="50" rx="4" stroke="currentColor" stroke-width="3" fill="none"/>
+                <path d="M15 35L50 60L85 35" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- Hearts floating -->
+                <path d="M25 20C25 17 22 15 20 18C19 20 19 24 25 28C31 24 31 20 30 18C28 15 25 17 25 20Z" fill="currentColor" opacity="0.4"/>
+                <path d="M75 15C75 13 73 12 72 13C71.5 14 71.5 16 75 18C78.5 16 78.5 14 78 13C77 12 75 13 75 15Z" fill="currentColor" opacity="0.3"/>
+                <path d="M60 25C60 23 58 22 57 23C56.5 24 56.5 26 60 28C63.5 26 63.5 24 63 23C62 22 60 23 60 25Z" fill="currentColor" opacity="0.35"/>
+            </svg>
+        </div>
+
+        <h2 class="text-2xl font-bold font-display text-center text-warm-800 mb-2">Invite Your Partner 💌</h2>
+        <p class="text-center text-warm-500 mb-8">
+            Send an invitation to join "{{ household.name }}"
+        </p>
+
+        <form method="POST" action="{{ url_for('send_invitation') }}" class="space-y-5">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <div>
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                <label for="email" class="block text-sm font-semibold text-warm-700 mb-2">
                     Partner's Email Address
                 </label>
                 <input
@@ -22,15 +40,18 @@
                     required
                     autocomplete="email"
                     placeholder="partner@example.com"
-                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    class="w-full px-4 py-3 bg-cream-50 border-2 border-warm-200 rounded-xl
+                           focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                           placeholder-warm-400 text-warm-800 transition-all duration-200"
                 >
-                <p class="mt-2 text-sm text-gray-500">
-                    They will receive an email with a link to join your household.
+                <p class="mt-2 text-sm text-warm-400 flex items-center gap-1">
+                    <span>📧</span>
+                    <span>They'll receive an email with a link to join</span>
                 </p>
             </div>
 
             <div>
-                <label for="display_name" class="block text-sm font-medium text-gray-700 mb-2">
+                <label for="display_name" class="block text-sm font-semibold text-warm-700 mb-2">
                     Display Name (optional)
                 </label>
                 <input
@@ -39,36 +60,47 @@
                     name="display_name"
                     placeholder="e.g., Alex, Partner"
                     maxlength="50"
-                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    class="w-full px-4 py-3 bg-cream-50 border-2 border-warm-200 rounded-xl
+                           focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                           placeholder-warm-400 text-warm-800 transition-all duration-200"
                 >
-                <p class="mt-2 text-sm text-gray-500">
-                    How their name will appear in this household. They can change this later.
+                <p class="mt-2 text-sm text-warm-400 flex items-center gap-1">
+                    <span>✨</span>
+                    <span>How their name will appear (they can change it later)</span>
                 </p>
             </div>
 
             <button
                 type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+                class="w-full bg-terracotta-500 text-white py-3.5 px-4 rounded-xl
+                       hover:bg-terracotta-600 active:bg-terracotta-700
+                       focus:ring-4 focus:ring-terracotta-200
+                       font-semibold text-lg shadow-sm hover:shadow-md
+                       transform hover:-translate-y-0.5 active:translate-y-0
+                       transition-all duration-200"
             >
-                Send Invitation
+                Send Invitation 💌
             </button>
         </form>
 
         {% if pending_invitations %}
-        <div class="mt-8 pt-6 border-t border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Pending Invitations</h3>
+        <div class="mt-8 pt-6 border-t border-warm-100">
+            <h3 class="text-lg font-semibold text-warm-700 mb-4 flex items-center gap-2">
+                <span>📨</span>
+                <span>Pending Invitations</span>
+            </h3>
             <div class="space-y-3">
                 {% for invite in pending_invitations %}
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-xl">
                     <div>
-                        <span class="font-medium text-gray-700">{{ invite.email }}</span>
-                        <span class="text-sm text-gray-500 ml-2">
+                        <span class="font-medium text-warm-700">{{ invite.email }}</span>
+                        <span class="text-sm text-warm-400 ml-2">
                             (sent {{ invite.created_at.strftime('%b %d, %Y') }})
                         </span>
                     </div>
                     <form method="POST" action="{{ url_for('cancel_invitation', invitation_id=invite.id) }}" class="inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="text-sm text-red-600 hover:text-red-800">
+                        <button type="submit" class="text-sm text-rose-500 hover:text-rose-600 font-medium transition-colors">
                             Cancel
                         </button>
                     </form>
@@ -78,15 +110,18 @@
         </div>
         {% endif %}
 
-        <div class="mt-6 text-center">
-            <a href="/" class="text-gray-600 hover:text-gray-900">&larr; Back to Transactions</a>
+        <div class="mt-8 text-center">
+            <a href="/" class="text-warm-500 hover:text-terracotta-600 font-medium transition-colors">
+                ← Back to Transactions
+            </a>
         </div>
     </div>
 
     {% if not mail_configured %}
-    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <p class="text-sm text-yellow-800">
-            <strong>Note:</strong> Email is not configured. The invitation link will be displayed on the next page instead of being emailed.
+    <div class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+        <p class="text-sm text-amber-700 flex items-center gap-2">
+            <span>💡</span>
+            <span><strong>Note:</strong> Email not configured. The invitation link will be displayed instead of emailed.</span>
         </p>
     </div>
     {% endif %}

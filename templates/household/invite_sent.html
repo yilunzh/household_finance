@@ -1,68 +1,103 @@
 {% extends "base.html" %}
 
-{% block title %}Invitation Sent - Household Expense Tracker{% endblock %}
+{% block title %}Invitation Sent - Lucky Ledger{% endblock %}
 
 {% block content %}
-<div class="max-w-lg mx-auto">
-    <div class="bg-white rounded-xl shadow-lg p-8 text-center">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+<div class="max-w-lg mx-auto animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-lg border border-warm-200 p-8 text-center relative overflow-hidden">
+        <!-- Decorative corners -->
+        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-sage-100 to-transparent rounded-bl-full opacity-50"></div>
+        <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-terracotta-100 to-transparent rounded-tr-full opacity-40"></div>
+
+        <!-- Success illustration - flying envelope with hearts -->
+        <div class="flex justify-center mb-6 relative">
+            <svg class="w-28 h-28 text-sage-400" viewBox="0 0 100 100" fill="none">
+                <!-- Envelope flying -->
+                <rect x="20" y="35" width="60" height="40" rx="4" stroke="currentColor" stroke-width="3" fill="none" transform="rotate(-5 50 55)"/>
+                <path d="M22 40L50 58L78 40" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" transform="rotate(-5 50 55)"/>
+                <!-- Motion lines -->
+                <path d="M10 50L5 50" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+                <path d="M12 58L6 60" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+                <path d="M12 42L6 40" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+                <!-- Hearts -->
+                <path d="M75 20C75 16 70 13 67 17C65 20 65 26 75 32C85 26 85 20 83 17C80 13 75 16 75 20Z" fill="currentColor" opacity="0.4" class="animate-bounce-gentle"/>
+                <path d="M88 35C88 33 86 32 85 33C84.5 34 84.5 36 88 38C91.5 36 91.5 34 91 33C90 32 88 33 88 35Z" fill="currentColor" opacity="0.3"/>
+                <path d="M65 12C65 10 63 9 62 10C61.5 11 61.5 13 65 15C68.5 13 68.5 11 68 10C67 9 65 10 65 12Z" fill="currentColor" opacity="0.35"/>
+                <!-- Sparkles -->
+                <circle cx="90" cy="25" r="2" fill="currentColor" opacity="0.5"/>
+                <circle cx="60" cy="8" r="1.5" fill="currentColor" opacity="0.4"/>
             </svg>
         </div>
 
-        <h2 class="text-2xl font-bold text-gray-800 mb-2">Invitation Sent!</h2>
+        <h2 class="text-2xl font-bold font-display text-warm-800 mb-2">Invitation Sent! 🎉</h2>
 
         {% if email_sent %}
-            <p class="text-gray-600 mb-6">
-                An invitation email has been sent to <strong>{{ email }}</strong>.
-                They can click the link in the email to join your household.
+            <p class="text-warm-600 mb-6">
+                We've sent an invitation to <strong class="text-terracotta-600">{{ email }}</strong>.
+                <br>They can click the link to join your household!
             </p>
         {% else %}
-            <p class="text-gray-600 mb-4">
-                Email is not configured, so please share this invitation link manually with <strong>{{ email }}</strong>:
+            <p class="text-warm-600 mb-4">
+                Share this invitation link with <strong class="text-terracotta-600">{{ email }}</strong>:
             </p>
-            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <div class="bg-cream-50 rounded-2xl p-4 mb-6 border border-warm-200">
                 <input
                     type="text"
                     readonly
                     value="{{ invite_url }}"
                     id="invite-link"
-                    class="w-full px-3 py-2 border border-gray-300 rounded text-sm font-mono bg-white"
+                    class="w-full px-3 py-2.5 bg-white border-2 border-warm-200 rounded-xl text-sm font-mono text-warm-700"
                 >
                 <button
                     onclick="copyInviteLink()"
-                    class="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    class="mt-3 text-sm text-terracotta-600 hover:text-terracotta-700 font-semibold transition-colors flex items-center justify-center gap-1 mx-auto"
                 >
-                    Copy to clipboard
+                    <span>📋</span>
+                    <span>Copy to clipboard</span>
                 </button>
             </div>
         {% endif %}
 
-        <div class="bg-blue-50 rounded-lg p-4 mb-6 text-left">
-            <h3 class="font-semibold text-blue-800 mb-2">What happens next?</h3>
-            <ul class="text-sm text-blue-700 space-y-1">
-                <li>1. Your partner receives the invitation</li>
-                <li>2. They click the link and create an account (or log in)</li>
-                <li>3. They automatically join your household</li>
-                <li>4. You can start tracking expenses together!</li>
+        <div class="bg-terracotta-50 rounded-2xl p-5 mb-6 text-left border border-terracotta-100">
+            <h3 class="font-semibold text-terracotta-700 mb-3 flex items-center gap-2">
+                <span>✨</span>
+                <span>What happens next?</span>
+            </h3>
+            <ul class="text-sm text-terracotta-600 space-y-2">
+                <li class="flex items-start gap-2">
+                    <span>1️⃣</span>
+                    <span>Your partner receives the invitation</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span>2️⃣</span>
+                    <span>They click the link and sign up (or log in)</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span>3️⃣</span>
+                    <span>They automatically join your household</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span>4️⃣</span>
+                    <span>Start tracking expenses together! 🎉</span>
+                </li>
             </ul>
         </div>
 
-        <p class="text-sm text-gray-500 mb-4">
-            The invitation expires in 7 days.
+        <p class="text-sm text-warm-400 mb-6 flex items-center justify-center gap-1">
+            <span>⏰</span>
+            <span>The invitation expires in 7 days</span>
         </p>
 
         <div class="flex gap-4 justify-center">
             <a
                 href="{{ url_for('send_invitation') }}"
-                class="px-4 py-2 text-blue-600 hover:text-blue-800 font-medium"
+                class="px-5 py-2.5 border-2 border-warm-200 text-warm-600 hover:border-terracotta-300 hover:text-terracotta-600 rounded-xl font-semibold transition-all duration-200"
             >
-                Send Another Invitation
+                Send Another
             </a>
             <a
                 href="/"
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                class="px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-xl font-semibold transition-all duration-200"
             >
                 Back to Transactions
             </a>
@@ -75,11 +110,10 @@ function copyInviteLink() {
     const linkInput = document.getElementById('invite-link');
     linkInput.select();
     navigator.clipboard.writeText(linkInput.value).then(() => {
-        alert('Link copied to clipboard!');
+        alert('Link copied to clipboard! 📋');
     }).catch(() => {
-        // Fallback for older browsers
         document.execCommand('copy');
-        alert('Link copied to clipboard!');
+        alert('Link copied to clipboard! 📋');
     });
 }
 </script>

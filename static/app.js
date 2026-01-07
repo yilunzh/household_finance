@@ -1,5 +1,6 @@
 /**
- * JavaScript for Zhang Estate Expense Tracker
+ * JavaScript for Lucky Ledger
+ * Warm & Friendly Theme
  */
 
 // Helper function to get CSRF token
@@ -38,10 +39,7 @@ async function handleTransactionSubmit(event) {
         const result = await response.json();
 
         if (result.success) {
-            // Show success message
-            showMessage('Transaction added successfully!', 'success');
-
-            // Reload page to show new transaction
+            showMessage('Transaction added! ✨', 'success');
             setTimeout(() => {
                 window.location.reload();
             }, 500);
@@ -53,11 +51,22 @@ async function handleTransactionSubmit(event) {
     }
 }
 
-// Delete transaction
+// Delete transaction with custom confirm modal if available
 async function deleteTransaction(transactionId) {
-    if (!confirm('Are you sure you want to delete this transaction?')) {
-        return;
+    // Use custom confirm if available, otherwise fallback to native
+    let confirmed = false;
+
+    if (typeof showConfirm === 'function') {
+        confirmed = await showConfirm(
+            'Delete Transaction?',
+            'Are you sure? This action cannot be undone.',
+            'danger'
+        );
+    } else {
+        confirmed = confirm('Are you sure you want to delete this transaction?');
     }
+
+    if (!confirmed) return;
 
     try {
         const response = await fetch(`/transaction/${transactionId}`, {
@@ -70,20 +79,36 @@ async function deleteTransaction(transactionId) {
         const result = await response.json();
 
         if (result.success) {
-            // Remove row from table
+            // Animate element removal (table row or mobile card)
             const row = document.querySelector(`tr[data-id="${transactionId}"]`);
-            if (row) {
-                row.remove();
-            }
+            const card = document.querySelector(`div[data-id="${transactionId}"]`);
 
-            showMessage('Transaction deleted successfully!', 'success');
+            [row, card].forEach(el => {
+                if (el) {
+                    el.style.transition = 'opacity 0.3s, transform 0.3s';
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateX(-10px)';
+                    setTimeout(() => el.remove(), 300);
+                }
+            });
+
+            // Use toast if available
+            if (typeof showToast === 'function') {
+                showToast('Deleted!', 'Transaction removed', 'success');
+            } else {
+                showMessage('Transaction deleted! 🗑️', 'success');
+            }
 
             // Reload page after a short delay to update summary
             setTimeout(() => {
                 window.location.reload();
-            }, 500);
+            }, 800);
         } else {
-            showMessage('Error: ' + result.error, 'error');
+            if (typeof showToast === 'function') {
+                showToast('Oops!', result.error, 'error');
+            } else {
+                showMessage('Error: ' + result.error, 'error');
+            }
         }
     } catch (error) {
         showMessage('Error deleting transaction: ' + error.message, 'error');
@@ -92,24 +117,29 @@ async function deleteTransaction(transactionId) {
 
 // Open edit modal and populate with transaction data
 function openEditModal(transactionId) {
-    const row = document.querySelector(`tr[data-id="${transactionId}"]`);
-    if (!row) {
-        console.error('Transaction row not found');
+    // Try table row first (desktop), then card div (mobile)
+    let element = document.querySelector(`tr[data-id="${transactionId}"]`);
+    if (!element) {
+        element = document.querySelector(`div[data-id="${transactionId}"]`);
+    }
+    if (!element) {
+        console.error('Transaction element not found');
         return;
     }
 
     // Populate form fields from data attributes
     document.getElementById('edit-transaction-id').value = transactionId;
-    document.getElementById('edit-date').value = row.dataset.date;
-    document.getElementById('edit-merchant').value = row.dataset.merchant;
-    document.getElementById('edit-amount').value = row.dataset.amount;
-    document.getElementById('edit-currency').value = row.dataset.currency;
-    document.getElementById('edit-paid-by').value = row.dataset.paidBy;
-    document.getElementById('edit-category').value = row.dataset.category;
-    document.getElementById('edit-notes').value = row.dataset.notes || '';
+    document.getElementById('edit-date').value = element.dataset.date;
+    document.getElementById('edit-merchant').value = element.dataset.merchant;
+    document.getElementById('edit-amount').value = element.dataset.amount;
+    document.getElementById('edit-currency').value = element.dataset.currency;
+    document.getElementById('edit-paid-by').value = element.dataset.paidBy;
+    document.getElementById('edit-category').value = element.dataset.category;
+    document.getElementById('edit-notes').value = element.dataset.notes || '';
 
-    // Show modal
-    document.getElementById('edit-modal').classList.remove('hidden');
+    // Show modal with animation
+    const modal = document.getElementById('edit-modal');
+    modal.classList.remove('hidden');
 
     // Focus merchant field for quick editing
     setTimeout(() => {
@@ -120,7 +150,8 @@ function openEditModal(transactionId) {
 
 // Close edit modal
 function closeEditModal() {
-    document.getElementById('edit-modal').classList.add('hidden');
+    const modal = document.getElementById('edit-modal');
+    modal.classList.add('hidden');
 
     const messageDiv = document.getElementById('edit-form-message');
     if (messageDiv) {
@@ -159,7 +190,7 @@ async function handleEditSubmit(event) {
         const result = await response.json();
 
         if (result.success) {
-            showEditMessage('Transaction updated successfully!', 'success');
+            showEditMessage('Updated! ✓', 'success');
             setTimeout(() => {
                 closeEditModal();
                 window.location.reload();
@@ -172,15 +203,20 @@ async function handleEditSubmit(event) {
     }
 }
 
-// Show message in edit modal
+// Show message in edit modal - warm theme
 function showEditMessage(message, type) {
     const messageDiv = document.getElementById('edit-form-message');
     if (!messageDiv) return;
 
-    messageDiv.className = `mt-4 p-4 rounded-lg ${
-        type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-    }`;
-    messageDiv.textContent = message;
+    // Warm theme classes
+    const classes = type === 'success'
+        ? 'bg-sage-50 text-sage-700 border border-sage-200'
+        : 'bg-rose-50 text-rose-600 border border-rose-200';
+
+    const icon = type === 'success' ? '✅' : '😟';
+
+    messageDiv.className = `mt-4 p-4 rounded-2xl flex items-center gap-2 animate-fade-in ${classes}`;
+    messageDiv.innerHTML = `<span>${icon}</span><span>${message}</span>`;
     messageDiv.classList.remove('hidden');
 
     setTimeout(() => {
@@ -188,15 +224,20 @@ function showEditMessage(message, type) {
     }, 5000);
 }
 
-// Show status message
+// Show status message - warm theme
 function showMessage(message, type) {
     const messageDiv = document.getElementById('form-message');
     if (!messageDiv) return;
 
-    messageDiv.className = `mt-4 p-4 rounded-lg ${
-        type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-    }`;
-    messageDiv.textContent = message;
+    // Warm theme classes
+    const classes = type === 'success'
+        ? 'bg-sage-50 text-sage-700 border border-sage-200'
+        : 'bg-rose-50 text-rose-600 border border-rose-200';
+
+    const icon = type === 'success' ? '✅' : '😟';
+
+    messageDiv.className = `mt-4 p-4 rounded-2xl flex items-center gap-2 animate-slide-up ${classes}`;
+    messageDiv.innerHTML = `<span>${icon}</span><span>${message}</span>`;
     messageDiv.classList.remove('hidden');
 
     // Auto-hide after 5 seconds
@@ -207,7 +248,7 @@ function showMessage(message, type) {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Zhang Estate Expense Tracker loaded');
+    console.log('Lucky Ledger loaded 🏠');
 
     // Auto-focus merchant field for quick entry
     const merchantField = document.getElementById('merchant');
@@ -235,9 +276,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Close modal on Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            const modal = document.getElementById('edit-modal');
-            if (modal && !modal.classList.contains('hidden')) {
+            const editModal = document.getElementById('edit-modal');
+            if (editModal && !editModal.classList.contains('hidden')) {
                 closeEditModal();
+            }
+
+            const confirmModal = document.getElementById('confirm-modal');
+            if (confirmModal && !confirmModal.classList.contains('hidden')) {
+                confirmModal.classList.add('hidden');
             }
         }
     });
@@ -248,6 +294,16 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.addEventListener('click', function(e) {
             if (e.target === modal) {
                 closeEditModal();
+            }
+        });
+    }
+
+    // Close confirm modal when clicking backdrop
+    const confirmModal = document.getElementById('confirm-modal');
+    if (confirmModal) {
+        confirmModal.addEventListener('click', function(e) {
+            if (e.target === confirmModal) {
+                confirmModal.classList.add('hidden');
             }
         });
     }

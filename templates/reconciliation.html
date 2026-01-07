@@ -1,18 +1,25 @@
 {% extends "base.html" %}
 
-{% block title %}Reconciliation - Household Expense Tracker{% endblock %}
+{% block title %}Reconciliation - Lucky Ledger{% endblock %}
 
 {% block content %}
 <!-- Header with Month Selector -->
-<div class="mb-6 flex justify-between items-center">
-    <div class="flex items-center gap-4">
-        <a href="/" class="text-blue-600 hover:text-blue-800 font-medium">&larr; Back to Transactions</a>
+<div class="mb-6 space-y-4">
+    <!-- Top row: Back link and Month selector -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <a href="/" class="text-terracotta-600 hover:text-terracotta-700 font-medium flex items-center gap-1 transition-colors">
+            <span>←</span>
+            <span>Back to Transactions</span>
+        </a>
 
-        <div class="flex items-center gap-2 ml-4">
-            <label for="month-select" class="text-gray-700 font-medium">Month:</label>
+        <div class="flex items-center gap-3">
+            <span class="text-xl">📅</span>
+            <label for="month-select" class="text-warm-700 font-semibold text-sm">Month:</label>
             <select
                 id="month-select"
-                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="px-3 py-2 bg-white border-2 border-warm-200 rounded-xl text-warm-800 font-medium text-sm
+                       focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                       cursor-pointer transition-all duration-200"
                 onchange="window.location.href = '/reconciliation/' + this.value"
             >
                 {% if not months %}
@@ -28,79 +35,116 @@
         </div>
     </div>
 
+    <!-- Export button -->
     <a
         href="/export/{{ month }}"
-        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+        class="inline-flex px-4 py-2 bg-sage-500 text-white rounded-xl font-semibold text-sm
+               hover:bg-sage-600 active:bg-sage-700
+               shadow-sm hover:shadow-md
+               transition-all duration-200 items-center gap-2"
     >
-        Export CSV
+        <span>📥</span>
+        <span>Export CSV</span>
     </a>
 </div>
 
 <!-- Locked Month Banner (show if settled) -->
 {% if settlement %}
-<div class="mb-6 bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-        </svg>
+<div class="mb-6 bg-sage-50 border-2 border-sage-300 rounded-2xl p-5 flex items-center justify-between gap-4 animate-fade-in">
+    <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-sage-100 rounded-xl flex items-center justify-center">
+            <span class="text-2xl">✅</span>
+        </div>
         <div>
-            <p class="font-semibold text-yellow-800">This month is locked</p>
-            <p class="text-sm text-yellow-700">Settled on {{ settlement.settled_date.strftime('%Y-%m-%d') }}. Transactions cannot be added or modified.</p>
+            <p class="font-bold text-sage-800 text-lg">This month is settled!</p>
+            <p class="text-sm text-sage-700">Locked on {{ settlement.settled_date.strftime('%B %d, %Y') }}</p>
         </div>
     </div>
 </div>
 {% endif %}
 
 <!-- Settlement Card (Most Important) -->
-<div class="mb-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg shadow-lg border-2 border-green-200 p-8">
-    <h2 class="text-2xl font-bold mb-4 text-gray-800">Monthly Settlement</h2>
+<div class="mb-6 bg-gradient-to-br from-sage-50 via-white to-cream-100 rounded-2xl sm:rounded-3xl shadow-lg border-2 border-sage-200 p-5 sm:p-8 relative overflow-hidden">
+    <!-- Decorative elements -->
+    <div class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-sage-100 to-transparent rounded-bl-full opacity-50"></div>
+    <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-terracotta-100 to-transparent rounded-tr-full opacity-30"></div>
+
+    <h2 class="text-2xl font-bold font-display mb-6 text-warm-800 flex items-center gap-3 relative">
+        <span class="text-3xl">🤝</span>
+        <span>Monthly Settlement</span>
+    </h2>
 
     {% if settlement %}
-        <!-- Settlement is recorded -->
-        <div class="space-y-3">
-            <div class="text-4xl font-bold text-green-700 mb-2">
-                {{ settlement.settlement_message }}
-            </div>
-            <div class="flex items-center gap-6 text-sm text-gray-600">
+        <!-- Settlement is recorded - Celebration state -->
+        <div class="space-y-4 relative">
+            <!-- Highfive illustration -->
+            <div class="flex items-center gap-6">
+                <svg class="w-20 h-20 text-sage-400" viewBox="0 0 100 100" fill="none">
+                    <!-- Two hands high-fiving -->
+                    <path d="M30 60L45 45L50 50L35 65Z" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M25 55L20 35L25 30L35 50Z" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M70 60L55 45L50 50L65 65Z" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M75 55L80 35L75 30L65 50Z" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Impact lines -->
+                    <path d="M50 35L50 25" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M40 40L32 32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M60 40L68 32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <!-- Sparkles -->
+                    <circle cx="50" cy="20" r="3" fill="currentColor" opacity="0.5"/>
+                    <circle cx="30" cy="28" r="2" fill="currentColor" opacity="0.4"/>
+                    <circle cx="70" cy="28" r="2" fill="currentColor" opacity="0.4"/>
+                </svg>
                 <div>
-                    <span class="font-semibold">Settled on:</span>
-                    {{ settlement.settled_date.strftime('%B %d, %Y') }}
-                </div>
-                <div>
-                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full font-medium">Locked</span>
+                    <div class="text-3xl font-bold text-sage-700 mb-1">
+                        {{ settlement.settlement_message }}
+                    </div>
+                    <div class="flex items-center gap-4 text-sm text-warm-600">
+                        <span class="px-3 py-1 bg-sage-100 text-sage-700 rounded-full font-medium flex items-center gap-1">
+                            <span>🔒</span>
+                            <span>Settled</span>
+                        </span>
+                    </div>
                 </div>
             </div>
-            <div class="pt-4 border-t border-gray-200 mt-4">
+
+            <div class="pt-6 border-t border-sage-200 mt-6">
                 <button
                     id="unsettle-btn"
                     onclick="unsettleMonth()"
-                    class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-medium text-sm"
+                    class="px-5 py-2.5 bg-amber-500 text-white rounded-xl font-semibold
+                           hover:bg-amber-600 shadow-sm hover:shadow-md
+                           transition-all duration-200"
                 >
-                    Unsettle Month
+                    🔓 Unlock Month
                 </button>
-                <p class="text-xs text-gray-600 mt-2">
-                    Unlock this month to allow adding or editing transactions.
+                <p class="text-sm text-warm-400 mt-2">
+                    Need to make changes? Unlock to edit transactions.
                 </p>
             </div>
         </div>
     {% else %}
         <!-- Settlement not yet recorded -->
-        <div class="space-y-4">
-            <div class="text-4xl font-bold text-green-700">
+        <div class="space-y-6 relative">
+            <div class="text-4xl font-bold text-sage-700">
                 {{ summary.settlement }}
             </div>
 
             {% if summary.breakdown %}
-            <div class="pt-4 border-t border-green-200">
+            <div class="pt-6 border-t border-sage-200">
                 <button
                     id="mark-settled-btn"
                     onclick="markMonthSettled()"
-                    class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold shadow-md hover:shadow-lg"
+                    class="px-8 py-3.5 bg-sage-500 text-white rounded-xl font-semibold text-lg
+                           hover:bg-sage-600 active:bg-sage-700
+                           shadow-md hover:shadow-lg
+                           transform hover:-translate-y-0.5 active:translate-y-0
+                           transition-all duration-200 flex items-center gap-2"
                 >
-                    Mark {{ month }} as Settled
+                    <span>✓</span>
+                    <span>Mark {{ month }} as Settled</span>
                 </button>
-                <p class="text-sm text-gray-600 mt-2">
-                    Once marked as settled, this month will be locked and transactions cannot be modified.
+                <p class="text-sm text-warm-400 mt-3">
+                    This will lock the month so no changes can be made.
                 </p>
             </div>
             {% endif %}
@@ -111,20 +155,23 @@
 <!-- Summary Cards -->
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
     <!-- What We Paid -->
-    <div class="bg-white rounded-lg shadow-sm border p-6">
-        <h3 class="text-lg font-semibold mb-4 text-gray-800">What We Paid</h3>
-        <div class="space-y-3">
+    <div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-4 sm:p-6">
+        <h3 class="text-lg font-bold font-display mb-4 text-warm-800 flex items-center gap-2">
+            <span>💸</span>
+            <span>What We Paid</span>
+        </h3>
+        <div class="space-y-4">
             {% for member in household_members %}
-            <div class="flex justify-between items-center">
-                <span class="text-gray-600">{{ member.display_name }} paid:</span>
-                <span class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.user_payments.get(member.user_id, 0)) }} USD</span>
+            <div class="flex justify-between items-center p-3 bg-cream-50 rounded-xl">
+                <span class="text-warm-600 font-medium">{{ member.display_name }}</span>
+                <span class="text-xl font-bold text-warm-800">${{ "%.2f"|format(summary.user_payments.get(member.user_id, 0)) }}</span>
             </div>
             {% endfor %}
-            <div class="pt-3 border-t">
+            <div class="pt-4 border-t border-warm-100">
                 <div class="flex justify-between items-center">
-                    <span class="font-semibold text-gray-700">Total Expenses:</span>
-                    <span class="text-2xl font-bold text-blue-600">
-                        ${{ "%.2f"|format(summary.user_payments.values()|sum) }} USD
+                    <span class="font-semibold text-warm-700">Total Expenses</span>
+                    <span class="text-2xl font-bold text-terracotta-600">
+                        ${{ "%.2f"|format(summary.user_payments.values()|sum) }}
                     </span>
                 </div>
             </div>
@@ -132,20 +179,23 @@
     </div>
 
     <!-- What We Owe -->
-    <div class="bg-white rounded-lg shadow-sm border p-6">
-        <h3 class="text-lg font-semibold mb-4 text-gray-800">What We Should Pay</h3>
-        <div class="space-y-3">
+    <div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-4 sm:p-6">
+        <h3 class="text-lg font-bold font-display mb-4 text-warm-800 flex items-center gap-2">
+            <span>📊</span>
+            <span>What We Should Pay</span>
+        </h3>
+        <div class="space-y-4">
             {% for member in household_members %}
-            <div class="flex justify-between items-center">
-                <span class="text-gray-600">{{ member.display_name }}'s share:</span>
-                <span class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.user_shares.get(member.user_id, 0)) }} USD</span>
+            <div class="flex justify-between items-center p-3 bg-cream-50 rounded-xl">
+                <span class="text-warm-600 font-medium">{{ member.display_name }}'s share</span>
+                <span class="text-xl font-bold text-warm-800">${{ "%.2f"|format(summary.user_shares.get(member.user_id, 0)) }}</span>
             </div>
             {% endfor %}
-            <div class="pt-3 border-t">
+            <div class="pt-4 border-t border-warm-100">
                 <div class="flex justify-between items-center">
-                    <span class="font-semibold text-gray-700">Total:</span>
-                    <span class="text-2xl font-bold text-blue-600">
-                        ${{ "%.2f"|format(summary.user_shares.values()|sum) }} USD
+                    <span class="font-semibold text-warm-700">Total</span>
+                    <span class="text-2xl font-bold text-terracotta-600">
+                        ${{ "%.2f"|format(summary.user_shares.values()|sum) }}
                     </span>
                 </div>
             </div>
@@ -154,93 +204,104 @@
 </div>
 
 <!-- Category Breakdown -->
-<div class="bg-white rounded-lg shadow-sm border p-6 mb-6">
-    <h3 class="text-lg font-semibold mb-4 text-gray-800">Breakdown by Category</h3>
+<div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-6 mb-6">
+    <h3 class="text-lg font-bold font-display mb-4 text-warm-800 flex items-center gap-2">
+        <span>📁</span>
+        <span>Breakdown by Category</span>
+    </h3>
 
     {% if summary.breakdown %}
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead>
-                    <tr class="border-b">
-                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Category</th>
-                        <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">Count</th>
-                        <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700">Total (USD)</th>
-                        <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700">Percentage</th>
+                    <tr class="border-b-2 border-warm-100">
+                        <th class="text-left py-3 px-4 text-sm font-bold text-warm-600">Category</th>
+                        <th class="text-center py-3 px-4 text-sm font-bold text-warm-600">Count</th>
+                        <th class="text-right py-3 px-4 text-sm font-bold text-warm-600">Total (USD)</th>
+                        <th class="text-right py-3 px-4 text-sm font-bold text-warm-600">Percentage</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% set total_amount = summary.user_payments.values()|sum %}
                     {% for item in summary.breakdown %}
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="py-3 px-4 text-sm">
-                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                    <tr class="border-b border-warm-100 hover:bg-cream-100 transition-colors duration-150">
+                        <td class="py-3.5 px-4">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                                         bg-terracotta-100 text-terracotta-700 border border-terracotta-200">
                                 {{ item.category_name }}
                             </span>
                         </td>
-                        <td class="py-3 px-4 text-sm text-center">{{ item.count }}</td>
-                        <td class="py-3 px-4 text-sm text-right font-semibold">
+                        <td class="py-3.5 px-4 text-center text-warm-700">{{ item.count }}</td>
+                        <td class="py-3.5 px-4 text-right font-semibold text-warm-800">
                             ${{ "%.2f"|format(item.total) }}
                         </td>
-                        <td class="py-3 px-4 text-sm text-right">
+                        <td class="py-3.5 px-4 text-right text-warm-600">
                             {{ "%.1f"|format((item.total / total_amount) * 100) }}%
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
                 <tfoot>
-                    <tr class="border-t-2 font-bold">
-                        <td class="py-3 px-4 text-sm">Total</td>
-                        <td class="py-3 px-4 text-sm text-center">
+                    <tr class="border-t-2 border-warm-200 font-bold">
+                        <td class="py-3.5 px-4 text-warm-800">Total</td>
+                        <td class="py-3.5 px-4 text-center text-warm-800">
                             {{ summary.breakdown | sum(attribute='count') }}
                         </td>
-                        <td class="py-3 px-4 text-sm text-right">
+                        <td class="py-3.5 px-4 text-right text-terracotta-600">
                             ${{ "%.2f"|format(total_amount) }}
                         </td>
-                        <td class="py-3 px-4 text-sm text-right">100.0%</td>
+                        <td class="py-3.5 px-4 text-right text-warm-600">100.0%</td>
                     </tr>
                 </tfoot>
             </table>
         </div>
     {% else %}
-        <p class="text-gray-500 text-center py-4">No transactions for this month.</p>
+        <div class="text-center py-8">
+            <span class="text-4xl mb-3 block">📭</span>
+            <p class="text-warm-400">No transactions for this month.</p>
+        </div>
     {% endif %}
 </div>
 
-<!-- Transaction Details (Optional) -->
-<div class="bg-white rounded-lg shadow-sm border p-6">
-    <h3 class="text-lg font-semibold mb-4 text-gray-800">Transaction Details</h3>
+<!-- Transaction Details -->
+<div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-4 sm:p-6">
+    <h3 class="text-lg font-bold font-display mb-4 text-warm-800 flex items-center gap-2">
+        <span>📋</span>
+        <span>Transaction Details</span>
+    </h3>
 
     {% if transactions %}
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead>
-                    <tr class="border-b">
-                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date</th>
-                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Merchant</th>
-                        <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700">Amount</th>
-                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Paid By</th>
-                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Category</th>
+                    <tr class="border-b-2 border-warm-100">
+                        <th class="text-left py-3 px-4 text-sm font-bold text-warm-600">Date</th>
+                        <th class="text-left py-3 px-4 text-sm font-bold text-warm-600">Merchant</th>
+                        <th class="text-right py-3 px-4 text-sm font-bold text-warm-600">Amount</th>
+                        <th class="text-left py-3 px-4 text-sm font-bold text-warm-600">Paid By</th>
+                        <th class="text-left py-3 px-4 text-sm font-bold text-warm-600">Category</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for txn in transactions %}
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="py-3 px-4 text-sm">{{ txn.date.strftime('%Y-%m-%d') }}</td>
-                        <td class="py-3 px-4 text-sm">
-                            <div>{{ txn.merchant }}</div>
+                    <tr class="border-b border-warm-100 hover:bg-cream-100 transition-colors duration-150">
+                        <td class="py-3.5 px-4 text-sm text-warm-700">{{ txn.date.strftime('%Y-%m-%d') }}</td>
+                        <td class="py-3.5 px-4">
+                            <div class="font-medium text-warm-800">{{ txn.merchant }}</div>
                             {% if txn.notes %}
-                            <div class="text-xs text-gray-500">{{ txn.notes }}</div>
+                            <div class="text-xs text-warm-400 mt-0.5">{{ txn.notes }}</div>
                             {% endif %}
                         </td>
-                        <td class="py-3 px-4 text-sm text-right">
-                            <div>${{ "%.2f"|format(txn.amount) }} {{ txn.currency }}</div>
+                        <td class="py-3.5 px-4 text-right">
+                            <div class="font-semibold text-warm-800">${{ "%.2f"|format(txn.amount) }} {{ txn.currency }}</div>
                             {% if txn.currency == 'CAD' %}
-                            <div class="text-xs text-gray-500">${{ "%.2f"|format(txn.amount_in_usd) }} USD</div>
+                            <div class="text-xs text-warm-400">${{ "%.2f"|format(txn.amount_in_usd) }} USD</div>
                             {% endif %}
                         </td>
-                        <td class="py-3 px-4 text-sm">{{ txn.get_paid_by_display_name() }}</td>
-                        <td class="py-3 px-4 text-sm">
-                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                        <td class="py-3.5 px-4 text-sm text-warm-700">{{ txn.get_paid_by_display_name() }}</td>
+                        <td class="py-3.5 px-4">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                                         bg-terracotta-100 text-terracotta-700 border border-terracotta-200">
                                 {{ txn.get_category_display_name(txn.category) }}
                             </span>
                         </td>
@@ -250,35 +311,40 @@
             </table>
         </div>
 
-        <div class="mt-4 text-sm text-gray-600">
-            Total: {{ transactions|length }} transaction(s)
+        <div class="mt-4 text-sm text-warm-500 flex items-center gap-2">
+            <span>📊</span>
+            <span>Total: {{ transactions|length }} transaction(s)</span>
         </div>
     {% else %}
-        <p class="text-gray-500 text-center py-4">No transactions for this month.</p>
+        <div class="text-center py-8">
+            <span class="text-4xl mb-3 block">📭</span>
+            <p class="text-warm-400">No transactions for this month.</p>
+        </div>
     {% endif %}
 </div>
 
 <!-- Confirm Modal -->
-<div id="confirm-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
+<div id="confirm-modal" class="hidden fixed inset-0 bg-warm-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full transform animate-scale-in border border-warm-200">
         <div class="p-6">
             <div class="flex items-center gap-4 mb-4">
-                <div id="confirm-icon" class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center">
-                    <!-- Icon will be inserted via JS -->
+                <div id="confirm-icon" class="flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center">
                 </div>
-                <h3 id="confirm-title" class="text-xl font-bold text-gray-900"></h3>
+                <h3 id="confirm-title" class="text-xl font-bold font-display text-warm-800"></h3>
             </div>
-            <p id="confirm-message" class="text-gray-600 leading-relaxed mb-6 ml-16"></p>
+            <p id="confirm-message" class="text-warm-600 leading-relaxed mb-6 ml-[4.5rem]"></p>
             <div class="flex gap-3 justify-end">
                 <button
                     id="confirm-cancel"
-                    class="px-5 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
+                    class="px-5 py-2.5 border-2 border-warm-200 text-warm-600 rounded-xl
+                           hover:bg-warm-50 transition-all duration-200 font-semibold"
                 >
                     Cancel
                 </button>
                 <button
                     id="confirm-ok"
-                    class="px-5 py-2.5 text-white rounded-lg hover:opacity-90 transition font-medium shadow-md"
+                    class="px-5 py-2.5 text-white rounded-xl font-semibold shadow-md
+                           transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
                 >
                     Confirm
                 </button>
@@ -288,16 +354,15 @@
 </div>
 
 <!-- Toast Notification -->
-<div id="toast-notification" class="hidden fixed top-4 right-4 z-50 transform transition-all duration-300">
-    <div class="bg-white rounded-xl shadow-2xl border-2 p-4 flex items-center gap-3 min-w-[320px]">
-        <div id="toast-icon" class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center">
-            <!-- Icon will be inserted via JS -->
+<div id="toast-notification" class="hidden fixed top-4 right-4 z-50 animate-slide-up">
+    <div class="bg-white rounded-2xl shadow-2xl border-2 p-4 flex items-center gap-3 min-w-[320px]">
+        <div id="toast-icon" class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center">
         </div>
         <div class="flex-1">
-            <p id="toast-title" class="font-semibold text-gray-900"></p>
-            <p id="toast-message" class="text-sm text-gray-600"></p>
+            <p id="toast-title" class="font-bold text-warm-800"></p>
+            <p id="toast-message" class="text-sm text-warm-500"></p>
         </div>
-        <button onclick="hideToast()" class="text-gray-400 hover:text-gray-600 ml-2">
+        <button onclick="hideToast()" class="text-warm-300 hover:text-warm-500 ml-2 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
@@ -307,7 +372,6 @@
 
 {% block extra_scripts %}
 <script>
-// Custom confirm modal
 function showConfirm(title, message, type = 'warning') {
     return new Promise((resolve) => {
         const modal = document.getElementById('confirm-modal');
@@ -317,25 +381,21 @@ function showConfirm(title, message, type = 'warning') {
         const okBtn = document.getElementById('confirm-ok');
         const cancelBtn = document.getElementById('confirm-cancel');
 
-        // Set content
         titleEl.textContent = title;
         messageEl.innerHTML = message.replace(/\n/g, '<br>');
 
-        // Set icon and colors based on type
         if (type === 'warning') {
-            iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-yellow-100';
-            iconEl.innerHTML = '<svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
-            okBtn.className = 'px-5 py-2.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-medium shadow-md';
+            iconEl.className = 'flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center bg-amber-100';
+            iconEl.innerHTML = '<span class="text-2xl">⚠️</span>';
+            okBtn.className = 'px-5 py-2.5 bg-amber-500 text-white rounded-xl font-semibold shadow-md transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 hover:bg-amber-600';
         } else if (type === 'success') {
-            iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-green-100';
-            iconEl.innerHTML = '<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
-            okBtn.className = 'px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium shadow-md';
+            iconEl.className = 'flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center bg-sage-100';
+            iconEl.innerHTML = '<span class="text-2xl">✅</span>';
+            okBtn.className = 'px-5 py-2.5 bg-sage-500 text-white rounded-xl font-semibold shadow-md transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 hover:bg-sage-600';
         }
 
-        // Show modal
         modal.classList.remove('hidden');
 
-        // Handle button clicks
         const handleOk = () => {
             modal.classList.add('hidden');
             okBtn.removeEventListener('click', handleOk);
@@ -355,7 +415,6 @@ function showConfirm(title, message, type = 'warning') {
     });
 }
 
-// Custom toast notification
 function showToast(title, message, type = 'success') {
     const toast = document.getElementById('toast-notification');
     const titleEl = document.getElementById('toast-title');
@@ -363,28 +422,21 @@ function showToast(title, message, type = 'success') {
     const iconEl = document.getElementById('toast-icon');
     const containerEl = toast.querySelector('div');
 
-    // Set content
     titleEl.textContent = title;
     messageEl.textContent = message;
 
-    // Set icon and colors based on type
     if (type === 'success') {
-        containerEl.className = 'bg-white rounded-xl shadow-2xl border-2 border-green-200 p-4 flex items-center gap-3 min-w-[320px]';
-        iconEl.className = 'flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-green-100';
-        iconEl.innerHTML = '<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+        containerEl.className = 'bg-white rounded-2xl shadow-2xl border-2 border-sage-200 p-4 flex items-center gap-3 min-w-[320px]';
+        iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center bg-sage-100';
+        iconEl.innerHTML = '<span class="text-2xl">✅</span>';
     } else if (type === 'error') {
-        containerEl.className = 'bg-white rounded-xl shadow-2xl border-2 border-red-200 p-4 flex items-center gap-3 min-w-[320px]';
-        iconEl.className = 'flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-red-100';
-        iconEl.innerHTML = '<svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+        containerEl.className = 'bg-white rounded-2xl shadow-2xl border-2 border-rose-200 p-4 flex items-center gap-3 min-w-[320px]';
+        iconEl.className = 'flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center bg-rose-100';
+        iconEl.innerHTML = '<span class="text-2xl">😟</span>';
     }
 
-    // Show toast
     toast.classList.remove('hidden');
-
-    // Auto hide after 4 seconds
-    setTimeout(() => {
-        hideToast();
-    }, 4000);
+    setTimeout(() => { hideToast(); }, 4000);
 }
 
 function hideToast() {
@@ -393,19 +445,18 @@ function hideToast() {
 
 async function markMonthSettled() {
     const month = '{{ month }}';
-
     const confirmed = await showConfirm(
         'Mark as Settled?',
-        `Are you sure you want to mark ${month} as settled?\n\nThis will lock the month (no more edits/additions/deletions) and record the current settlement amount.\n\nYou can unsettle it later if needed.`,
+        `Lock ${month} and record the settlement?\n\nYou can unlock it later if needed.`,
         'success'
     );
 
     if (!confirmed) return;
 
     const btn = document.getElementById('mark-settled-btn');
-    const originalText = btn.textContent;
+    const originalText = btn.innerHTML;
     btn.disabled = true;
-    btn.textContent = 'Marking as settled...';
+    btn.innerHTML = '<span>Processing...</span>';
     btn.classList.add('opacity-50', 'cursor-not-allowed');
 
     try {
@@ -418,66 +469,60 @@ async function markMonthSettled() {
         const result = await response.json();
 
         if (result.success) {
-            showToast('Success', `Month ${month} has been marked as settled!`, 'success');
+            showToast('Settled!', `${month} is now locked`, 'success');
             setTimeout(() => window.location.reload(), 1500);
         } else {
-            showToast('Error', result.error, 'error');
+            showToast('Oops!', result.error, 'error');
             btn.disabled = false;
-            btn.textContent = originalText;
+            btn.innerHTML = originalText;
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
         }
     } catch (error) {
         showToast('Error', error.message, 'error');
         btn.disabled = false;
-        btn.textContent = originalText;
+        btn.innerHTML = originalText;
         btn.classList.remove('opacity-50', 'cursor-not-allowed');
     }
 }
 
 async function unsettleMonth() {
     const month = '{{ month }}';
-
     const confirmed = await showConfirm(
-        'Unsettle Month?',
-        `Are you sure you want to unsettle ${month}?\n\nThis will unlock the month for editing and remove the settlement record.\n\nYou can mark it as settled again later.`,
+        'Unlock Month?',
+        `Unlock ${month} for editing?\n\nYou can lock it again later.`,
         'warning'
     );
 
     if (!confirmed) return;
 
     const btn = document.getElementById('unsettle-btn');
-    const originalText = btn.textContent;
+    const originalText = btn.innerHTML;
     btn.disabled = true;
-    btn.textContent = 'Unsettling...';
+    btn.innerHTML = 'Processing...';
     btn.classList.add('opacity-50', 'cursor-not-allowed');
 
     try {
-        // Get CSRF token from meta tag or cookie
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
-                         document.querySelector('input[name="csrf_token"]')?.value;
-
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
         const response = await fetch(`/settlement/${month}`, {
             method: 'DELETE',
-            headers: {
-                'X-CSRFToken': csrfToken
-            }
+            headers: { 'X-CSRFToken': csrfToken }
         });
 
         const result = await response.json();
 
         if (result.success) {
-            showToast('Success', `Month ${month} has been unsettled and is now unlocked!`, 'success');
+            showToast('Unlocked!', `${month} is now open for changes`, 'success');
             setTimeout(() => window.location.reload(), 1500);
         } else {
-            showToast('Error', result.error, 'error');
+            showToast('Oops!', result.error, 'error');
             btn.disabled = false;
-            btn.textContent = originalText;
+            btn.innerHTML = originalText;
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
         }
     } catch (error) {
         showToast('Error', error.message, 'error');
         btn.disabled = false;
-        btn.textContent = originalText;
+        btn.innerHTML = originalText;
         btn.classList.remove('opacity-50', 'cursor-not-allowed');
     }
 }

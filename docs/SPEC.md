@@ -1,6 +1,6 @@
 # Zhang Estate Expense Tracker - Technical Specification
 
-**Version**: 2.0 (Multi-User, Multi-Household)
+**Version**: 2.2 (Warm Theme Redesign)
 **Date**: January 2026
 **Status**: Implemented and Deployed to Production
 
@@ -55,7 +55,7 @@ Web-based expense tracking tool with automatic reconciliation calculations, focu
 | CSRF Protection | Flask-WTF | Form protection, CSRF tokens |
 | Email | Flask-Mail | Sending invitation emails |
 | Rate Limiting | Flask-Limiter | Protecting authentication routes |
-| Frontend | HTML + Tailwind CSS + Alpine.js | Simple, no build tools needed |
+| Frontend | HTML + Tailwind CSS + Alpine.js | Simple, no build tools needed, warm theme |
 | Currency API | frankfurter.app | Free, no signup required |
 | Production Server | Gunicorn | WSGI server for production deployment |
 | Hosting | Render.com | $7/month with persistent disk, auto-deploy from GitHub |
@@ -374,6 +374,47 @@ def get_exchange_rate(from_curr, to_curr, date):
 
 ## 6. User Interface Design
 
+### 6.0 Visual Theme
+
+**Design Direction**: Warm & Playful - suitable for family/couple household tracking
+
+**Color Palette** (via Tailwind custom config):
+
+| Color | Hex | Usage |
+|-------|-----|-------|
+| Terracotta | `#C67B5C` | Primary buttons, accents, CTAs |
+| Sage | `#8FAE8B` | Success states, positive amounts, settlement |
+| Warm Cream | `#FDF8F3` | Page backgrounds |
+| Soft Amber | `#E5A853` | Warnings, highlights, locked states |
+| Dusty Rose | `#D4A5A5` | Error states, danger zone |
+| Warm Gray | `#3D3833` | Primary text |
+
+**Typography** (Google Fonts via CDN):
+- **Display**: Quicksand - rounded, friendly headings
+- **Body**: Nunito - clean, readable body text
+
+**Custom SVG Illustrations** (inline, hand-drawn style):
+- Cozy house with chimney (login page)
+- Two people waving (register page)
+- House with piggy bank (empty transactions state)
+- Flying envelope with hearts (invitation sent)
+- Confused envelope with question marks (invalid invite)
+- High-five hands (settled month celebration)
+- Open door with welcome mat (accept invitation)
+
+**Animations** (Tailwind keyframes):
+- `animate-bounce-gentle` - Subtle float for illustrations
+- `animate-wiggle` - Playful shake for success icons
+- `animate-fade-in` - Modal backdrops
+- `animate-slide-up` - Modal content, toasts
+- `animate-scale-in` - Pop-in effect
+- Button hover: `-translate-y-0.5` lift effect
+
+**Emoji Accents**:
+- Navigation: 📊 Transactions, 🤝 Reconciliation, 💌 Invite, ⚙️ Settings
+- Categories: 🤝 Shared, 👤 Personal, 💝 Pays for Partner
+- Status indicators: 🔒 Locked, ✅ Settled
+
 ### 6.1 Main Page (`/`)
 
 **Layout:**
@@ -601,8 +642,9 @@ gunicorn==21.2.0
 | Service | Purpose | Cost | URL |
 |---------|---------|------|-----|
 | frankfurter.app | Currency exchange rates | Free | https://www.frankfurter.app |
-| Tailwind CSS CDN | UI styling | Free | https://cdn.tailwindcss.com |
+| Tailwind CSS CDN | UI styling with custom config | Free | https://cdn.tailwindcss.com |
 | Alpine.js CDN | Dropdown interactions | Free | https://cdn.jsdelivr.net/npm/alpinejs |
+| Google Fonts | Typography (Quicksand, Nunito) | Free | https://fonts.googleapis.com |
 
 ---
 
@@ -709,6 +751,16 @@ open http://localhost:5000
 - ✅ Security headers (CSP, X-Frame-Options, HSTS)
 - ✅ HTTPS enforcement in production
 - ✅ CSRF protection on all forms
+
+**✅ v2.2 - Frontend Redesign (Completed)**
+- ✅ Warm & playful visual theme (terracotta, sage, cream palette)
+- ✅ Custom typography (Quicksand + Nunito via Google Fonts)
+- ✅ Custom hand-drawn SVG illustrations for all pages
+- ✅ Tailwind custom config with extended color palette
+- ✅ CSS animations (bounce, wiggle, fade-in, slide-up, scale-in)
+- ✅ Button hover lift effects and smooth transitions
+- ✅ Emoji accents throughout UI
+- ✅ Redesigned all 12 templates with cohesive warm theme
 
 ### 10.3 Testing Checklist
 
@@ -1023,9 +1075,10 @@ def format_settlement(me_balance, wife_balance):
 | 1.2 | Jan 2026 | Added settlement tracking and month locking |
 | 2.0 | Jan 2026 | Multi-user auth, multi-household, invitations, security |
 | 2.1 | Jan 2026 | Added Claude Code Stop hook for automated SPEC.md documentation updates |
+| 2.2 | Jan 2026 | Frontend redesign: warm theme, custom illustrations, animations |
 
 ---
 
-**Document Version**: 2.1
+**Document Version**: 2.2
 **Last Updated**: January 7, 2026
 **GitHub Repository**: https://github.com/yilunzh/household_finance

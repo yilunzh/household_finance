@@ -241,12 +241,11 @@ def main():
         trigger_phrase
     )
 
-    # Output JSON response
+    # Output JSON response for Stop hook
+    # Stop hooks use systemMessage at top level, not hookSpecificOutput
     response = {
-        "hookSpecificOutput": {
-            "hookEventName": "Stop",
-            "additionalContext": prompt
-        }
+        "continue": True,
+        "systemMessage": prompt
     }
 
     print(json.dumps(response))

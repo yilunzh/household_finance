@@ -4,64 +4,362 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{% block title %}Household Expense Tracker{% endblock %}</title>
+    <title>{% block title %}Lucky Ledger{% endblock %}</title>
+
+    <!-- Google Fonts - Warm, friendly typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        terracotta: {
+                            50: '#FEF5F2',
+                            100: '#FCEAE4',
+                            200: '#F8D5C9',
+                            300: '#E8A88B',
+                            400: '#D88B6A',
+                            500: '#C67B5C',
+                            600: '#A85D3F',
+                            700: '#8A4A32',
+                            800: '#6D3B28',
+                            900: '#5A3222'
+                        },
+                        sage: {
+                            50: '#F4F8F4',
+                            100: '#E8F1E7',
+                            200: '#D1E3CF',
+                            300: '#B8D4B5',
+                            400: '#9FC59C',
+                            500: '#8FAE8B',
+                            600: '#5F7D5B',
+                            700: '#4A6247',
+                            800: '#3A4D38',
+                            900: '#2D3D2C'
+                        },
+                        cream: {
+                            50: '#FFFDFB',
+                            100: '#FDF8F3',
+                            200: '#F5EDE4',
+                            300: '#EBE3D8',
+                            400: '#DDD2C4'
+                        },
+                        amber: {
+                            50: '#FFFBF0',
+                            100: '#FEF5DC',
+                            200: '#F5D590',
+                            300: '#E5A853',
+                            400: '#D49A3D',
+                            500: '#C08830'
+                        },
+                        rose: {
+                            50: '#FDF6F6',
+                            100: '#FAE9E9',
+                            200: '#EDCFCF',
+                            300: '#D4A5A5',
+                            400: '#C28585',
+                            500: '#B87070',
+                            600: '#9A5555'
+                        },
+                        warm: {
+                            50: '#FAF9F7',
+                            100: '#EBE7E1',
+                            200: '#DDD7CE',
+                            300: '#C9C2B8',
+                            400: '#A69E92',
+                            500: '#8B8279',
+                            600: '#6E665D',
+                            700: '#5C554D',
+                            800: '#454038',
+                            900: '#3D3833'
+                        }
+                    },
+                    fontFamily: {
+                        'display': ['Quicksand', 'sans-serif'],
+                        'body': ['Nunito', 'sans-serif']
+                    },
+                    animation: {
+                        'bounce-gentle': 'bounce-gentle 2s ease-in-out infinite',
+                        'wiggle': 'wiggle 0.5s ease-in-out',
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'scale-in': 'scaleIn 0.2s ease-out'
+                    },
+                    keyframes: {
+                        'bounce-gentle': {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' }
+                        },
+                        'wiggle': {
+                            '0%, 100%': { transform: 'rotate(0deg)' },
+                            '25%': { transform: 'rotate(-3deg)' },
+                            '75%': { transform: 'rotate(3deg)' }
+                        },
+                        'fadeIn': {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        'slideUp': {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        'scaleIn': {
+                            '0%': { opacity: '0', transform: 'scale(0.95)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <!-- Alpine.js for dropdown interactions -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    <!-- Custom styles -->
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+        }
+        h1, h2, h3, .font-display {
+            font-family: 'Quicksand', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F5EDE4;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #C9C2B8;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #A69E92;
+        }
+    </style>
+
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-gray-50">
+<body class="bg-cream-100 text-warm-900">
     <!-- Navigation -->
-    <nav class="bg-white shadow-sm border-b">
+    <nav class="bg-white/80 backdrop-blur-sm shadow-sm border-b border-warm-200 sticky top-0 z-40">
         <div class="max-w-6xl mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-gray-800">
-                    Household Expense Tracker
-                </h1>
+                <!-- Logo -->
+                <a href="/" class="flex items-center gap-2 group">
+                    <!-- Lucky Ledger Cat Logo -->
+                    <svg viewBox="0 0 50 40" class="w-10 h-8">
+                        <!-- Left cat head -->
+                        <circle cx="15" cy="22" r="12" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+                        <!-- Left cat ears -->
+                        <path d="M6 14 L9 4 L14 12" fill="#FEF3C7" stroke="#D97706" stroke-width="1"/>
+                        <path d="M16 12 L21 4 L24 14" fill="#FEF3C7" stroke="#D97706" stroke-width="1"/>
+                        <path d="M7 12 L9 6 L12 11" fill="#FBBF24"/>
+                        <path d="M18 11 L20 6 L22 12" fill="#FBBF24"/>
+                        <!-- Left cat eyes -->
+                        <path d="M9 21 Q12 17 15 21" stroke="#78350F" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                        <path d="M15 21 Q18 17 21 21" stroke="#78350F" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                        <!-- Left cat nose & mouth -->
+                        <ellipse cx="15" cy="25" rx="2" ry="1.5" fill="#F59E0B"/>
+                        <path d="M13 28 Q15 31 17 28" stroke="#78350F" stroke-width="1" fill="none" stroke-linecap="round"/>
+                        <!-- Right cat head -->
+                        <circle cx="35" cy="22" r="11" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+                        <!-- Right cat ears -->
+                        <path d="M27 15 L30 5 L35 13" fill="#FEF3C7" stroke="#D97706" stroke-width="1"/>
+                        <path d="M35 13 L40 5 L43 15" fill="#FEF3C7" stroke="#D97706" stroke-width="1"/>
+                        <path d="M28 13 L30 7 L33 12" fill="#FBBF24"/>
+                        <path d="M37 12 L39 7 L41 13" fill="#FBBF24"/>
+                        <!-- Flower on right ear -->
+                        <circle cx="42" cy="10" r="3" fill="#F9A8D4"/>
+                        <circle cx="42" cy="10" r="1.2" fill="#FBBF24"/>
+                        <!-- Right cat eyes with lashes -->
+                        <path d="M30 21 Q33 17 36 21" stroke="#78350F" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                        <path d="M34 21 Q37 17 40 21" stroke="#78350F" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                        <path d="M29 19 L27 16" stroke="#78350F" stroke-width="0.8" stroke-linecap="round"/>
+                        <path d="M39 19 L41 16" stroke="#78350F" stroke-width="0.8" stroke-linecap="round"/>
+                        <!-- Right cat nose & mouth -->
+                        <ellipse cx="35" cy="25" rx="1.8" ry="1.3" fill="#F9A8D4"/>
+                        <path d="M33 27 Q35 30 37 27" stroke="#78350F" stroke-width="1" fill="none" stroke-linecap="round"/>
+                        <!-- Blush -->
+                        <ellipse cx="30" cy="24" rx="2" ry="1" fill="#FECACA" opacity="0.5"/>
+                        <ellipse cx="40" cy="24" rx="2" ry="1" fill="#FECACA" opacity="0.5"/>
+                        <!-- Coin between them -->
+                        <circle cx="25" cy="8" r="6" fill="#F59E0B" stroke="#B45309" stroke-width="1.5"/>
+                        <circle cx="25" cy="8" r="4" fill="none" stroke="#FCD34D" stroke-width="1"/>
+                        <text x="25" y="11" text-anchor="middle" font-size="7" fill="#78350F" font-weight="bold">$</text>
+                    </svg>
+                    <h1 class="text-xl font-bold font-display text-warm-800 group-hover:text-terracotta-600 transition-colors">
+                        Lucky Ledger
+                    </h1>
+                </a>
+
                 <div class="flex items-center gap-6">
-                    <div class="flex gap-4">
-                        <a href="/" class="text-gray-600 hover:text-gray-900 font-medium">Transactions</a>
-                        <a href="/reconciliation" class="text-gray-600 hover:text-gray-900 font-medium">Reconciliation</a>
-                        <a href="/household/invite" class="text-gray-600 hover:text-gray-900 font-medium">Invite</a>
-                        <a href="/household/settings" class="text-gray-600 hover:text-gray-900 font-medium">Settings</a>
+                    <!-- Nav Links -->
+                    <div class="hidden md:flex gap-1">
+                        <a href="/" class="relative px-3 py-2 text-warm-600 hover:text-terracotta-600 font-medium transition-colors group">
+                            <span class="flex items-center gap-1.5">
+                                <span>📊</span>
+                                <span>Transactions</span>
+                            </span>
+                            <span class="absolute bottom-0 left-3 right-3 h-0.5 bg-terracotta-400 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+                        </a>
+                        <a href="/reconciliation" class="relative px-3 py-2 text-warm-600 hover:text-terracotta-600 font-medium transition-colors group">
+                            <span class="flex items-center gap-1.5">
+                                <span>🤝</span>
+                                <span>Reconciliation</span>
+                            </span>
+                            <span class="absolute bottom-0 left-3 right-3 h-0.5 bg-terracotta-400 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+                        </a>
+                        <a href="/household/invite" class="relative px-3 py-2 text-warm-600 hover:text-terracotta-600 font-medium transition-colors group">
+                            <span class="flex items-center gap-1.5">
+                                <span>💌</span>
+                                <span>Invite</span>
+                            </span>
+                            <span class="absolute bottom-0 left-3 right-3 h-0.5 bg-terracotta-400 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+                        </a>
+                        <a href="/household/settings" class="relative px-3 py-2 text-warm-600 hover:text-terracotta-600 font-medium transition-colors group">
+                            <span class="flex items-center gap-1.5">
+                                <span>⚙️</span>
+                                <span>Settings</span>
+                            </span>
+                            <span class="absolute bottom-0 left-3 right-3 h-0.5 bg-terracotta-400 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+                        </a>
                     </div>
+
                     {% if current_user.is_authenticated %}
-                        <div class="flex items-center gap-4 pl-4 border-l border-gray-300">
+                        <!-- Desktop: Full user info -->
+                        <div class="hidden sm:flex items-center gap-3 pl-4 border-l border-warm-200">
                             <!-- Household Switcher -->
                             {% if current_user.household_memberships|length > 1 %}
                             <div class="relative" x-data="{ open: false }">
-                                <button @click="open = !open" class="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
-                                    <span class="font-medium">{{ current_household.name if current_household else 'Select Household' }}</span>
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button @click="open = !open"
+                                        class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-cream-200 hover:bg-cream-300 text-warm-700 text-sm font-medium transition-colors">
+                                    <span>🏡</span>
+                                    <span>{{ current_household.name if current_household else 'Select Household' }}</span>
+                                    <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                     </svg>
                                 </button>
-                                <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border py-1 z-50">
+                                <div x-show="open"
+                                     x-transition:enter="transition ease-out duration-200"
+                                     x-transition:enter-start="opacity-0 scale-95"
+                                     x-transition:enter-end="opacity-100 scale-100"
+                                     x-transition:leave="transition ease-in duration-150"
+                                     x-transition:leave-start="opacity-100 scale-100"
+                                     x-transition:leave-end="opacity-0 scale-95"
+                                     @click.away="open = false"
+                                     class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-lg border border-warm-200 py-2 z-50">
                                     {% for membership in current_user.household_memberships %}
                                     <form method="POST" action="{{ url_for('switch_household', household_id=membership.household.id) }}">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            {{ membership.household.name }}
+                                        <button type="submit" class="flex items-center justify-between w-full px-4 py-2.5 text-sm text-warm-700 hover:bg-cream-100 transition-colors">
+                                            <span class="flex items-center gap-2">
+                                                <span>🏠</span>
+                                                <span>{{ membership.household.name }}</span>
+                                            </span>
                                             {% if current_household and membership.household.id == current_household.id %}
-                                            <span class="text-blue-600">&#10003;</span>
+                                            <span class="text-sage-500 text-lg">✓</span>
                                             {% endif %}
                                         </button>
                                     </form>
                                     {% endfor %}
-                                    <hr class="my-1">
-                                    <a href="{{ url_for('create_household') }}" class="block px-4 py-2 text-sm text-blue-600 hover:bg-gray-100">
-                                        + Create New Household
+                                    <hr class="my-2 border-warm-100">
+                                    <a href="{{ url_for('create_household') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm text-terracotta-600 hover:bg-terracotta-50 transition-colors">
+                                        <span>✨</span>
+                                        <span>Create New Household</span>
                                     </a>
                                 </div>
                             </div>
                             {% else %}
-                            <span class="text-sm text-gray-500">{{ current_household.name if current_household else '' }}</span>
+                            <span class="flex items-center gap-1.5 text-sm text-warm-500">
+                                <span>🏡</span>
+                                <span>{{ current_household.name if current_household else '' }}</span>
+                            </span>
                             {% endif %}
-                            <span class="text-sm text-gray-600">{{ current_user.name }}</span>
-                            <a href="/logout" class="text-sm text-gray-600 hover:text-gray-900 font-medium">Logout</a>
+
+                            <!-- User -->
+                            <div class="flex items-center gap-3">
+                                <span class="text-sm text-warm-600 font-medium">{{ current_user.name }}</span>
+                                <a href="/logout" class="px-3 py-1.5 text-sm text-warm-500 hover:text-rose-500 hover:bg-rose-50 rounded-lg font-medium transition-colors">
+                                    Logout
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Mobile: Compact menu -->
+                        <div class="sm:hidden relative" x-data="{ open: false }">
+                            <button @click="open = !open"
+                                    class="flex items-center gap-2 px-3 py-2 rounded-xl bg-cream-200 hover:bg-cream-300 text-warm-700 font-medium transition-colors">
+                                <span class="text-lg">☰</span>
+                            </button>
+                            <div x-show="open"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 scale-95"
+                                 x-transition:enter-end="opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 scale-100"
+                                 x-transition:leave-end="opacity-0 scale-95"
+                                 @click.away="open = false"
+                                 class="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-lg border border-warm-200 py-2 z-50">
+                                <!-- User info -->
+                                <div class="px-4 py-3 border-b border-warm-100">
+                                    <div class="font-semibold text-warm-800">{{ current_user.name }}</div>
+                                    <div class="text-xs text-warm-400">{{ current_household.name if current_household else '' }}</div>
+                                </div>
+                                <!-- Navigation -->
+                                <div class="py-2">
+                                    <a href="/" class="flex items-center gap-3 px-4 py-2.5 text-sm text-warm-700 hover:bg-cream-100 transition-colors">
+                                        <span>📊</span>
+                                        <span>Transactions</span>
+                                    </a>
+                                    <a href="/reconciliation" class="flex items-center gap-3 px-4 py-2.5 text-sm text-warm-700 hover:bg-cream-100 transition-colors">
+                                        <span>🤝</span>
+                                        <span>Reconciliation</span>
+                                    </a>
+                                    <a href="/household/invite" class="flex items-center gap-3 px-4 py-2.5 text-sm text-warm-700 hover:bg-cream-100 transition-colors">
+                                        <span>💌</span>
+                                        <span>Invite Partner</span>
+                                    </a>
+                                    <a href="/household/settings" class="flex items-center gap-3 px-4 py-2.5 text-sm text-warm-700 hover:bg-cream-100 transition-colors">
+                                        <span>⚙️</span>
+                                        <span>Settings</span>
+                                    </a>
+                                </div>
+                                <!-- Household switcher (if multiple) -->
+                                {% if current_user.household_memberships|length > 1 %}
+                                <div class="border-t border-warm-100 py-2">
+                                    <div class="px-4 py-1 text-xs font-semibold text-warm-400 uppercase">Switch Household</div>
+                                    {% for membership in current_user.household_memberships %}
+                                    <form method="POST" action="{{ url_for('switch_household', household_id=membership.household.id) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="flex items-center justify-between w-full px-4 py-2 text-sm text-warm-700 hover:bg-cream-100 transition-colors">
+                                            <span class="flex items-center gap-2">
+                                                <span>🏠</span>
+                                                <span>{{ membership.household.name }}</span>
+                                            </span>
+                                            {% if current_household and membership.household.id == current_household.id %}
+                                            <span class="text-sage-500">✓</span>
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <!-- Logout -->
+                                <div class="border-t border-warm-100 pt-2">
+                                    <a href="/logout" class="flex items-center gap-3 px-4 py-2.5 text-sm text-rose-500 hover:bg-rose-50 transition-colors">
+                                        <span>👋</span>
+                                        <span>Logout</span>
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     {% endif %}
                 </div>
@@ -70,14 +368,24 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="max-w-6xl mx-auto px-4 py-6">
+    <main class="max-w-6xl mx-auto px-5 sm:px-8 py-6">
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="mb-4 space-y-2">
+                <div class="mb-6 space-y-3">
                     {% for category, message in messages %}
-                        <div class="p-4 rounded-lg {% if category == 'success' %}bg-green-50 text-green-800 border border-green-200{% elif category == 'danger' %}bg-red-50 text-red-800 border border-red-200{% elif category == 'warning' %}bg-yellow-50 text-yellow-800 border border-yellow-200{% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
-                            {{ message }}
+                        <div class="p-4 rounded-2xl flex items-start gap-3 animate-slide-up
+                            {% if category == 'success' %}bg-sage-50 text-sage-800 border border-sage-200
+                            {% elif category == 'danger' %}bg-rose-50 text-rose-600 border border-rose-200
+                            {% elif category == 'warning' %}bg-amber-50 text-amber-500 border border-amber-200
+                            {% else %}bg-terracotta-50 text-terracotta-700 border border-terracotta-200{% endif %}">
+                            <span class="text-lg">
+                                {% if category == 'success' %}✅
+                                {% elif category == 'danger' %}😟
+                                {% elif category == 'warning' %}⚠️
+                                {% else %}💡{% endif %}
+                            </span>
+                            <span class="font-medium">{{ message }}</span>
                         </div>
                     {% endfor %}
                 </div>
@@ -88,8 +396,13 @@
     </main>
 
     <!-- Footer -->
-    <footer class="mt-12 py-6 text-center text-gray-500 text-sm">
-        <p>Household Expense Tracker &copy; 2026</p>
+    <footer class="mt-16 py-8 text-center border-t border-warm-200">
+        <p class="text-warm-400 text-sm flex items-center justify-center gap-2">
+            <span>Made with</span>
+            <span class="text-rose-400">❤️</span>
+            <span>for families everywhere</span>
+        </p>
+        <p class="text-warm-300 text-xs mt-1">Lucky Ledger © 2026</p>
     </footer>
 
     <!-- JavaScript -->
