@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Transactions - Zhang Estate Expense Tracker{% endblock %}
+{% block title %}Transactions - Household Expense Tracker{% endblock %}
 
 {% block content %}
 <!-- Month Selector -->
@@ -57,15 +57,13 @@
 {% if summary %}
 <div class="mb-6 bg-white rounded-lg shadow-sm border p-6">
     <h2 class="text-lg font-semibold mb-4">Month Summary</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-{{ household_members|length + 1 }} gap-4">
+        {% for member in household_members %}
         <div>
-            <p class="text-sm text-gray-600">Bibi paid</p>
-            <p class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.me_paid) }} USD</p>
+            <p class="text-sm text-gray-600">{{ member.display_name }} paid</p>
+            <p class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.user_payments.get(member.user_id, 0)) }} USD</p>
         </div>
-        <div>
-            <p class="text-sm text-gray-600">Pi paid</p>
-            <p class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.wife_paid) }} USD</p>
-        </div>
+        {% endfor %}
         <div>
             <p class="text-sm text-gray-600">Settlement</p>
             <p class="text-xl font-bold text-green-600">{{ summary.settlement }}</p>
@@ -141,8 +139,9 @@
                     name="paid_by"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                    <option value="ME">Bibi</option>
-                    <option value="WIFE">Pi</option>
+                    {% for member in household_members %}
+                    <option value="{{ member.user_id }}">{{ member.display_name }}</option>
+                    {% endfor %}
                 </select>
             </div>
 
@@ -154,10 +153,12 @@
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                     <option value="SHARED">Shared 50/50</option>
-                    <option value="I_PAY_FOR_WIFE">Bibi pays for Pi</option>
-                    <option value="WIFE_PAYS_FOR_ME">Pi pays for Bibi</option>
-                    <option value="PERSONAL_ME">Personal (Bibi)</option>
-                    <option value="PERSONAL_WIFE">Personal (Pi)</option>
+                    {% if household_members|length == 2 %}
+                        <option value="I_PAY_FOR_WIFE">{{ household_members[0].display_name }} pays for {{ household_members[1].display_name }}</option>
+                        <option value="WIFE_PAYS_FOR_ME">{{ household_members[1].display_name }} pays for {{ household_members[0].display_name }}</option>
+                        <option value="PERSONAL_ME">Personal ({{ household_members[0].display_name }})</option>
+                        <option value="PERSONAL_WIFE">Personal ({{ household_members[1].display_name }})</option>
+                    {% endif %}
                 </select>
             </div>
         </form>
@@ -213,7 +214,7 @@
                         data-merchant="{{ txn.merchant }}"
                         data-amount="{{ txn.amount }}"
                         data-currency="{{ txn.currency }}"
-                        data-paid-by="{{ txn.paid_by }}"
+                        data-paid-by="{{ txn.paid_by_user_id }}"
                         data-category="{{ txn.category }}"
                         data-notes="{{ txn.notes or '' }}">
                         <td class="py-3 px-4 text-sm">{{ txn.date.strftime('%Y-%m-%d') }}</td>
@@ -229,10 +230,10 @@
                             <div class="text-xs text-gray-500">${{ "%.2f"|format(txn.amount_in_usd) }} USD</div>
                             {% endif %}
                         </td>
-                        <td class="py-3 px-4 text-sm">{{ txn.get_person_display_name(txn.paid_by) }}</td>
+                        <td class="py-3 px-4 text-sm">{{ txn.get_paid_by_display_name() }}</td>
                         <td class="py-3 px-4 text-sm">
                             <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                                {{ txn.get_category_display_name(txn.category) }}
+                                {{ txn.get_category_display_name(txn.category, household_members) }}
                             </span>
                         </td>
                         <td class="py-3 px-4 text-sm text-right">
@@ -394,8 +395,9 @@
                             name="paid_by"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
-                            <option value="ME">Bibi</option>
-                            <option value="WIFE">Pi</option>
+                            {% for member in household_members %}
+                            <option value="{{ member.user_id }}">{{ member.display_name }}</option>
+                            {% endfor %}
                         </select>
                     </div>
 
@@ -407,10 +409,12 @@
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                             <option value="SHARED">Shared 50/50</option>
-                            <option value="I_PAY_FOR_WIFE">Bibi pays for Pi</option>
-                            <option value="WIFE_PAYS_FOR_ME">Pi pays for Bibi</option>
-                            <option value="PERSONAL_ME">Personal (Bibi)</option>
-                            <option value="PERSONAL_WIFE">Personal (Pi)</option>
+                            {% if household_members|length == 2 %}
+                                <option value="I_PAY_FOR_WIFE">{{ household_members[0].display_name }} pays for {{ household_members[1].display_name }}</option>
+                                <option value="WIFE_PAYS_FOR_ME">{{ household_members[1].display_name }} pays for {{ household_members[0].display_name }}</option>
+                                <option value="PERSONAL_ME">Personal ({{ household_members[0].display_name }})</option>
+                                <option value="PERSONAL_WIFE">Personal ({{ household_members[1].display_name }})</option>
+                            {% endif %}
                         </select>
                     </div>
                 </div>

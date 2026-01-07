@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Reconciliation - Zhang Estate Expense Tracker{% endblock %}
+{% block title %}Reconciliation - Household Expense Tracker{% endblock %}
 
 {% block content %}
 <!-- Header with Month Selector -->
@@ -114,19 +114,17 @@
     <div class="bg-white rounded-lg shadow-sm border p-6">
         <h3 class="text-lg font-semibold mb-4 text-gray-800">What We Paid</h3>
         <div class="space-y-3">
+            {% for member in household_members %}
             <div class="flex justify-between items-center">
-                <span class="text-gray-600">Bibi paid:</span>
-                <span class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.me_paid) }} USD</span>
+                <span class="text-gray-600">{{ member.display_name }} paid:</span>
+                <span class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.user_payments.get(member.user_id, 0)) }} USD</span>
             </div>
-            <div class="flex justify-between items-center">
-                <span class="text-gray-600">Pi paid:</span>
-                <span class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.wife_paid) }} USD</span>
-            </div>
+            {% endfor %}
             <div class="pt-3 border-t">
                 <div class="flex justify-between items-center">
                     <span class="font-semibold text-gray-700">Total Expenses:</span>
                     <span class="text-2xl font-bold text-blue-600">
-                        ${{ "%.2f"|format(summary.me_paid + summary.wife_paid) }} USD
+                        ${{ "%.2f"|format(summary.user_payments.values()|sum) }} USD
                     </span>
                 </div>
             </div>
@@ -137,19 +135,17 @@
     <div class="bg-white rounded-lg shadow-sm border p-6">
         <h3 class="text-lg font-semibold mb-4 text-gray-800">What We Should Pay</h3>
         <div class="space-y-3">
+            {% for member in household_members %}
             <div class="flex justify-between items-center">
-                <span class="text-gray-600">Bibi's share:</span>
-                <span class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.me_share) }} USD</span>
+                <span class="text-gray-600">{{ member.display_name }}'s share:</span>
+                <span class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.user_shares.get(member.user_id, 0)) }} USD</span>
             </div>
-            <div class="flex justify-between items-center">
-                <span class="text-gray-600">Pi's share:</span>
-                <span class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(summary.wife_share) }} USD</span>
-            </div>
+            {% endfor %}
             <div class="pt-3 border-t">
                 <div class="flex justify-between items-center">
                     <span class="font-semibold text-gray-700">Total:</span>
                     <span class="text-2xl font-bold text-blue-600">
-                        ${{ "%.2f"|format(summary.me_share + summary.wife_share) }} USD
+                        ${{ "%.2f"|format(summary.user_shares.values()|sum) }} USD
                     </span>
                 </div>
             </div>
@@ -173,7 +169,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% set total_amount = summary.me_paid + summary.wife_paid %}
+                    {% set total_amount = summary.user_payments.values()|sum %}
                     {% for item in summary.breakdown %}
                     <tr class="border-b hover:bg-gray-50">
                         <td class="py-3 px-4 text-sm">
@@ -242,7 +238,7 @@
                             <div class="text-xs text-gray-500">${{ "%.2f"|format(txn.amount_in_usd) }} USD</div>
                             {% endif %}
                         </td>
-                        <td class="py-3 px-4 text-sm">{{ txn.get_person_display_name(txn.paid_by) }}</td>
+                        <td class="py-3 px-4 text-sm">{{ txn.get_paid_by_display_name() }}</td>
                         <td class="py-3 px-4 text-sm">
                             <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
                                 {{ txn.get_category_display_name(txn.category) }}
@@ -456,8 +452,15 @@ async function unsettleMonth() {
     btn.classList.add('opacity-50', 'cursor-not-allowed');
 
     try {
+        // Get CSRF token from meta tag or cookie
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                         document.querySelector('input[name="csrf_token"]')?.value;
+
         const response = await fetch(`/settlement/${month}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
         });
 
         const result = await response.json();

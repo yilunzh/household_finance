@@ -87,53 +87,69 @@ def get_current_exchange_rate(from_currency, to_currency):
     return 1.4 if from_currency == 'USD' and to_currency == 'CAD' else 1.0
 
 
-def calculate_reconciliation(transactions):
+def calculate_reconciliation(transactions, household_members):
     """
-    Calculate who owes what based on transactions.
+    Calculate who owes what based on transactions (NEW: dynamic household members).
 
     Args:
         transactions (list): List of Transaction model instances
+        household_members (list): List of HouseholdMember instances
 
     Returns:
         dict: Summary containing:
-            - me_paid: Total amount I paid (in USD)
-            - wife_paid: Total amount wife paid (in USD)
-            - me_share: My share of expenses (in USD)
-            - wife_share: Wife's share of expenses (in USD)
-            - me_balance: My balance (positive = owed to me, negative = I owe)
-            - wife_balance: Wife's balance
+            - user_payments: Dict of {user_id: amount_paid}
+            - user_shares: Dict of {user_id: amount_owed}
+            - user_balances: Dict of {user_id: balance} (positive = owed to them, negative = they owe)
             - settlement: Human-readable settlement message
             - breakdown: Category breakdown
+            - member_names: Dict of {user_id: display_name}
     """
-    me_paid = Decimal('0.00')
-    wife_paid = Decimal('0.00')
-    me_share = Decimal('0.00')
-    wife_share = Decimal('0.00')
+    # Initialize tracking dictionaries for each household member
+    user_payments = {}  # How much each user paid
+    user_shares = {}    # How much each user owes
+    member_names = {}   # User ID to display name mapping
+
+    for member in household_members:
+        user_id = member.user_id
+        user_payments[user_id] = Decimal('0.00')
+        user_shares[user_id] = Decimal('0.00')
+        member_names[user_id] = member.display_name
 
     # Track category totals
     category_totals = {}
 
+    # Process transactions
     for txn in transactions:
         amount_usd = Decimal(str(txn.amount_in_usd))
+        paid_by_user_id = txn.paid_by_user_id
 
         # Track who paid
-        if txn.paid_by == 'ME':
-            me_paid += amount_usd
-        else:
-            wife_paid += amount_usd
+        if paid_by_user_id in user_payments:
+            user_payments[paid_by_user_id] += amount_usd
 
         # Calculate each person's share based on category
-        if txn.category == 'SHARED':
-            me_share += amount_usd * Decimal('0.5')
-            wife_share += amount_usd * Decimal('0.5')
-        elif txn.category == 'I_PAY_FOR_WIFE':
-            wife_share += amount_usd
-        elif txn.category == 'WIFE_PAYS_FOR_ME':
-            me_share += amount_usd
-        elif txn.category == 'PERSONAL_ME':
-            me_share += amount_usd
-        elif txn.category == 'PERSONAL_WIFE':
-            wife_share += amount_usd
+        # NOTE: For 2-person households only (will be enhanced in Phase 4 for 3+ members)
+        if len(household_members) == 2:
+            member_ids = list(user_payments.keys())
+            user1_id = member_ids[0]
+            user2_id = member_ids[1]
+
+            if txn.category == 'SHARED':
+                # 50/50 split
+                user_shares[user1_id] += amount_usd * Decimal('0.5')
+                user_shares[user2_id] += amount_usd * Decimal('0.5')
+            elif txn.category == 'I_PAY_FOR_WIFE':
+                # Member 1 pays for Member 2 (Member 2 owes 100%)
+                user_shares[user2_id] += amount_usd
+            elif txn.category == 'WIFE_PAYS_FOR_ME':
+                # Member 2 pays for Member 1 (Member 1 owes 100%)
+                user_shares[user1_id] += amount_usd
+            elif txn.category == 'PERSONAL_ME':
+                # Personal expense for Member 1
+                user_shares[user1_id] += amount_usd
+            elif txn.category == 'PERSONAL_WIFE':
+                # Personal expense for Member 2
+                user_shares[user2_id] += amount_usd
 
         # Track category totals
         category = txn.category
@@ -145,12 +161,14 @@ def calculate_reconciliation(transactions):
         category_totals[category]['count'] += 1
         category_totals[category]['total'] += amount_usd
 
-    # Calculate net balances
-    me_balance = me_paid - me_share
-    wife_balance = wife_paid - wife_share
+    # Calculate net balances for each user
+    user_balances = {}
+    for user_id in user_payments:
+        balance = user_payments[user_id] - user_shares[user_id]
+        user_balances[user_id] = float(balance)
 
-    # Format settlement message
-    settlement = format_settlement(me_balance, wife_balance)
+    # Format settlement message (for 2-person households)
+    settlement = format_settlement_dynamic(user_balances, member_names)
 
     # Format breakdown
     breakdown = []
@@ -158,7 +176,7 @@ def calculate_reconciliation(transactions):
         from models import Transaction
         breakdown.append({
             'category': category,
-            'category_name': Transaction.get_category_display_name(category),
+            'category_name': Transaction.get_category_display_name(category, household_members),
             'count': data['count'],
             'total': float(data['total'])
         })
@@ -167,20 +185,57 @@ def calculate_reconciliation(transactions):
     breakdown.sort(key=lambda x: x['total'], reverse=True)
 
     return {
-        'me_paid': float(me_paid),
-        'wife_paid': float(wife_paid),
-        'me_share': float(me_share),
-        'wife_share': float(wife_share),
-        'me_balance': float(me_balance),
-        'wife_balance': float(wife_balance),
+        'user_payments': {uid: float(amt) for uid, amt in user_payments.items()},
+        'user_shares': {uid: float(amt) for uid, amt in user_shares.items()},
+        'user_balances': user_balances,
         'settlement': settlement,
-        'breakdown': breakdown
+        'breakdown': breakdown,
+        'member_names': member_names
     }
+
+
+def format_settlement_dynamic(user_balances, member_names):
+    """
+    Format the settlement message with dynamic member names.
+
+    Args:
+        user_balances (dict): Dict of {user_id: balance}
+        member_names (dict): Dict of {user_id: display_name}
+
+    Returns:
+        str: Settlement message
+    """
+    threshold = 0.01
+
+    # For 2-person households
+    if len(user_balances) == 2:
+        user_ids = list(user_balances.keys())
+        user1_id = user_ids[0]
+        user2_id = user_ids[1]
+
+        balance1 = user_balances[user1_id]
+        balance2 = user_balances[user2_id]
+
+        name1 = member_names.get(user1_id, "Member 1")
+        name2 = member_names.get(user2_id, "Member 2")
+
+        if balance1 > threshold:
+            # User1 is owed money, User2 owes User1
+            return f"{name2} owes {name1} ${abs(balance1):.2f}"
+        elif balance2 > threshold:
+            # User2 is owed money, User1 owes User2
+            return f"{name1} owes {name2} ${abs(balance2):.2f}"
+        else:
+            return "All settled up!"
+
+    # Fallback for non-2-person households
+    return "Settlement calculation available for 2-person households only"
 
 
 def format_settlement(me_balance, wife_balance):
     """
-    Format the settlement message in a human-readable way.
+    LEGACY: Format the settlement message in a human-readable way.
+    Kept for backward compatibility. Use format_settlement_dynamic instead.
 
     Args:
         me_balance (Decimal): My balance

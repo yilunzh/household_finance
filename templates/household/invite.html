@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Invite to Household - Household Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <div class="bg-white rounded-xl shadow-lg p-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Invite Partner</h2>
+        <p class="text-gray-600 mb-6">Send an email invitation to add someone to your household "{{ household.name }}".</p>
+
+        <form method="POST" action="{{ url_for('send_invitation') }}" class="space-y-6">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                    Partner's Email Address
+                </label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    autocomplete="email"
+                    placeholder="partner@example.com"
+                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                >
+                <p class="mt-2 text-sm text-gray-500">
+                    They will receive an email with a link to join your household.
+                </p>
+            </div>
+
+            <div>
+                <label for="display_name" class="block text-sm font-medium text-gray-700 mb-2">
+                    Display Name (optional)
+                </label>
+                <input
+                    type="text"
+                    id="display_name"
+                    name="display_name"
+                    placeholder="e.g., Alex, Partner"
+                    maxlength="50"
+                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                >
+                <p class="mt-2 text-sm text-gray-500">
+                    How their name will appear in this household. They can change this later.
+                </p>
+            </div>
+
+            <button
+                type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+            >
+                Send Invitation
+            </button>
+        </form>
+
+        {% if pending_invitations %}
+        <div class="mt-8 pt-6 border-t border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Pending Invitations</h3>
+            <div class="space-y-3">
+                {% for invite in pending_invitations %}
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                        <span class="font-medium text-gray-700">{{ invite.email }}</span>
+                        <span class="text-sm text-gray-500 ml-2">
+                            (sent {{ invite.created_at.strftime('%b %d, %Y') }})
+                        </span>
+                    </div>
+                    <form method="POST" action="{{ url_for('cancel_invitation', invitation_id=invite.id) }}" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="text-sm text-red-600 hover:text-red-800">
+                            Cancel
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="mt-6 text-center">
+            <a href="/" class="text-gray-600 hover:text-gray-900">&larr; Back to Transactions</a>
+        </div>
+    </div>
+
+    {% if not mail_configured %}
+    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <p class="text-sm text-yellow-800">
+            <strong>Note:</strong> Email is not configured. The invitation link will be displayed on the next page instead of being emailed.
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
