@@ -72,8 +72,11 @@ def register():
         confirm_password = request.form.get('confirm_password', '')
         name = request.form.get('name', '').strip()
 
+        print(f"[DEBUG] Registration attempt: email={email}, name={name}")
+
         # Validation
         if not email or not password or not name:
+            print(f"[DEBUG] Validation failed: missing fields")
             flash('All fields are required.', 'danger')
             return render_template('auth/register.html')
 
@@ -96,11 +99,14 @@ def register():
         user.set_password(password)
 
         try:
+            print(f"[DEBUG] Attempting to save user to database...")
             db.session.add(user)
             db.session.commit()
+            print(f"[DEBUG] User saved successfully!")
 
             # Auto-login after registration
             login_user(user, remember=True)
+            print(f"[DEBUG] User logged in successfully!")
 
             flash(f'Welcome, {user.name}! Your account has been created.', 'success')
             # TODO: Phase 2 - Redirect to household setup
@@ -109,7 +115,9 @@ def register():
         except Exception as e:
             db.session.rollback()
             flash('An error occurred during registration. Please try again.', 'danger')
-            print(f'Registration error: {e}')
+            print(f'[ERROR] Registration error: {e}')
+            import traceback
+            traceback.print_exc()
             return render_template('auth/register.html')
 
     return render_template('auth/register.html')
