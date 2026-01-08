@@ -460,9 +460,13 @@ async function markMonthSettled() {
     btn.classList.add('opacity-50', 'cursor-not-allowed');
 
     try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
         const response = await fetch('/settlement', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
             body: JSON.stringify({month_year: month})
         });
 
