@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
 {% block title %}Accept Invitation - Lucky Ledger{% endblock %}
 
@@ -30,7 +31,10 @@
         </div>
 
         <div class="text-center mb-6">
-            <h2 class="text-2xl font-bold font-display text-warm-800 mb-2">You're Invited! 🎉</h2>
+            <h2 class="text-2xl font-bold font-display text-warm-800 mb-2 flex items-center justify-center gap-2">
+                {{ icon('cat-celebrate', size='lg') }}
+                <span>You're Invited!</span>
+            </h2>
             <p class="text-warm-600">
                 <strong class="text-terracotta-600">{{ inviter.name }}</strong> invited you to join
             </p>
@@ -41,7 +45,7 @@
             <!-- User is already logged in -->
             <div class="bg-sage-50 rounded-2xl p-4 mb-6 border border-sage-200">
                 <p class="text-sm text-sage-700 flex items-center gap-2">
-                    <span>✅</span>
+                    {{ icon('cat-happy', size='md') }}
                     <span>Logged in as <strong>{{ current_user.email }}</strong></span>
                 </p>
             </div>
@@ -67,7 +71,7 @@
                                text-warm-800 transition-all duration-200"
                     >
                     <p class="mt-2 text-sm text-warm-400 flex items-center gap-1">
-                        <span>👋</span>
+                        {{ icon('cat-wave', size='sm') }}
                         <span>This is how your name will appear in transactions</span>
                     </p>
                 </div>
@@ -81,7 +85,7 @@
                            transform hover:-translate-y-0.5 active:translate-y-0
                            transition-all duration-200"
                 >
-                    Join Household 🏠
+                    Join Household
                 </button>
             </form>
 
@@ -104,7 +108,7 @@
                     <input type="hidden" name="action" value="signup">
 
                     <h3 class="font-bold font-display text-warm-800 text-lg flex items-center gap-2">
-                        <span>✨</span>
+                        {{ icon('cat-sparkle', size='md') }}
                         <span>Create Account</span>
                     </h3>
 
@@ -190,7 +194,7 @@
                                transform hover:-translate-y-0.5 active:translate-y-0
                                transition-all duration-200"
                     >
-                        Create Account & Join 🚀
+                        Create Account & Join
                     </button>
                 </form>
 

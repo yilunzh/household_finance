@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
 {% block title %}Reconciliation - Lucky Ledger{% endblock %}
 
@@ -13,7 +14,7 @@
         </a>
 
         <div class="flex items-center gap-3">
-            <span class="text-xl">📅</span>
+            <span class="text-xl text-terracotta-500">{{ icon('cat-calendar', size='lg') }}</span>
             <label for="month-select" class="text-warm-700 font-semibold text-sm">Month:</label>
             <select
                 id="month-select"
@@ -43,7 +44,7 @@
                shadow-sm hover:shadow-md
                transition-all duration-200 items-center gap-2"
     >
-        <span>📥</span>
+        {{ icon('cat-download', size='md') }}
         <span>Export CSV</span>
     </a>
 </div>
@@ -52,8 +53,8 @@
 {% if settlement %}
 <div class="mb-6 bg-sage-50 border-2 border-sage-300 rounded-2xl p-5 flex items-center justify-between gap-4 animate-fade-in">
     <div class="flex items-center gap-4">
-        <div class="w-12 h-12 bg-sage-100 rounded-xl flex items-center justify-center">
-            <span class="text-2xl">✅</span>
+        <div class="w-12 h-12 bg-sage-100 rounded-xl flex items-center justify-center text-sage-600">
+            {{ icon('cat-happy', size='xl') }}
         </div>
         <div>
             <p class="font-bold text-sage-800 text-lg">This month is settled!</p>
@@ -70,7 +71,7 @@
     <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-terracotta-100 to-transparent rounded-tr-full opacity-30"></div>
 
     <h2 class="text-2xl font-bold font-display mb-6 text-warm-800 flex items-center gap-3 relative">
-        <span class="text-3xl">🤝</span>
+        <span class="text-sage-600">{{ icon('cat-highfive', size='xl') }}</span>
         <span>Monthly Settlement</span>
     </h2>
 
@@ -100,7 +101,7 @@
                     </div>
                     <div class="flex items-center gap-4 text-sm text-warm-600">
                         <span class="px-3 py-1 bg-sage-100 text-sage-700 rounded-full font-medium flex items-center gap-1">
-                            <span>🔒</span>
+                            {{ icon('cat-lock', size='sm') }}
                             <span>Settled</span>
                         </span>
                     </div>
@@ -113,9 +114,10 @@
                     onclick="unsettleMonth()"
                     class="px-5 py-2.5 bg-amber-500 text-white rounded-xl font-semibold
                            hover:bg-amber-600 shadow-sm hover:shadow-md
-                           transition-all duration-200"
+                           transition-all duration-200 flex items-center gap-2"
                 >
-                    🔓 Unlock Month
+                    {{ icon('cat-unlock', size='md') }}
+                    <span>Unlock Month</span>
                 </button>
                 <p class="text-sm text-warm-400 mt-2">
                     Need to make changes? Unlock to edit transactions.
@@ -157,7 +159,7 @@
     <!-- What We Paid -->
     <div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-4 sm:p-6">
         <h3 class="text-lg font-bold font-display mb-4 text-warm-800 flex items-center gap-2">
-            <span>💸</span>
+            {{ icon('cat-coins', size='lg') }}
             <span>What We Paid</span>
         </h3>
         <div class="space-y-4">
@@ -181,7 +183,7 @@
     <!-- What We Owe -->
     <div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-4 sm:p-6">
         <h3 class="text-lg font-bold font-display mb-4 text-warm-800 flex items-center gap-2">
-            <span>📊</span>
+            {{ icon('cat-ledger', size='lg') }}
             <span>What We Should Pay</span>
         </h3>
         <div class="space-y-4">
@@ -206,7 +208,7 @@
 <!-- Category Breakdown -->
 <div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-6 mb-6">
     <h3 class="text-lg font-bold font-display mb-4 text-warm-800 flex items-center gap-2">
-        <span>📁</span>
+        {{ icon('cat-folder', size='lg') }}
         <span>Breakdown by Category</span>
     </h3>
 
@@ -256,9 +258,9 @@
             </table>
         </div>
     {% else %}
-        <div class="text-center py-8">
-            <span class="text-4xl mb-3 block">📭</span>
-            <p class="text-warm-400">No transactions for this month.</p>
+        <div class="text-center py-8 text-warm-400">
+            {{ icon('cat-sleeping', size='2xl', class='mx-auto mb-3') }}
+            <p>No transactions for this month.</p>
         </div>
     {% endif %}
 </div>
@@ -266,7 +268,7 @@
 <!-- Transaction Details -->
 <div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-4 sm:p-6">
     <h3 class="text-lg font-bold font-display mb-4 text-warm-800 flex items-center gap-2">
-        <span>📋</span>
+        {{ icon('cat-clipboard', size='lg') }}
         <span>Transaction Details</span>
     </h3>
 
@@ -312,13 +314,13 @@
         </div>
 
         <div class="mt-4 text-sm text-warm-500 flex items-center gap-2">
-            <span>📊</span>
+            {{ icon('cat-ledger', size='md') }}
             <span>Total: {{ transactions|length }} transaction(s)</span>
         </div>
     {% else %}
-        <div class="text-center py-8">
-            <span class="text-4xl mb-3 block">📭</span>
-            <p class="text-warm-400">No transactions for this month.</p>
+        <div class="text-center py-8 text-warm-400">
+            {{ icon('cat-sleeping', size='2xl', class='mx-auto mb-3') }}
+            <p>No transactions for this month.</p>
         </div>
     {% endif %}
 </div>

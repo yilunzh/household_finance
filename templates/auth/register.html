@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
 {% block title %}Join Us - Lucky Ledger{% endblock %}
 
@@ -182,7 +183,7 @@
                     placeholder="Create a password"
                 />
                 <p class="mt-2 text-xs text-warm-400 flex items-center gap-1">
-                    <span>🔒</span>
+                    {{ icon('cat-lock', size='sm') }}
                     <span>At least 8 characters to keep things safe</span>
                 </p>
             </div>
@@ -216,7 +217,7 @@
                            transform hover:-translate-y-0.5 active:translate-y-0
                            transition-all duration-200"
                 >
-                    Create My Account 🚀
+                    Create My Account
                 </button>
             </div>
         </form>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
 {% block title %}Create Your Home Base - Lucky Ledger{% endblock %}
 
@@ -44,7 +45,10 @@
                 </svg>
             </div>
 
-            <h2 class="text-2xl font-bold font-display text-warm-800 mb-2">Create Your Home Base 🏡</h2>
+            <h2 class="text-2xl font-bold font-display text-warm-800 mb-2 flex items-center justify-center gap-2">
+                {{ icon('cat-house', size='lg') }}
+                <span>Create Your Home Base</span>
+            </h2>
             <p class="text-warm-500">Set up a household to start tracking expenses together</p>
         </div>
 
@@ -67,7 +71,7 @@
                            placeholder-warm-400 text-warm-800 transition-all duration-200"
                 >
                 <p class="mt-2 text-sm text-warm-400 flex items-center gap-1">
-                    <span>💡</span>
+                    {{ icon('cat-lightbulb', size='sm') }}
                     <span>Pick something that feels like home!</span>
                 </p>
             </div>
@@ -89,7 +93,7 @@
                            placeholder-warm-400 text-warm-800 transition-all duration-200"
                 >
                 <p class="mt-2 text-sm text-warm-400 flex items-center gap-1">
-                    <span>👋</span>
+                    {{ icon('cat-wave', size='sm') }}
                     <span>This is how your name will show up in transactions</span>
                 </p>
             </div>
@@ -103,7 +107,7 @@
                        transform hover:-translate-y-0.5 active:translate-y-0
                        transition-all duration-200"
             >
-                Create My Household ✨
+                Create My Household
             </button>
         </form>
 

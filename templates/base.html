@@ -147,6 +147,7 @@
 
     {% block extra_head %}{% endblock %}
 </head>
+{% from "_icons.html" import icon %}
 <body class="bg-cream-100 text-warm-900">
     <!-- Navigation -->
     <nav class="bg-white/80 backdrop-blur-sm shadow-sm border-b border-warm-200 sticky top-0 z-40">
@@ -205,21 +206,21 @@
                     <div class="hidden md:flex gap-1">
                         <a href="/" class="relative px-3 py-2 text-warm-600 hover:text-terracotta-600 font-medium transition-colors group">
                             <span class="flex items-center gap-1.5">
-                                <span>📊</span>
+                                {{ icon('cat-ledger', size='md') }}
                                 <span>Transactions</span>
                             </span>
                             <span class="absolute bottom-0 left-3 right-3 h-0.5 bg-terracotta-400 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
                         </a>
                         <a href="/reconciliation" class="relative px-3 py-2 text-warm-600 hover:text-terracotta-600 font-medium transition-colors group">
                             <span class="flex items-center gap-1.5">
-                                <span>🤝</span>
+                                {{ icon('cat-highfive', size='md') }}
                                 <span>Reconciliation</span>
                             </span>
                             <span class="absolute bottom-0 left-3 right-3 h-0.5 bg-terracotta-400 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
                         </a>
                         <a href="/household/settings" class="relative px-3 py-2 text-warm-600 hover:text-terracotta-600 font-medium transition-colors group">
                             <span class="flex items-center gap-1.5">
-                                <span>⚙️</span>
+                                {{ icon('cat-gear', size='md') }}
                                 <span>Settings</span>
                             </span>
                             <span class="absolute bottom-0 left-3 right-3 h-0.5 bg-terracotta-400 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
@@ -234,7 +235,7 @@
                             <div class="relative" x-data="{ open: false }">
                                 <button @click="open = !open"
                                         class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-cream-200 hover:bg-cream-300 text-warm-700 text-sm font-medium transition-colors">
-                                    <span>🏡</span>
+                                    {{ icon('cat-house', size='sm') }}
                                     <span>{{ current_household.name if current_household else 'Select Household' }}</span>
                                     <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -254,7 +255,7 @@
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="flex items-center justify-between w-full px-4 py-2.5 text-sm text-warm-700 hover:bg-cream-100 transition-colors">
                                             <span class="flex items-center gap-2">
-                                                <span>🏠</span>
+                                                {{ icon('cat-house', size='sm') }}
                                                 <span>{{ membership.household.name }}</span>
                                             </span>
                                             {% if current_household and membership.household.id == current_household.id %}
@@ -265,14 +266,14 @@
                                     {% endfor %}
                                     <hr class="my-2 border-warm-100">
                                     <a href="{{ url_for('create_household') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm text-terracotta-600 hover:bg-terracotta-50 transition-colors">
-                                        <span>✨</span>
+                                        {{ icon('cat-sparkle', size='sm') }}
                                         <span>Create New Household</span>
                                     </a>
                                 </div>
                             </div>
                             {% else %}
                             <span class="flex items-center gap-1.5 text-sm text-warm-500">
-                                <span>🏡</span>
+                                {{ icon('cat-house', size='sm') }}
                                 <span>{{ current_household.name if current_household else '' }}</span>
                             </span>
                             {% endif %}
@@ -290,7 +291,7 @@
                         <div class="sm:hidden relative" x-data="{ open: false }">
                             <button @click="open = !open"
                                     class="flex items-center gap-2 px-3 py-2 rounded-xl bg-cream-200 hover:bg-cream-300 text-warm-700 font-medium transition-colors">
-                                <span class="text-lg">☰</span>
+                                {{ icon('cat-menu', size='md') }}
                             </button>
                             <div x-show="open"
                                  x-transition:enter="transition ease-out duration-200"
@@ -309,15 +310,15 @@
                                 <!-- Navigation -->
                                 <div class="py-2">
                                     <a href="/" class="flex items-center gap-3 px-4 py-2.5 text-sm text-warm-700 hover:bg-cream-100 transition-colors">
-                                        <span>📊</span>
+                                        {{ icon('cat-ledger', size='md') }}
                                         <span>Transactions</span>
                                     </a>
                                     <a href="/reconciliation" class="flex items-center gap-3 px-4 py-2.5 text-sm text-warm-700 hover:bg-cream-100 transition-colors">
-                                        <span>🤝</span>
+                                        {{ icon('cat-highfive', size='md') }}
                                         <span>Reconciliation</span>
                                     </a>
                                     <a href="/household/settings" class="flex items-center gap-3 px-4 py-2.5 text-sm text-warm-700 hover:bg-cream-100 transition-colors">
-                                        <span>⚙️</span>
+                                        {{ icon('cat-gear', size='md') }}
                                         <span>Settings</span>
                                     </a>
                                 </div>
@@ -330,7 +331,7 @@
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="flex items-center justify-between w-full px-4 py-2 text-sm text-warm-700 hover:bg-cream-100 transition-colors">
                                             <span class="flex items-center gap-2">
-                                                <span>🏠</span>
+                                                {{ icon('cat-house', size='sm') }}
                                                 <span>{{ membership.household.name }}</span>
                                             </span>
                                             {% if current_household and membership.household.id == current_household.id %}
@@ -344,7 +345,7 @@
                                 <!-- Logout -->
                                 <div class="border-t border-warm-100 pt-2">
                                     <a href="/logout" class="flex items-center gap-3 px-4 py-2.5 text-sm text-rose-500 hover:bg-rose-50 transition-colors">
-                                        <span>👋</span>
+                                        {{ icon('cat-wave', size='md') }}
                                         <span>Logout</span>
                                     </a>
                                 </div>
@@ -369,10 +370,10 @@
                             {% elif category == 'warning' %}bg-amber-50 text-amber-500 border border-amber-200
                             {% else %}bg-terracotta-50 text-terracotta-700 border border-terracotta-200{% endif %}">
                             <span class="text-lg">
-                                {% if category == 'success' %}✅
-                                {% elif category == 'danger' %}😟
-                                {% elif category == 'warning' %}⚠️
-                                {% else %}💡{% endif %}
+                                {% if category == 'success' %}{{ icon('cat-happy', size='lg') }}
+                                {% elif category == 'danger' %}{{ icon('cat-worried', size='lg') }}
+                                {% elif category == 'warning' %}{{ icon('cat-alert', size='lg') }}
+                                {% else %}{{ icon('cat-lightbulb', size='lg') }}{% endif %}
                             </span>
                             <span class="font-medium">{{ message }}</span>
                         </div>
@@ -388,7 +389,7 @@
     <footer class="mt-16 py-8 text-center border-t border-warm-200">
         <p class="text-warm-400 text-sm flex items-center justify-center gap-2">
             <span>Made with</span>
-            <span class="text-rose-400">❤️</span>
+            <span class="text-rose-400">{{ icon('cat-heart', size='md') }}</span>
             <span>for families everywhere</span>
         </p>
         <p class="text-warm-300 text-xs mt-1">Lucky Ledger © 2026</p>

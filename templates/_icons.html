@@ -1,0 +1,343 @@
+{# Cat-themed icon macros for Lucky Ledger #}
+{# Usage: {% from "_icons.html" import icon %}  then  {{ icon('cat-happy', size='md') }} #}
+
+{% macro icon(name, size='md', class='') %}
+{%- set sizes = {'sm': '16', 'md': '20', 'lg': '24', 'xl': '32', '2xl': '48'} -%}
+{%- set s = sizes.get(size, '20') -%}
+<svg viewBox="0 0 24 24" width="{{ s }}" height="{{ s }}" class="inline-block {{ class }}" fill="none" aria-hidden="true">
+{%- if name == 'cat-ledger' -%}
+<!-- Cat face with coins - Transactions -->
+<circle cx="12" cy="11" r="7" stroke="currentColor" stroke-width="1.5"/>
+<path d="M7 7L8.5 3L10.5 6.5" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M13.5 6.5L15.5 3L17 7" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M9 10Q10.5 8.5 12 10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+<path d="M12 10Q13.5 8.5 15 10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+<ellipse cx="12" cy="12.5" rx="1.2" ry="0.8" fill="currentColor"/>
+<circle cx="7" cy="19" r="3" stroke="currentColor" stroke-width="1.2"/>
+<text x="7" y="20.5" text-anchor="middle" font-size="4" fill="currentColor" font-weight="bold">$</text>
+<circle cx="12" cy="21" r="2.5" stroke="currentColor" stroke-width="1.2"/>
+<circle cx="17" cy="19" r="3" stroke="currentColor" stroke-width="1.2"/>
+{%- elif name == 'cat-highfive' -%}
+<!-- Cat face with balance scales - Reconciliation/Shared -->
+<circle cx="12" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/>
+<path d="M8.5 4L9.5 1.5L11 4" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M13 4L14.5 1.5L15.5 4" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M9.5 6.5Q11 5 12.5 6.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+<ellipse cx="12" cy="8.5" rx="0.8" ry="0.5" fill="currentColor"/>
+<path d="M12 12V14" stroke="currentColor" stroke-width="1.5"/>
+<path d="M6 16L18 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M6 16L4 21H8L6 16Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M18 16L16 21H20L18 16Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<circle cx="6" cy="20" r="0.5" fill="currentColor" opacity="0.5"/>
+<circle cx="18" cy="20" r="0.5" fill="currentColor" opacity="0.5"/>
+{%- elif name == 'cat-gear' -%}
+<!-- Cat face with gear collar - Settings -->
+<circle cx="12" cy="9" r="6" stroke="currentColor" stroke-width="1.5"/>
+<path d="M8 5L9 2L10.5 4.5" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M13.5 4.5L15 2L16 5" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M9 8Q10.5 6.5 12 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+<path d="M12 8Q13.5 6.5 15 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+<ellipse cx="12" cy="10.5" rx="1" ry="0.7" fill="currentColor"/>
+<circle cx="12" cy="19" r="4" stroke="currentColor" stroke-width="1.5"/>
+<circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+<path d="M12 14V15M12 23V22M8 19H7M17 19H16M9 16L8 15M16 22L15 21M15 16L16 15M8 22L9 21" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+{%- elif name == 'cat-house' -%}
+<!-- Cat in house - Household -->
+<path d="M4 11L12 4L20 11V20C20 20.5 19.5 21 19 21H5C4.5 21 4 20.5 4 20V11Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<circle cx="12" cy="14" r="3.5" stroke="currentColor" stroke-width="1.2"/>
+<path d="M9.5 12L10 10L11 11.5" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+<path d="M13 11.5L14 10L14.5 12" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+<path d="M10.5 13.5Q11.5 12.5 12.5 13.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+<ellipse cx="12" cy="15" rx="0.8" ry="0.5" fill="currentColor"/>
+{%- elif name == 'cat-sparkle' -%}
+<!-- Cat face with sparkles - Create/New -->
+<circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="1.5"/>
+<path d="M8 8L9 5L10.5 7.5" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M13.5 7.5L15 5L16 8" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M9 11Q10.5 9.5 12 11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+<path d="M12 11Q13.5 9.5 15 11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+<ellipse cx="12" cy="13.5" rx="1" ry="0.7" fill="currentColor"/>
+<path d="M20 4L20 8M18 6L22 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M4 6L4 9M2.5 7.5L5.5 7.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M18 18L18 20M17 19L19 19" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+{%- elif name == 'cat-menu' -%}
+<!-- Three stacked cat paw beans - Mobile Menu -->
+<ellipse cx="12" cy="5" rx="3" ry="2" stroke="currentColor" stroke-width="1.5"/>
+<circle cx="9.5" cy="4" r="1" fill="currentColor" opacity="0.4"/>
+<circle cx="12" cy="3.5" r="1" fill="currentColor" opacity="0.4"/>
+<circle cx="14.5" cy="4" r="1" fill="currentColor" opacity="0.4"/>
+<ellipse cx="12" cy="12" rx="3" ry="2" stroke="currentColor" stroke-width="1.5"/>
+<circle cx="9.5" cy="11" r="1" fill="currentColor" opacity="0.4"/>
+<circle cx="12" cy="10.5" r="1" fill="currentColor" opacity="0.4"/>
+<circle cx="14.5" cy="11" r="1" fill="currentColor" opacity="0.4"/>
+<ellipse cx="12" cy="19" rx="3" ry="2" stroke="currentColor" stroke-width="1.5"/>
+<circle cx="9.5" cy="18" r="1" fill="currentColor" opacity="0.4"/>
+<circle cx="12" cy="17.5" r="1" fill="currentColor" opacity="0.4"/>
+<circle cx="14.5" cy="18" r="1" fill="currentColor" opacity="0.4"/>
+{%- elif name == 'cat-wave' -%}
+<!-- Waving cat paw - Logout/Greetings -->
+<ellipse cx="12" cy="14" rx="5" ry="6" stroke="currentColor" stroke-width="1.5"/>
+<circle cx="8" cy="9" r="2" fill="currentColor" opacity="0.3" stroke="currentColor" stroke-width="1"/>
+<circle cx="12" cy="7" r="2" fill="currentColor" opacity="0.3" stroke="currentColor" stroke-width="1"/>
+<circle cx="16" cy="9" r="2" fill="currentColor" opacity="0.3" stroke="currentColor" stroke-width="1"/>
+<path d="M18 5L20 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M20 6L22 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M19 8L21 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+{%- elif name == 'cat-happy' -%}
+<!-- Happy cat face - Success -->
+<circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/>
+<path d="M6 8L7.5 3L10 7" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M14 7L16.5 3L18 8" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M8 11Q10 9 12 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 11Q14 9 16 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<ellipse cx="12" cy="14" rx="1.5" ry="1" fill="currentColor"/>
+<path d="M9 16Q12 19 15 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+{%- elif name == 'cat-worried' -%}
+<!-- Worried cat face - Error -->
+<circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/>
+<path d="M6 8L7.5 3L10 7" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M14 7L16.5 3L18 8" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<circle cx="9" cy="11" r="1.5" fill="currentColor"/>
+<circle cx="15" cy="11" r="1.5" fill="currentColor"/>
+<ellipse cx="12" cy="14" rx="1.5" ry="1" fill="currentColor"/>
+<path d="M9 17Q12 15 15 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M7 8L10 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M17 8L14 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+{%- elif name == 'cat-alert' -%}
+<!-- Alert cat with exclamation - Warning -->
+<circle cx="12" cy="13" r="7" stroke="currentColor" stroke-width="1.5"/>
+<path d="M7 9L8.5 5L10.5 8" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M13.5 8L15.5 5L17 9" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<circle cx="9" cy="12" r="1.2" fill="currentColor"/>
+<circle cx="15" cy="12" r="1.2" fill="currentColor"/>
+<ellipse cx="12" cy="15" rx="1.2" ry="0.8" fill="currentColor"/>
+<path d="M10 17L14 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="12" y1="1" x2="12" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+<circle cx="12" cy="6" r="0.8" fill="currentColor"/>
+{%- elif name == 'cat-lightbulb' -%}
+<!-- Cat with lightbulb - Info/Tips -->
+<circle cx="12" cy="14" r="6" stroke="currentColor" stroke-width="1.5"/>
+<path d="M8 10L9 7L10.5 9.5" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M13.5 9.5L15 7L16 10" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M9 13Q10.5 11.5 12 13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+<path d="M12 13Q13.5 11.5 15 13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+<ellipse cx="12" cy="15.5" rx="1" ry="0.7" fill="currentColor"/>
+<path d="M12 1C14.5 1 16 3 16 5C16 6.5 15 7.5 14 8H10C9 7.5 8 6.5 8 5C8 3 9.5 1 12 1Z" stroke="currentColor" stroke-width="1.2"/>
+<path d="M10 8V9H14V8" stroke="currentColor" stroke-width="1"/>
+<path d="M12 1V0" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M8 3L7 2" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+<path d="M16 3L17 2" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+{%- elif name == 'cat-heart' -%}
+<!-- Cat face with heart - Love/Pays for -->
+<circle cx="10" cy="13" r="5" stroke="currentColor" stroke-width="1.5"/>
+<path d="M6.5 10L7.5 7L9 9.5" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M11 9.5L12.5 7L13.5 10" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M7.5 12Q9 10.5 10.5 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+<ellipse cx="10" cy="14" rx="0.8" ry="0.6" fill="currentColor"/>
+<path d="M16 8C17.5 6.5 20 6.5 20 9C20 12 16 15 16 15C16 15 12 12 12 9C12 6.5 14.5 6.5 16 8Z" fill="currentColor" opacity="0.3" stroke="currentColor" stroke-width="1.2"/>
+{%- elif name == 'cat-calendar' -%}
+<!-- Cat with calendar page - Month selector -->
+<rect x="5" y="6" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
+<path d="M5 10H19" stroke="currentColor" stroke-width="1.5"/>
+<path d="M8 4V7M16 4V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="12" cy="15" r="3" stroke="currentColor" stroke-width="1.2"/>
+<path d="M10.5 13.5L11 12L11.8 13" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>
+<path d="M12.2 13L13 12L13.5 13.5" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>
+<path d="M10.8 14.5Q11.5 13.8 12.2 14.5" stroke="currentColor" stroke-width="0.8" stroke-linecap="round"/>
+<ellipse cx="12" cy="15.8" rx="0.6" ry="0.4" fill="currentColor"/>
+{%- elif name == 'cat-lock' -%}
+<!-- Cat guarding with lock - Locked -->
+<rect x="6" y="11" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
+<path d="M9 11V8C9 5.5 10.5 4 12 4C13.5 4 15 5.5 15 8V11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="12" cy="16" r="2.5" stroke="currentColor" stroke-width="1.2"/>
+<path d="M10.8 14.8L11 13.5L11.6 14.3" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>
+<path d="M12.4 14.3L13 13.5L13.2 14.8" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>
+<path d="M11 15.5Q11.5 15 12 15.5" stroke="currentColor" stroke-width="0.8" stroke-linecap="round"/>
+<ellipse cx="12" cy="16.8" rx="0.5" ry="0.35" fill="currentColor"/>
+{%- elif name == 'cat-unlock' -%}
+<!-- Beckoning cat with open lock - Unlock -->
+<rect x="6" y="11" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
+<path d="M9 11V8C9 5.5 10.5 4 12 4C13.5 4 15 5.5 15 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="12" cy="16" r="2.5" stroke="currentColor" stroke-width="1.2"/>
+<path d="M10.8 14.8L11 13.5L11.6 14.3" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>
+<path d="M12.4 14.3L13 13.5L13.2 14.8" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>
+<path d="M11 15.5Q12 14.5 13 15.5" stroke="currentColor" stroke-width="0.8" stroke-linecap="round"/>
+<ellipse cx="12" cy="16.8" rx="0.5" ry="0.35" fill="currentColor"/>
+<path d="M17 6L19 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M18 8L20 7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+{%- elif name == 'cat-coins' -%}
+<!-- Cat with coin stack - Money summary -->
+<circle cx="9" cy="10" r="5" stroke="currentColor" stroke-width="1.5"/>
+<path d="M5.5 7L6.5 4L8 6.5" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M10 6.5L11.5 4L12.5 7" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M6.5 9Q8 7.5 9.5 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+<ellipse cx="9" cy="11" rx="0.8" ry="0.6" fill="currentColor"/>
+<ellipse cx="17" cy="15" rx="4" ry="1.5" stroke="currentColor" stroke-width="1.3"/>
+<ellipse cx="17" cy="12" rx="4" ry="1.5" stroke="currentColor" stroke-width="1.3"/>
+<path d="M13 12V15" stroke="currentColor" stroke-width="1.3"/>
+<path d="M21 12V15" stroke="currentColor" stroke-width="1.3"/>
+<ellipse cx="17" cy="18" rx="4" ry="1.5" stroke="currentColor" stroke-width="1.3"/>
+<path d="M13 15V18" stroke="currentColor" stroke-width="1.3"/>
+<path d="M21 15V18" stroke="currentColor" stroke-width="1.3"/>
+{%- elif name == 'cat-stop' -%}
+<!-- Cat with X/stop - Prohibited -->
+<circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/>
+<path d="M7 8L8.5 4L10.5 7.5" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M13.5 7.5L15.5 4L17 8" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M9 11L11 13M11 11L9 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M13 11L15 13M15 11L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<ellipse cx="12" cy="15" rx="1.2" ry="0.8" fill="currentColor"/>
+<path d="M10 17L14 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+{%- elif name == 'cat-plus' -%}
+<!-- Cat paw with plus - Add -->
+<ellipse cx="10" cy="14" rx="5" ry="6" stroke="currentColor" stroke-width="1.5"/>
+<circle cx="6.5" cy="9.5" r="1.8" fill="currentColor" opacity="0.3" stroke="currentColor" stroke-width="1"/>
+<circle cx="10" cy="7.5" r="1.8" fill="currentColor" opacity="0.3" stroke="currentColor" stroke-width="1"/>
+<circle cx="13.5" cy="9.5" r="1.8" fill="currentColor" opacity="0.3" stroke="currentColor" stroke-width="1"/>
+<path d="M19 8V14M16 11H22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+{%- elif name == 'cat-silhouette' -%}
+<!-- Single cat profile - Personal only -->
+<circle cx="12" cy="12" r="7" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="1.5"/>
+<path d="M7 8L8.5 4L10.5 7.5" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M13.5 7.5L15.5 4L17 8" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M9 11Q10.5 9.5 12 11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+<path d="M12 11Q13.5 9.5 15 11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+<ellipse cx="12" cy="13.5" rx="1.2" ry="0.8" fill="currentColor"/>
+{%- elif name == 'cat-clipboard' -%}
+<!-- Cat with clipboard - Lists -->
+<rect x="6" y="4" width="12" height="16" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+<path d="M9 4V3C9 2.5 9.5 2 10 2H14C14.5 2 15 2.5 15 3V4" stroke="currentColor" stroke-width="1.5"/>
+<circle cx="12" cy="11" r="3" stroke="currentColor" stroke-width="1.2"/>
+<path d="M10.5 9.5L11 8.5L11.7 9.3" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>
+<path d="M12.3 9.3L13 8.5L13.5 9.5" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>
+<path d="M10.8 10.5Q11.5 9.8 12.2 10.5" stroke="currentColor" stroke-width="0.8" stroke-linecap="round"/>
+<ellipse cx="12" cy="12" rx="0.6" ry="0.4" fill="currentColor"/>
+<path d="M9 16H15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M9 18H13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+{%- elif name == 'cat-pencil' -%}
+<!-- Cat paw with pencil - Edit -->
+<ellipse cx="9" cy="15" rx="4.5" ry="5.5" stroke="currentColor" stroke-width="1.5"/>
+<circle cx="6" cy="11" r="1.5" fill="currentColor" opacity="0.3" stroke="currentColor" stroke-width="0.8"/>
+<circle cx="9" cy="9.5" r="1.5" fill="currentColor" opacity="0.3" stroke="currentColor" stroke-width="0.8"/>
+<circle cx="12" cy="11" r="1.5" fill="currentColor" opacity="0.3" stroke="currentColor" stroke-width="0.8"/>
+<path d="M15 13L20 3L22 4L17 14L15 15L15 13Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+<path d="M18.5 5.5L20 7" stroke="currentColor" stroke-width="1"/>
+{%- elif name == 'cat-download' -%}
+<!-- Cat with download arrow - Export -->
+<circle cx="10" cy="9" r="5" stroke="currentColor" stroke-width="1.5"/>
+<path d="M6.5 6L7.5 3L9 5.5" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M11 5.5L12.5 3L13.5 6" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M7.5 8Q9 6.5 10.5 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+<ellipse cx="10" cy="10" rx="0.8" ry="0.6" fill="currentColor"/>
+<path d="M18 10V18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+<path d="M15 15L18 18L21 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14 21H22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+{%- elif name == 'cat-folder' -%}
+<!-- Cat with folder - Categories -->
+<path d="M3 8H9L11 6H21V19C21 19.5 20.5 20 20 20H4C3.5 20 3 19.5 3 19V8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<circle cx="12" cy="14" r="3" stroke="currentColor" stroke-width="1.2"/>
+<path d="M10.5 12.5L11 11.5L11.7 12.3" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>
+<path d="M12.3 12.3L13 11.5L13.5 12.5" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>
+<path d="M10.8 13.5Q11.5 12.8 12.2 13.5" stroke="currentColor" stroke-width="0.8" stroke-linecap="round"/>
+<ellipse cx="12" cy="15" rx="0.6" ry="0.4" fill="currentColor"/>
+{%- elif name == 'cat-sleeping' -%}
+<!-- Sleeping/curled cat - Empty state -->
+<ellipse cx="12" cy="14" rx="8" ry="5" stroke="currentColor" stroke-width="1.5"/>
+<circle cx="8" cy="12" r="3.5" stroke="currentColor" stroke-width="1.5"/>
+<path d="M5 9L6 6.5L7.5 8.5" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+<path d="M8.5 8.5L10 6.5L11 9" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+<path d="M6 11.5Q7 12.5 8 11.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+<path d="M8 11.5Q9 12.5 10 11.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+<ellipse cx="8" cy="13" rx="0.8" ry="0.5" fill="currentColor"/>
+<path d="M14 10Q15 9 16 10" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+<path d="M16 10Q17 9 18 10" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+<path d="M15 11Q16 12 17 11" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+{%- elif name == 'cat-envelope' -%}
+<!-- Cat with envelope - Invitations -->
+<rect x="3" y="7" width="18" height="13" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+<path d="M3 8L12 14L21 8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<circle cx="12" cy="4" r="2.5" stroke="currentColor" stroke-width="1.2"/>
+<path d="M10.5 3L11 2L11.5 2.8" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>
+<path d="M12.5 2.8L13 2L13.5 3" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>
+<path d="M11 3.8Q11.5 3.3 12 3.8" stroke="currentColor" stroke-width="0.7" stroke-linecap="round"/>
+<ellipse cx="12" cy="4.8" rx="0.5" ry="0.35" fill="currentColor"/>
+{%- elif name == 'cat-crown' -%}
+<!-- Cat with crown - Owner -->
+<circle cx="12" cy="14" r="6" stroke="currentColor" stroke-width="1.5"/>
+<path d="M8 10L9 7L10.5 9.5" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M13.5 9.5L15 7L16 10" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M9 13Q10.5 11.5 12 13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 13Q13.5 11.5 15 13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+<ellipse cx="12" cy="15.5" rx="1" ry="0.7" fill="currentColor"/>
+<path d="M7 6L9 3L12 5L15 3L17 6H7Z" fill="currentColor" opacity="0.3" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<circle cx="9" cy="4" r="0.8" fill="currentColor"/>
+<circle cx="12" cy="5.5" r="0.8" fill="currentColor"/>
+<circle cx="15" cy="4" r="0.8" fill="currentColor"/>
+{%- elif name == 'cat-group' -%}
+<!-- Multiple cat faces - Members -->
+<circle cx="8" cy="12" r="4.5" stroke="currentColor" stroke-width="1.4"/>
+<path d="M5 9L6 6.5L7.5 8.5" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+<path d="M8.5 8.5L10 6.5L11 9" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+<path d="M6 11Q7 10 8 11" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+<path d="M8 11Q9 10 10 11" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+<ellipse cx="8" cy="13" rx="0.7" ry="0.5" fill="currentColor"/>
+<circle cx="16" cy="12" r="4.5" stroke="currentColor" stroke-width="1.4"/>
+<path d="M13 9L14 6.5L15.5 8.5" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+<path d="M16.5 8.5L18 6.5L19 9" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+<path d="M14 11Q15 10 16 11" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+<path d="M16 11Q17 10 18 11" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+<ellipse cx="16" cy="13" rx="0.7" ry="0.5" fill="currentColor"/>
+{%- elif name == 'cat-celebrate' -%}
+<!-- Celebrating cat with confetti - Success celebration -->
+<circle cx="12" cy="13" r="6" stroke="currentColor" stroke-width="1.5"/>
+<path d="M8 9L9 6L10.5 8.5" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M13.5 8.5L15 6L16 9" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M9 12Q10.5 10.5 12 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M12 12Q13.5 10.5 15 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+<ellipse cx="12" cy="14.5" rx="1" ry="0.7" fill="currentColor"/>
+<path d="M9 17Q12 20 15 17" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+<circle cx="4" cy="5" r="1" fill="currentColor" opacity="0.6"/>
+<circle cx="20" cy="4" r="1.2" fill="currentColor" opacity="0.5"/>
+<circle cx="3" cy="10" r="0.8" fill="currentColor" opacity="0.4"/>
+<circle cx="21" cy="9" r="1" fill="currentColor" opacity="0.5"/>
+<path d="M5 2L6 4L4 4Z" fill="currentColor" opacity="0.5"/>
+<path d="M18 2L19 4L17 4Z" fill="currentColor" opacity="0.5"/>
+{%- elif name == 'cat-clock' -%}
+<!-- Cat with clock - Time/Expiry -->
+<circle cx="14" cy="13" r="7" stroke="currentColor" stroke-width="1.5"/>
+<path d="M14 9V13L17 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="6" cy="10" r="4" stroke="currentColor" stroke-width="1.3"/>
+<path d="M3.5 7.5L4.5 5L5.8 7" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+<path d="M6.2 7L7.5 5L8.5 7.5" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+<path d="M4.5 9.5Q5.5 8.5 6.5 9.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+<ellipse cx="6" cy="11" rx="0.6" ry="0.4" fill="currentColor"/>
+{%- elif name == 'cat-rocket' -%}
+<!-- Cat with rocket - Launch/Create account -->
+<path d="M14 3C14 3 19 5 19 12C19 16 17 19 14 21L12 18H10L8 21C5 19 3 16 3 12C3 5 8 3 8 3" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<circle cx="11" cy="11" r="3.5" stroke="currentColor" stroke-width="1.2"/>
+<path d="M9 9.5L9.5 8L10.3 9" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>
+<path d="M11.7 9L12.5 8L13 9.5" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>
+<path d="M9.5 10.5Q10.5 9.8 11.5 10.5" stroke="currentColor" stroke-width="0.9" stroke-linecap="round"/>
+<ellipse cx="11" cy="12" rx="0.7" ry="0.5" fill="currentColor"/>
+<path d="M9 21L10 23M13 21L12 23" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+{%- elif name == 'cat-trash' -%}
+<!-- Cat peeking from trash - Delete -->
+<path d="M6 7H18L17 21H7L6 7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M4 7H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M9 7V5C9 4 10 3 12 3C14 3 15 4 15 5V7" stroke="currentColor" stroke-width="1.5"/>
+<circle cx="12" cy="13" r="3" stroke="currentColor" stroke-width="1.2"/>
+<path d="M10.5 11.5L11 10.5L11.7 11.3" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>
+<path d="M12.3 11.3L13 10.5L13.5 11.5" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>
+<path d="M10.8 12.5Q11.5 11.8 12.2 12.5" stroke="currentColor" stroke-width="0.8" stroke-linecap="round"/>
+<ellipse cx="12" cy="14" rx="0.6" ry="0.4" fill="currentColor"/>
+{%- else -%}
+<!-- Fallback: simple cat face -->
+<circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/>
+<path d="M6 8L8 4L10 8" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M14 8L16 4L18 8" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+<circle cx="9" cy="11" r="1.5" fill="currentColor"/>
+<circle cx="15" cy="11" r="1.5" fill="currentColor"/>
+<ellipse cx="12" cy="14" rx="1.5" ry="1" fill="currentColor"/>
+{%- endif -%}
+</svg>
+{%- endmacro %}

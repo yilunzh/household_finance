@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
 {% block title %}Invalid Invitation - Lucky Ledger{% endblock %}
 
@@ -28,24 +29,24 @@
         <h2 class="text-2xl font-bold font-display text-warm-800 mb-3">Oops! Invalid Invitation</h2>
 
         {% if reason == 'expired' %}
-            <p class="text-warm-600 mb-6">
-                This invitation has expired ⏰
-                <br><span class="text-warm-400 text-sm">Please ask for a new invitation.</span>
+            <p class="text-warm-600 mb-6 flex flex-col items-center gap-2">
+                <span class="flex items-center gap-2">This invitation has expired {{ icon('cat-clock', size='md') }}</span>
+                <span class="text-warm-400 text-sm">Please ask for a new invitation.</span>
             </p>
         {% elif reason == 'used' %}
-            <p class="text-warm-600 mb-6">
-                This invitation has already been used ✅
-                <br><span class="text-warm-400 text-sm">If you've already joined, just log in!</span>
+            <p class="text-warm-600 mb-6 flex flex-col items-center gap-2">
+                <span class="flex items-center gap-2">This invitation has already been used {{ icon('cat-happy', size='md') }}</span>
+                <span class="text-warm-400 text-sm">If you've already joined, just log in!</span>
             </p>
         {% elif reason == 'not_found' %}
-            <p class="text-warm-600 mb-6">
-                This invitation link is invalid or was cancelled 🚫
-                <br><span class="text-warm-400 text-sm">The link may have been typed incorrectly.</span>
+            <p class="text-warm-600 mb-6 flex flex-col items-center gap-2">
+                <span class="flex items-center gap-2">This invitation link is invalid or was cancelled {{ icon('cat-stop', size='md') }}</span>
+                <span class="text-warm-400 text-sm">The link may have been typed incorrectly.</span>
             </p>
         {% else %}
-            <p class="text-warm-600 mb-6">
-                This invitation is no longer valid 😕
-                <br><span class="text-warm-400 text-sm">Please request a new one.</span>
+            <p class="text-warm-600 mb-6 flex flex-col items-center gap-2">
+                <span class="flex items-center gap-2">This invitation is no longer valid {{ icon('cat-worried', size='md') }}</span>
+                <span class="text-warm-400 text-sm">Please request a new one.</span>
             </p>
         {% endif %}
 

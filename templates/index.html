@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
 {% block title %}Transactions - Lucky Ledger{% endblock %}
 
@@ -6,7 +7,7 @@
 <!-- Month Selector -->
 <div class="mb-6 flex flex-wrap justify-between items-center gap-4">
     <div class="flex items-center gap-3">
-        <span class="text-2xl">📅</span>
+        <span class="text-2xl text-terracotta-500">{{ icon('cat-calendar', size='lg') }}</span>
         <label for="month-select" class="text-warm-700 font-semibold">Month:</label>
         <select
             id="month-select"
@@ -35,7 +36,7 @@
                transform hover:-translate-y-0.5 active:translate-y-0
                transition-all duration-200 flex items-center gap-2"
     >
-        <span>🤝</span>
+        {{ icon('cat-highfive', size='md') }}
         <span>View Reconciliation</span>
     </a>
 </div>
@@ -44,8 +45,8 @@
 {% if is_settled %}
 <div class="mb-6 bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 flex items-center justify-between gap-4 animate-fade-in">
     <div class="flex items-center gap-4">
-        <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
-            <span class="text-2xl">🔒</span>
+        <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
+            {{ icon('cat-lock', size='xl') }}
         </div>
         <div>
             <p class="font-bold text-amber-800 text-lg">This month is locked</p>
@@ -56,9 +57,10 @@
         onclick="unsettleMonth('{{ current_month }}')"
         class="px-5 py-2.5 bg-amber-500 text-white rounded-xl font-semibold
                hover:bg-amber-600 shadow-sm hover:shadow-md
-               transition-all duration-200 whitespace-nowrap"
+               transition-all duration-200 whitespace-nowrap flex items-center gap-2"
     >
-        🔓 Unlock Month
+        {{ icon('cat-unlock', size='md') }}
+        <span>Unlock Month</span>
     </button>
 </div>
 {% endif %}
@@ -70,7 +72,7 @@
     <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-terracotta-100 to-transparent rounded-bl-full opacity-40"></div>
 
     <h2 class="text-lg font-bold font-display text-warm-800 mb-4 flex items-center gap-2 relative">
-        <span>💰</span>
+        {{ icon('cat-coins', size='lg') }}
         <span>Month Summary</span>
     </h2>
     <div class="grid grid-cols-1 md:grid-cols-{{ household_members|length + 1 }} gap-6 relative">
@@ -93,7 +95,7 @@
 {% if is_settled %}
     <div class="bg-warm-100 rounded-2xl border-2 border-warm-200 border-dashed p-4 sm:p-6 mb-6">
         <h2 class="text-lg font-semibold mb-2 text-warm-500 flex items-center gap-2">
-            <span>🚫</span>
+            {{ icon('cat-stop', size='lg') }}
             <span>Add Transaction (Locked)</span>
         </h2>
         <p class="text-warm-400">This month has been settled. Unlock it or select a different month to add transactions.</p>
@@ -101,7 +103,7 @@
 {% else %}
     <div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-4 sm:p-6 mb-6 md:sticky md:top-20 z-10">
         <h2 class="text-lg font-bold font-display text-warm-800 mb-4 flex items-center gap-2">
-            <span>➕</span>
+            {{ icon('cat-plus', size='lg') }}
             <span>Add Transaction</span>
         </h2>
 
@@ -222,7 +224,7 @@
                        transform hover:-translate-y-0.5 active:translate-y-0
                        transition-all duration-200"
             >
-                Add Transaction ✨
+                Add Transaction
             </button>
         </div>
 
@@ -234,7 +236,7 @@
 <!-- Transaction List -->
 <div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-4 sm:p-6">
     <h2 class="text-lg font-bold font-display text-warm-800 mb-4 flex items-center gap-2">
-        <span>📋</span>
+        {{ icon('cat-clipboard', size='lg') }}
         <span>Transactions for {{ current_month }}</span>
     </h2>
 
@@ -268,7 +270,7 @@
                     </span>
                     {% if is_settled %}
                         <span class="text-warm-300 text-xs flex items-center gap-1">
-                            <span>🔒</span>
+                            {{ icon('cat-lock', size='sm') }}
                             <span>Locked</span>
                         </span>
                     {% else %}
@@ -338,7 +340,7 @@
                         <td class="py-3.5 px-4 text-right">
                             {% if is_settled %}
                                 <span class="text-warm-300 text-xs flex items-center justify-end gap-1">
-                                    <span>🔒</span>
+                                    {{ icon('cat-lock', size='sm') }}
                                     <span>Locked</span>
                                 </span>
                             {% else %}
@@ -363,7 +365,7 @@
         </div>
 
         <div class="mt-4 text-sm text-warm-500 flex items-center gap-2">
-            <span>📊</span>
+            {{ icon('cat-ledger', size='md') }}
             <span>Total: {{ transactions|length }} transaction(s)</span>
         </div>
     {% else %}
@@ -399,7 +401,7 @@
                 <circle cx="155" cy="40" r="3" fill="currentColor" opacity="0.2"/>
             </svg>
             <p class="text-xl font-display font-semibold text-warm-600 mb-2">No transactions yet!</p>
-            <p class="text-warm-400">Start tracking by adding your first expense above ✨</p>
+            <p class="text-warm-400">Start tracking by adding your first expense above</p>
         </div>
     {% endif %}
 </div>
@@ -459,7 +461,7 @@
         <!-- Modal Header -->
         <div class="sticky top-0 bg-white border-b border-warm-100 px-6 py-4 flex justify-between items-center rounded-t-3xl">
             <h2 class="text-xl font-bold font-display text-warm-800 flex items-center gap-2">
-                <span>✏️</span>
+                {{ icon('cat-pencil', size='lg') }}
                 <span>Edit Transaction</span>
             </h2>
             <button
