@@ -1,6 +1,6 @@
 # Zhang Estate Expense Tracker - Technical Specification
 
-**Version**: 2.2 (Warm Theme Redesign)
+**Version**: 2.3 (Budget Tracking)
 **Date**: January 2026
 **Status**: Implemented and Deployed to Production
 
@@ -173,13 +173,73 @@ CREATE TABLE settlements (
     UNIQUE(household_id, month_year)
 );
 CREATE INDEX idx_settlement_household_month ON settlements(household_id, month_year);
+
+-- Expense types table (budget categorization)
+CREATE TABLE expense_types (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,  -- e.g., "Grocery", "Dining", "Entertainment"
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(household_id, name)
+);
+CREATE INDEX idx_expense_types_household ON expense_types(household_id);
+
+-- Auto-category rules (merchant keyword matching)
+CREATE TABLE auto_category_rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    expense_type_id INTEGER NOT NULL REFERENCES expense_types(id) ON DELETE CASCADE,
+    keyword VARCHAR(100) NOT NULL,  -- e.g., "publix", "whole foods"
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_auto_rules_expense ON auto_category_rules(expense_type_id);
+
+-- Budget rules (giver/receiver/amount/categories)
+CREATE TABLE budget_rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id) ON DELETE CASCADE,
+    giver_user_id INTEGER NOT NULL REFERENCES users(id),  -- Who provides the budget
+    receiver_user_id INTEGER NOT NULL REFERENCES users(id),  -- Who receives/spends
+    monthly_amount DECIMAL(10, 2) NOT NULL,  -- Budget amount per month
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_budget_rules_household ON budget_rules(household_id);
+
+-- Budget rule expense types (many-to-many)
+CREATE TABLE budget_rule_expense_types (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    budget_rule_id INTEGER NOT NULL REFERENCES budget_rules(id) ON DELETE CASCADE,
+    expense_type_id INTEGER NOT NULL REFERENCES expense_types(id) ON DELETE CASCADE,
+    UNIQUE(budget_rule_id, expense_type_id)
+);
+
+-- Budget snapshots (monthly summaries)
+CREATE TABLE budget_snapshots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    budget_rule_id INTEGER NOT NULL REFERENCES budget_rules(id) ON DELETE CASCADE,
+    month_year VARCHAR(7) NOT NULL,  -- Format: "2026-01"
+    budget_amount DECIMAL(10, 2) NOT NULL,
+    spent_amount DECIMAL(10, 2) NOT NULL,
+    giver_reimbursement DECIMAL(10, 2) NOT NULL,  -- Amount giver paid that should be reimbursed
+    carryover_from_previous DECIMAL(10, 2) DEFAULT 0,
+    net_balance DECIMAL(10, 2) NOT NULL,  -- Positive = surplus, negative = deficit
+    is_finalized BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(budget_rule_id, month_year)
+);
+
+-- Add expense_type_id to transactions (nullable for backward compatibility)
+ALTER TABLE transactions ADD COLUMN expense_type_id INTEGER REFERENCES expense_types(id);
 ```
 
 **Key Design Decisions:**
-- **Multi-tenancy**: All data (transactions, settlements) is isolated by `household_id`
+- **Multi-tenancy**: All data (transactions, settlements, budgets) is isolated by `household_id`
 - **Dynamic members**: Users have a `display_name` per household (not hardcoded)
 - **Invitations**: Secure 48-char tokens with 7-day expiration
 - **Settlements**: One per household per month (UNIQUE constraint)
+- **Budget rules**: Giver provides budget to receiver for specific expense types
+- **Auto-categorization**: Merchant keywords auto-detect expense types
 
 ### 3.2 Transaction Categories
 
@@ -252,7 +312,23 @@ User ──< HouseholdMember >── Household
 | GET/POST | `/household/settings` | Manage household settings | @household_required |
 | POST | `/household/leave` | Leave current household | @household_required |
 
-### 4.6 Transaction JSON Schema
+### 4.6 Budget Routes
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/budget` | Budget tracking (current month) | @household_required |
+| GET | `/budget/<month>` | Budget tracking for specific month | @household_required |
+| POST | `/api/auto-categorize` | Auto-detect expense type from merchant | @household_required |
+| POST | `/expense-type` | Create expense type | @household_required |
+| PUT | `/expense-type/<id>` | Update expense type | @household_required |
+| DELETE | `/expense-type/<id>` | Delete expense type | @household_required |
+| POST | `/auto-category-rule` | Add auto-category keyword | @household_required |
+| DELETE | `/auto-category-rule/<id>` | Delete auto-category keyword | @household_required |
+| POST | `/budget-rule` | Create budget rule | @household_required |
+| PUT | `/budget-rule/<id>` | Update budget rule | @household_required |
+| DELETE | `/budget-rule/<id>` | Delete budget rule | @household_required |
+
+### 4.7 Transaction JSON Schema
 
 ```json
 {
@@ -369,6 +445,55 @@ def get_exchange_rate(from_curr, to_curr, date):
 - Cache exchange rates by date (format: `CAD_USD_YYYY-MM-DD`)
 - Rates don't change retroactively
 - Store in memory (dict) for session-based caching
+
+### 5.4 Budget Tracking Logic
+
+**Budget Rule Model**: "Giver provides Receiver $X/month for [expense types]"
+
+Example: "Bob gives Alice $1500/month for Grocery, Dining"
+
+**Auto-Split Defaulting Based on Budget Rules:**
+
+When a transaction's expense type matches a budget rule:
+
+| Who Pays | Auto-Default Split | Meaning |
+|----------|-------------------|---------|
+| Receiver (Alice) | "Alice only" (PERSONAL) | Alice spending from her budget - no reimbursement |
+| Giver (Bob) | "Bob → Alice" (PAYS_FOR) | Bob paid, Alice should reimburse from budget |
+
+**Budget Status Calculation:**
+```python
+def calculate_budget_status(budget_rule, month_year):
+    # Get transactions matching expense types in budget rule
+    budget_transactions = [txn for txn in transactions
+                          if txn.expense_type_id in rule.expense_type_ids]
+
+    spent_amount = sum(txn.amount_in_usd for txn in budget_transactions)
+
+    # Track giver reimbursement (when giver paid for receiver's budget items)
+    giver_reimbursement = sum(txn.amount_in_usd for txn in budget_transactions
+                             if txn.paid_by_user_id == rule.giver_user_id)
+
+    remaining = budget_amount - spent_amount
+    percent_used = (spent_amount / budget_amount) * 100
+    is_over_budget = spent_amount > budget_amount
+
+    # Net balance includes carryover from previous months
+    net_balance = budget_amount - spent_amount + carryover_from_previous
+
+    return {budget_amount, spent_amount, giver_reimbursement,
+            remaining, percent_used, is_over_budget, net_balance}
+```
+
+**Year-to-Date Tracking:**
+- Cumulative surplus/deficit tracked across months within a year
+- Resets to zero on January 1st
+- Allows budget flexibility (under-spend one month, over-spend next)
+
+**Auto-Categorization:**
+- Merchant keywords (case-insensitive) auto-detect expense types
+- Example: "publix", "whole foods" → Grocery expense type
+- Applied when merchant field loses focus (blur event)
 
 ---
 
@@ -571,13 +696,15 @@ def get_exchange_rate(from_curr, to_curr, date):
 
 ```
 household_tracker/
-├── app.py                    # Main Flask application (~700 lines)
-├── models.py                 # SQLAlchemy models (~240 lines)
+├── app.py                    # Main Flask application (~1300 lines)
+├── models.py                 # SQLAlchemy models (~450 lines)
 ├── auth.py                   # Flask-Login configuration
 ├── decorators.py             # @household_required decorator
 ├── household_context.py      # Household session helpers
 ├── email_service.py          # Flask-Mail integration
-├── utils.py                  # Helper functions (~150 lines)
+├── utils.py                  # Helper functions (~180 lines)
+├── budget_utils.py           # Budget calculation utilities (~220 lines)
+├── migrate_budget_tables.py  # Database migration script for budget feature
 ├── requirements.txt          # Python dependencies
 ├── requirements-dev.txt      # Dev dependencies (playwright)
 ├── Procfile                  # Production server config for Render
@@ -596,13 +723,15 @@ household_tracker/
 │   ├── household/
 │   │   ├── setup.html       # Create household wizard
 │   │   ├── select.html      # Household switcher
-│   │   ├── settings.html    # Manage household
+│   │   ├── settings.html    # Manage household (+ expense types, budget rules)
 │   │   ├── invite.html      # Send invitations
 │   │   ├── invite_sent.html # Invitation success
 │   │   ├── accept_invite.html # Accept invitation
 │   │   └── invite_invalid.html # Invalid token
+│   ├── budget/
+│   │   └── index.html       # Budget tracking page
 │   ├── base.html            # Base template with nav
-│   ├── index.html           # Main transaction page
+│   ├── index.html           # Main transaction page (+ expense type dropdown)
 │   └── reconciliation.html  # Monthly summary
 │
 ├── instance/
@@ -761,6 +890,17 @@ open http://localhost:5000
 - ✅ Button hover lift effects and smooth transitions
 - ✅ Emoji accents throughout UI
 - ✅ Redesigned all 12 templates with cohesive warm theme
+
+**✅ v2.3 - Budget Tracking (Completed)**
+- ✅ Expense types with household-level management
+- ✅ Auto-category rules (merchant keyword matching)
+- ✅ Budget rules (giver/receiver/amount/expense types)
+- ✅ Budget tracking page with monthly status and progress bars
+- ✅ Year-to-date cumulative tracking with January reset
+- ✅ Auto-split defaulting based on budget rules
+- ✅ Expense type dropdown in transaction form (add and edit)
+- ✅ Settings page sections for expense types and budget rules
+- ✅ Database migration script for production deployment
 
 ### 10.3 Testing Checklist
 
@@ -1076,9 +1216,10 @@ def format_settlement(me_balance, wife_balance):
 | 2.0 | Jan 2026 | Multi-user auth, multi-household, invitations, security |
 | 2.1 | Jan 2026 | Added Claude Code Stop hook for automated SPEC.md documentation updates |
 | 2.2 | Jan 2026 | Frontend redesign: warm theme, custom illustrations, animations |
+| 2.3 | Jan 2026 | Budget tracking: expense types, budget rules, auto-split, auto-categorization |
 
 ---
 
-**Document Version**: 2.2
-**Last Updated**: January 7, 2026
+**Document Version**: 2.3
+**Last Updated**: January 17, 2026
 **GitHub Repository**: https://github.com/yilunzh/household_finance
