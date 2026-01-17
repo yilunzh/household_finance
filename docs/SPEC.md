@@ -1,6 +1,6 @@
 # Zhang Estate Expense Tracker - Technical Specification
 
-**Version**: 2.4 (Password Reset & UI Polish)
+**Version**: 2.5 (UX Improvements)
 **Date**: January 2026
 **Status**: Implemented and Deployed to Production
 
@@ -590,7 +590,7 @@ def calculate_budget_status(budget_rule, month_year):
 - Merchant (text input)
 - Amount (number)
 - Currency (USD/CAD dropdown, USD default)
-- Paid By (Bibi/Pi dropdown, displayed as nicknames but stored as ME/WIFE)
+- Paid By (household members dropdown, defaults to logged-in user)
 - Category (dropdown with friendly labels: "Shared Expense", "Bibi pays for Pi", etc.)
 - Notes (optional textarea)
 
@@ -601,6 +601,10 @@ def calculate_budget_status(budget_rule, month_year):
 - Click Delete (×) → Confirm and DELETE request
 - Month selector → Load different month (query param: `?month=YYYY-MM`)
 - Escape key or backdrop click → Close edit modal
+
+**Transaction Sorting:**
+- Primary: Transaction date (newest first)
+- Secondary: Created timestamp (most recently added first when dates are equal)
 
 **Edit Modal Implementation:**
 - Transaction data stored in HTML `data-*` attributes on table rows
@@ -869,7 +873,11 @@ pip install -r requirements.txt
 python app.py
 
 # 5. Open browser
-open http://localhost:5000
+open http://localhost:5001
+
+# 6. (Optional) Seed test users for development
+python seed_test_users.py
+# Creates: test_alice@example.com / test_bob@example.com (password: password123)
 ```
 
 ### 10.2 Implementation Status
@@ -930,6 +938,11 @@ open http://localhost:5000
 - ✅ UI: Notes field moved next to Split dropdown (same row)
 - ✅ UI: Visual divider between Add Transaction form and transaction list
 - ✅ Improved split category labels ("For X (by Y)" format)
+
+**✅ v2.5 - UX Improvements (Completed)**
+- ✅ Transaction sorting: date desc, then created_at desc (newest additions first for same date)
+- ✅ Paid By field defaults to logged-in user when adding transactions
+- ✅ Test user seeding script (`seed_test_users.py`) for local development
 
 ### 10.3 Testing Checklist
 
