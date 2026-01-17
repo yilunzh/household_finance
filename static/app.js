@@ -35,13 +35,17 @@ async function handleTransactionSubmit(event) {
     const formData = new FormData(form);
 
     // Build JSON payload
+    const expenseTypeEl = document.getElementById('expense_type');
+    const expenseTypeId = expenseTypeEl ? expenseTypeEl.value : null;
+
     const data = {
         date: formData.get('date'),
         merchant: formData.get('merchant'),
         amount: parseFloat(formData.get('amount')),
         currency: formData.get('currency'),
         paid_by: formData.get('paid_by'),
-        category: formData.get('category'),
+        category: document.getElementById('category').value,
+        expense_type_id: expenseTypeId || null,
         notes: document.getElementById('notes').value
     };
 
@@ -186,6 +190,9 @@ async function handleEditSubmit(event) {
     const formData = new FormData(form);
     const transactionId = document.getElementById('edit-transaction-id').value;
 
+    const editExpenseTypeEl = document.getElementById('edit-expense-type');
+    const editExpenseTypeId = editExpenseTypeEl ? editExpenseTypeEl.value : null;
+
     const data = {
         date: formData.get('date'),
         merchant: formData.get('merchant'),
@@ -193,6 +200,7 @@ async function handleEditSubmit(event) {
         currency: formData.get('currency'),
         paid_by: formData.get('paid_by'),
         category: formData.get('category'),
+        expense_type_id: editExpenseTypeId || null,
         notes: document.getElementById('edit-notes').value
     };
 

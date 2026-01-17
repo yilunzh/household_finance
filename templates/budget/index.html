@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Budget - Lucky Ledger{% endblock %}
+
+{% block content %}
+<!-- Month Selector -->
+<div class="mb-6 flex flex-wrap justify-between items-center gap-4">
+    <div class="flex items-center gap-3">
+        <span class="text-2xl text-terracotta-500">{{ icon('cat-coins', size='lg') }}</span>
+        <h1 class="text-2xl font-bold font-display text-warm-800">Budget Tracking</h1>
+    </div>
+    <div class="flex items-center gap-3">
+        <label for="month-select" class="text-warm-700 font-semibold">Month:</label>
+        <select
+            id="month-select"
+            class="px-4 py-2.5 bg-white border-2 border-warm-200 rounded-xl text-warm-800 font-medium
+                   focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                   cursor-pointer transition-all duration-200"
+            onchange="window.location.href = '/budget/' + this.value"
+        >
+            {% for month in months %}
+                <option value="{{ month }}" {% if month == current_month %}selected{% endif %}>
+                    {{ month }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+{% if not budget_rules %}
+<!-- No Budget Rules State -->
+<div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-8 text-center">
+    <div class="w-24 h-24 mx-auto mb-6 bg-cream-100 rounded-full flex items-center justify-center">
+        {{ icon('cat-coins', size='2xl') }}
+    </div>
+    <h2 class="text-xl font-bold font-display text-warm-800 mb-2">No Budget Rules Yet</h2>
+    <p class="text-warm-500 mb-6 max-w-md mx-auto">
+        Set up budget rules in Settings to track spending limits for specific expense categories.
+    </p>
+    <a href="{{ url_for('household_settings') }}"
+       class="inline-flex items-center gap-2 px-6 py-3 bg-terracotta-500 text-white rounded-xl font-semibold
+              hover:bg-terracotta-600 transition-all">
+        {{ icon('cat-gear', size='md') }}
+        <span>Go to Settings</span>
+    </a>
+</div>
+{% else %}
+
+<!-- Budget Status Cards -->
+<div class="space-y-6">
+    {% for rule_data in budget_data %}
+    <div class="bg-white rounded-2xl shadow-sm border border-warm-200 overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-terracotta-50 to-cream-100 px-6 py-4 border-b border-warm-100">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-terracotta-100 rounded-xl flex items-center justify-center text-terracotta-600">
+                        {{ icon('cat-heart', size='lg') }}
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-warm-800 text-lg">
+                            {{ rule_data.giver_name }} &rarr; {{ rule_data.receiver_name }}
+                        </h3>
+                        <div class="flex flex-wrap gap-1 mt-1">
+                            {% for name in rule_data.expense_type_names %}
+                            <span class="px-2 py-0.5 bg-sage-100 text-sage-700 text-xs rounded-full">{{ name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-terracotta-600">${{ "%.2f"|format(rule_data.monthly_amount) }}</div>
+                    <div class="text-xs text-warm-400">per month</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="p-6">
+            <!-- Progress Bar -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-semibold text-warm-700">This Month</span>
+                    <span class="text-sm text-warm-500">
+                        ${{ "%.2f"|format(rule_data.status.spent_amount) }} / ${{ "%.2f"|format(rule_data.status.budget_amount) }}
+                    </span>
+                </div>
+                <div class="h-4 bg-cream-100 rounded-full overflow-hidden">
+                    {% if rule_data.status.is_over_budget %}
+                    <div class="h-full bg-rose-500 rounded-full transition-all duration-500"
+                         style="width: 100%"></div>
+                    {% else %}
+                    <div class="h-full bg-sage-500 rounded-full transition-all duration-500"
+                         style="width: {{ rule_data.status.percent_used }}%"></div>
+                    {% endif %}
+                </div>
+                <div class="flex justify-between items-center mt-2">
+                    <span class="text-xs text-warm-400">{{ "%.1f"|format(rule_data.status.percent_used) }}% used</span>
+                    {% if rule_data.status.is_over_budget %}
+                    <span class="text-xs text-rose-600 font-semibold">
+                        Over budget by ${{ "%.2f"|format(rule_data.status.spent_amount - rule_data.status.budget_amount) }}
+                    </span>
+                    {% else %}
+                    <span class="text-xs text-sage-600 font-semibold">
+                        ${{ "%.2f"|format(rule_data.status.remaining) }} remaining
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-cream-50 rounded-xl p-4">
+                    <p class="text-xs text-warm-500 mb-1">Budget</p>
+                    <p class="text-lg font-bold text-warm-800">${{ "%.2f"|format(rule_data.status.budget_amount) }}</p>
+                </div>
+                <div class="bg-cream-50 rounded-xl p-4">
+                    <p class="text-xs text-warm-500 mb-1">Spent</p>
+                    <p class="text-lg font-bold {% if rule_data.status.is_over_budget %}text-rose-600{% else %}text-warm-800{% endif %}">
+                        ${{ "%.2f"|format(rule_data.status.spent_amount) }}
+                    </p>
+                </div>
+                <div class="bg-amber-50 rounded-xl p-4 border border-amber-200">
+                    <p class="text-xs text-amber-600 mb-1">{{ rule_data.giver_name }} Paid</p>
+                    <p class="text-lg font-bold text-amber-700">${{ "%.2f"|format(rule_data.status.giver_reimbursement) }}</p>
+                    <p class="text-xs text-amber-500">to be reimbursed</p>
+                </div>
+                <div class="{% if rule_data.status.net_balance >= 0 %}bg-sage-50 border-sage-200{% else %}bg-rose-50 border-rose-200{% endif %} rounded-xl p-4 border">
+                    <p class="text-xs {% if rule_data.status.net_balance >= 0 %}text-sage-600{% else %}text-rose-600{% endif %} mb-1">
+                        Net Balance
+                    </p>
+                    <p class="text-lg font-bold {% if rule_data.status.net_balance >= 0 %}text-sage-700{% else %}text-rose-700{% endif %}">
+                        {% if rule_data.status.net_balance >= 0 %}+{% endif %}${{ "%.2f"|format(rule_data.status.net_balance) }}
+                    </p>
+                    <p class="text-xs {% if rule_data.status.net_balance >= 0 %}text-sage-500{% else %}text-rose-500{% endif %}">
+                        {% if rule_data.status.net_balance >= 0 %}surplus{% else %}deficit{% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Year-to-Date Summary -->
+            {% if rule_data.yearly_cumulative != 0 %}
+            <div class="bg-warm-50 rounded-xl p-4 mb-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        {{ icon('cat-calendar', size='md') }}
+                        <span class="font-semibold text-warm-700">Year-to-Date ({{ current_year }})</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-lg font-bold {% if rule_data.yearly_cumulative >= 0 %}text-sage-600{% else %}text-rose-600{% endif %}">
+                            {% if rule_data.yearly_cumulative >= 0 %}+{% endif %}${{ "%.2f"|format(rule_data.yearly_cumulative) }}
+                        </span>
+                        <p class="text-xs text-warm-400">Resets Jan 1</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Transactions in this Budget -->
+            {% if rule_data.status.transactions %}
+            <div>
+                <h4 class="font-semibold text-warm-700 mb-3 flex items-center gap-2">
+                    {{ icon('cat-clipboard', size='md') }}
+                    <span>Transactions ({{ rule_data.status.transactions|length }})</span>
+                </h4>
+                <div class="space-y-2 max-h-64 overflow-y-auto">
+                    {% for txn in rule_data.status.transactions %}
+                    <div class="flex items-center justify-between p-3 bg-cream-50 rounded-xl">
+                        <div class="flex items-center gap-3">
+                            <div class="text-xs text-warm-400 w-20">{{ txn.date.strftime('%m/%d') }}</div>
+                            <div>
+                                <div class="font-medium text-warm-800">{{ txn.merchant }}</div>
+                                <div class="text-xs text-warm-400">{{ txn.get_paid_by_display_name() }}</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-semibold text-warm-800">${{ "%.2f"|format(txn.amount_in_usd) }}</div>
+                            {% if txn.paid_by_user_id == rule_data.giver_user_id %}
+                            <div class="text-xs text-amber-600">reimbursable</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-6 text-warm-400">
+                <p>No transactions in these categories for {{ current_month }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endif %}
+
+<div class="mt-6 text-center">
+    <a href="/" class="text-warm-500 hover:text-terracotta-600 font-medium transition-colors">
+        &larr; Back to Transactions
+    </a>
+</div>
+{% endblock %}

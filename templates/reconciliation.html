@@ -205,6 +205,77 @@
     </div>
 </div>
 
+<!-- Budget Summary (if budget rules exist) -->
+{% if budget_data %}
+<div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-6 mb-6">
+    <h3 class="text-lg font-bold font-display mb-4 text-warm-800 flex items-center gap-2">
+        {{ icon('cat-coins', size='lg') }}
+        <span>Budget Summary</span>
+    </h3>
+
+    <div class="space-y-4">
+        {% for bd in budget_data %}
+        <div class="bg-cream-50 rounded-xl p-4 border border-warm-100">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold text-warm-800">{{ bd.giver_name }} → {{ bd.receiver_name }}</span>
+                    <span class="text-sm text-warm-500">${{ "%.2f"|format(bd.monthly_amount) }}/mo</span>
+                </div>
+                <div class="flex flex-wrap gap-1">
+                    {% for name in bd.expense_type_names %}
+                    <span class="px-2 py-0.5 bg-sage-100 text-sage-700 text-xs rounded-full">{{ name }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="mb-3">
+                <div class="h-2.5 bg-warm-100 rounded-full overflow-hidden">
+                    {% if bd.status.is_over_budget %}
+                    <div class="h-full bg-rose-500 rounded-full" style="width: 100%"></div>
+                    {% else %}
+                    <div class="h-full bg-sage-500 rounded-full" style="width: {{ bd.status.percent_used }}%"></div>
+                    {% endif %}
+                </div>
+                <div class="flex justify-between text-xs mt-1">
+                    <span class="text-warm-500">${{ "%.2f"|format(bd.status.spent_amount) }} spent</span>
+                    <span class="{% if bd.status.is_over_budget %}text-rose-600{% else %}text-sage-600{% endif %}">
+                        {% if bd.status.is_over_budget %}
+                        Over by ${{ "%.2f"|format(bd.status.spent_amount - bd.status.budget_amount) }}
+                        {% else %}
+                        ${{ "%.2f"|format(bd.status.remaining) }} left
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Giver reimbursement if any -->
+            {% if bd.status.giver_reimbursement > 0 %}
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3">
+                <div class="flex items-center gap-2">
+                    {{ icon('cat-heart', size='sm', class='text-amber-600') }}
+                    <span class="text-sm text-amber-800">
+                        <strong>{{ bd.giver_name }}</strong> paid <strong>${{ "%.2f"|format(bd.status.giver_reimbursement) }}</strong>
+                        for budget items → added to settlement
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if summary.budget_reimbursements %}
+    <div class="mt-4 pt-4 border-t border-warm-200">
+        <p class="text-sm text-warm-600 flex items-center gap-2">
+            {{ icon('cat-ledger', size='sm') }}
+            <span>Budget reimbursements are included in the settlement calculation above.</span>
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
 <!-- Category Breakdown -->
 <div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-6 mb-6">
     <h3 class="text-lg font-bold font-display mb-4 text-warm-800 flex items-center gap-2">

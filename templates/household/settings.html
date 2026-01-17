@@ -165,6 +165,66 @@
             </form>
         </div>
 
+        <!-- Budget Rules -->
+        <div class="mb-8 pt-6 border-t border-warm-100">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-warm-700 flex items-center gap-2">
+                    {{ icon('cat-coins', size='lg') }}
+                    <span>Budget Rules</span>
+                </h3>
+                <button
+                    onclick="showBudgetRuleModal()"
+                    class="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium transition-colors"
+                >
+                    + Add Rule
+                </button>
+            </div>
+            <div id="budget-rules-list" class="space-y-3">
+                <p class="text-warm-400 text-sm italic" id="no-budget-rules">Loading...</p>
+            </div>
+        </div>
+
+        <!-- Expense Categories -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-warm-700 flex items-center gap-2">
+                    {{ icon('cat-folder', size='lg') }}
+                    <span>Expense Categories</span>
+                </h3>
+                <button
+                    onclick="showExpenseTypeModal()"
+                    class="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium transition-colors"
+                >
+                    + Add Category
+                </button>
+            </div>
+            <div id="expense-types-list" class="space-y-3">
+                <p class="text-warm-400 text-sm italic" id="no-expense-types">Loading...</p>
+            </div>
+        </div>
+
+        <!-- Auto-Categorization Rules -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-warm-700 flex items-center gap-2">
+                    {{ icon('cat-sparkle', size='lg') }}
+                    <span>Auto-Categorization Rules</span>
+                </h3>
+                <button
+                    onclick="showAutoCategoryModal()"
+                    class="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium transition-colors"
+                >
+                    + Add Rule
+                </button>
+            </div>
+            <p class="text-sm text-warm-400 mb-3">
+                When adding transactions, the expense type will be auto-detected based on merchant name.
+            </p>
+            <div id="auto-category-rules-list" class="space-y-3">
+                <p class="text-warm-400 text-sm italic" id="no-auto-rules">Loading...</p>
+            </div>
+        </div>
+
         <!-- Danger Zone -->
         <div class="pt-6 border-t border-warm-100">
             <h3 class="text-lg font-semibold text-rose-500 mb-4 flex items-center gap-2">
@@ -205,4 +265,587 @@
         </a>
     </div>
 </div>
+
+<!-- Expense Type Modal -->
+<div id="expense-type-modal" class="hidden fixed inset-0 bg-warm-900/50 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 animate-scale-in">
+        <div class="p-6">
+            <h3 class="text-xl font-bold font-display text-warm-800 mb-4" id="expense-type-modal-title">Add Expense Category</h3>
+            <form id="expense-type-form" class="space-y-4">
+                <input type="hidden" id="expense-type-id" value="">
+                <div>
+                    <label class="block text-sm font-semibold text-warm-700 mb-1.5">Category Name</label>
+                    <input type="text" id="expense-type-name" required maxlength="50"
+                        class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               text-warm-800 transition-all duration-200"
+                        placeholder="e.g., Grocery, Dining, Household">
+                </div>
+                <div class="flex gap-3 justify-end pt-2">
+                    <button type="button" onclick="hideExpenseTypeModal()"
+                        class="px-4 py-2 text-warm-600 hover:text-warm-800 font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-xl font-semibold transition-all">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Auto-Category Rule Modal -->
+<div id="auto-category-modal" class="hidden fixed inset-0 bg-warm-900/50 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 animate-scale-in">
+        <div class="p-6">
+            <h3 class="text-xl font-bold font-display text-warm-800 mb-4" id="auto-category-modal-title">Add Auto-Category Rule</h3>
+            <form id="auto-category-form" class="space-y-4">
+                <input type="hidden" id="auto-category-id" value="">
+                <div>
+                    <label class="block text-sm font-semibold text-warm-700 mb-1.5">Keyword</label>
+                    <input type="text" id="auto-category-keyword" required maxlength="100"
+                        class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               text-warm-800 transition-all duration-200"
+                        placeholder="e.g., Whole Foods, Costco">
+                    <p class="text-xs text-warm-400 mt-1">If merchant name contains this keyword, it will auto-assign the category.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-warm-700 mb-1.5">Expense Category</label>
+                    <select id="auto-category-expense-type" required
+                        class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               text-warm-800 transition-all duration-200 cursor-pointer">
+                        <option value="">Select a category...</option>
+                    </select>
+                </div>
+                <div class="flex gap-3 justify-end pt-2">
+                    <button type="button" onclick="hideAutoCategoryModal()"
+                        class="px-4 py-2 text-warm-600 hover:text-warm-800 font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-xl font-semibold transition-all">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Budget Rule Modal -->
+<div id="budget-rule-modal" class="hidden fixed inset-0 bg-warm-900/50 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 animate-scale-in">
+        <div class="p-6">
+            <h3 class="text-xl font-bold font-display text-warm-800 mb-4" id="budget-rule-modal-title">Add Budget Rule</h3>
+            <form id="budget-rule-form" class="space-y-4">
+                <input type="hidden" id="budget-rule-id" value="">
+                <div>
+                    <label class="block text-sm font-semibold text-warm-700 mb-1.5">Budget Giver</label>
+                    <select id="budget-giver" required
+                        class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               text-warm-800 transition-all duration-200 cursor-pointer">
+                        <option value="">Select who gives the budget...</option>
+                        {% for member in members %}
+                        <option value="{{ member.user_id }}">{{ member.display_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-warm-700 mb-1.5">Budget Receiver</label>
+                    <select id="budget-receiver" required
+                        class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               text-warm-800 transition-all duration-200 cursor-pointer">
+                        <option value="">Select who receives the budget...</option>
+                        {% for member in members %}
+                        <option value="{{ member.user_id }}">{{ member.display_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-warm-700 mb-1.5">Monthly Budget (USD)</label>
+                    <input type="number" id="budget-amount" required min="0.01" step="0.01"
+                        class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               text-warm-800 transition-all duration-200"
+                        placeholder="1500.00">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-warm-700 mb-1.5">Expense Categories</label>
+                    <div id="budget-expense-types" class="space-y-2 max-h-40 overflow-y-auto p-2 bg-cream-50 rounded-xl border-2 border-warm-200">
+                        <p class="text-warm-400 text-sm">Loading categories...</p>
+                    </div>
+                    <p class="text-xs text-warm-400 mt-1">Select which expense categories this budget covers.</p>
+                </div>
+                <div class="flex gap-3 justify-end pt-2">
+                    <button type="button" onclick="hideBudgetRuleModal()"
+                        class="px-4 py-2 text-warm-600 hover:text-warm-800 font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-xl font-semibold transition-all">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global state for budget settings
+let expenseTypes = [];
+let autoCategoryRules = [];
+let budgetRules = [];
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadExpenseTypes();
+    loadAutoCategoryRules();
+    loadBudgetRules();
+
+    // Form handlers
+    document.getElementById('expense-type-form').addEventListener('submit', saveExpenseType);
+    document.getElementById('auto-category-form').addEventListener('submit', saveAutoCategoryRule);
+    document.getElementById('budget-rule-form').addEventListener('submit', saveBudgetRule);
+});
+
+// ============================================================================
+// Expense Types
+// ============================================================================
+
+async function loadExpenseTypes() {
+    try {
+        const response = await fetch('/api/expense-types');
+        const data = await response.json();
+        if (data.success) {
+            expenseTypes = data.expense_types;
+            renderExpenseTypes();
+            updateExpenseTypeSelects();
+        }
+    } catch (error) {
+        console.error('Error loading expense types:', error);
+    }
+}
+
+function renderExpenseTypes() {
+    const container = document.getElementById('expense-types-list');
+    if (expenseTypes.length === 0) {
+        container.innerHTML = '<p class="text-warm-400 text-sm italic">No expense categories yet. Add one to get started.</p>';
+        return;
+    }
+
+    container.innerHTML = expenseTypes.map(et => `
+        <div class="flex items-center justify-between p-3 bg-cream-50 rounded-xl">
+            <span class="font-medium text-warm-700">${escapeHtml(et.name)}</span>
+            <div class="flex gap-2">
+                <button onclick="editExpenseType(${et.id})" class="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium">Edit</button>
+                <button onclick="deleteExpenseType(${et.id})" class="text-sm text-rose-500 hover:text-rose-600 font-medium">Delete</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showExpenseTypeModal(id = null) {
+    const modal = document.getElementById('expense-type-modal');
+    const title = document.getElementById('expense-type-modal-title');
+    const nameInput = document.getElementById('expense-type-name');
+    const idInput = document.getElementById('expense-type-id');
+
+    if (id) {
+        const et = expenseTypes.find(e => e.id === id);
+        title.textContent = 'Edit Expense Category';
+        nameInput.value = et.name;
+        idInput.value = id;
+    } else {
+        title.textContent = 'Add Expense Category';
+        nameInput.value = '';
+        idInput.value = '';
+    }
+
+    modal.classList.remove('hidden');
+    nameInput.focus();
+}
+
+function hideExpenseTypeModal() {
+    document.getElementById('expense-type-modal').classList.add('hidden');
+}
+
+function editExpenseType(id) {
+    showExpenseTypeModal(id);
+}
+
+async function saveExpenseType(e) {
+    e.preventDefault();
+    const id = document.getElementById('expense-type-id').value;
+    const name = document.getElementById('expense-type-name').value.trim();
+
+    const url = id ? `/api/expense-types/${id}` : '/api/expense-types';
+    const method = id ? 'PUT' : 'POST';
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ name })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            hideExpenseTypeModal();
+            loadExpenseTypes();
+        } else {
+            alert(data.error || 'Failed to save expense type');
+        }
+    } catch (error) {
+        console.error('Error saving expense type:', error);
+        alert('Failed to save expense type');
+    }
+}
+
+async function deleteExpenseType(id) {
+    if (!confirm('Delete this expense category?')) return;
+
+    try {
+        const response = await fetch(`/api/expense-types/${id}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': csrfToken }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            loadExpenseTypes();
+        } else {
+            alert(data.error || 'Failed to delete expense type');
+        }
+    } catch (error) {
+        console.error('Error deleting expense type:', error);
+        alert('Failed to delete expense type');
+    }
+}
+
+function updateExpenseTypeSelects() {
+    // Update auto-category modal select
+    const autoCategorySelect = document.getElementById('auto-category-expense-type');
+    autoCategorySelect.innerHTML = '<option value="">Select a category...</option>' +
+        expenseTypes.map(et => `<option value="${et.id}">${escapeHtml(et.name)}</option>`).join('');
+
+    // Update budget rule modal checkboxes
+    const budgetExpenseTypesContainer = document.getElementById('budget-expense-types');
+    if (expenseTypes.length === 0) {
+        budgetExpenseTypesContainer.innerHTML = '<p class="text-warm-400 text-sm">No expense categories. Create some first.</p>';
+    } else {
+        budgetExpenseTypesContainer.innerHTML = expenseTypes.map(et => `
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="expense_type_ids" value="${et.id}"
+                    class="rounded border-warm-300 text-terracotta-500 focus:ring-terracotta-400">
+                <span class="text-warm-700">${escapeHtml(et.name)}</span>
+            </label>
+        `).join('');
+    }
+}
+
+// ============================================================================
+// Auto-Category Rules
+// ============================================================================
+
+async function loadAutoCategoryRules() {
+    try {
+        const response = await fetch('/api/auto-category-rules');
+        const data = await response.json();
+        if (data.success) {
+            autoCategoryRules = data.rules;
+            renderAutoCategoryRules();
+        }
+    } catch (error) {
+        console.error('Error loading auto-category rules:', error);
+    }
+}
+
+function renderAutoCategoryRules() {
+    const container = document.getElementById('auto-category-rules-list');
+    if (autoCategoryRules.length === 0) {
+        container.innerHTML = '<p class="text-warm-400 text-sm italic">No auto-categorization rules yet.</p>';
+        return;
+    }
+
+    container.innerHTML = autoCategoryRules.map(rule => `
+        <div class="flex items-center justify-between p-3 bg-cream-50 rounded-xl">
+            <div>
+                <span class="font-medium text-warm-700">"${escapeHtml(rule.keyword)}"</span>
+                <span class="text-warm-400 mx-2">→</span>
+                <span class="px-2 py-0.5 bg-terracotta-100 text-terracotta-700 text-sm rounded-full">${escapeHtml(rule.expense_type_name || 'Unknown')}</span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="editAutoCategoryRule(${rule.id})" class="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium">Edit</button>
+                <button onclick="deleteAutoCategoryRule(${rule.id})" class="text-sm text-rose-500 hover:text-rose-600 font-medium">Delete</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showAutoCategoryModal(id = null) {
+    const modal = document.getElementById('auto-category-modal');
+    const title = document.getElementById('auto-category-modal-title');
+    const keywordInput = document.getElementById('auto-category-keyword');
+    const expenseTypeSelect = document.getElementById('auto-category-expense-type');
+    const idInput = document.getElementById('auto-category-id');
+
+    if (id) {
+        const rule = autoCategoryRules.find(r => r.id === id);
+        title.textContent = 'Edit Auto-Category Rule';
+        keywordInput.value = rule.keyword;
+        expenseTypeSelect.value = rule.expense_type_id;
+        idInput.value = id;
+    } else {
+        title.textContent = 'Add Auto-Category Rule';
+        keywordInput.value = '';
+        expenseTypeSelect.value = '';
+        idInput.value = '';
+    }
+
+    modal.classList.remove('hidden');
+    keywordInput.focus();
+}
+
+function hideAutoCategoryModal() {
+    document.getElementById('auto-category-modal').classList.add('hidden');
+}
+
+function editAutoCategoryRule(id) {
+    showAutoCategoryModal(id);
+}
+
+async function saveAutoCategoryRule(e) {
+    e.preventDefault();
+    const id = document.getElementById('auto-category-id').value;
+    const keyword = document.getElementById('auto-category-keyword').value.trim();
+    const expense_type_id = parseInt(document.getElementById('auto-category-expense-type').value);
+
+    const url = id ? `/api/auto-category-rules/${id}` : '/api/auto-category-rules';
+    const method = id ? 'PUT' : 'POST';
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ keyword, expense_type_id })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            hideAutoCategoryModal();
+            loadAutoCategoryRules();
+        } else {
+            alert(data.error || 'Failed to save rule');
+        }
+    } catch (error) {
+        console.error('Error saving auto-category rule:', error);
+        alert('Failed to save rule');
+    }
+}
+
+async function deleteAutoCategoryRule(id) {
+    if (!confirm('Delete this auto-categorization rule?')) return;
+
+    try {
+        const response = await fetch(`/api/auto-category-rules/${id}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': csrfToken }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            loadAutoCategoryRules();
+        } else {
+            alert(data.error || 'Failed to delete rule');
+        }
+    } catch (error) {
+        console.error('Error deleting auto-category rule:', error);
+        alert('Failed to delete rule');
+    }
+}
+
+// ============================================================================
+// Budget Rules
+// ============================================================================
+
+async function loadBudgetRules() {
+    try {
+        const response = await fetch('/api/budget-rules');
+        const data = await response.json();
+        if (data.success) {
+            budgetRules = data.rules;
+            renderBudgetRules();
+        }
+    } catch (error) {
+        console.error('Error loading budget rules:', error);
+    }
+}
+
+function renderBudgetRules() {
+    const container = document.getElementById('budget-rules-list');
+    if (budgetRules.length === 0) {
+        container.innerHTML = '<p class="text-warm-400 text-sm italic">No budget rules yet. Add one to start tracking budgets.</p>';
+        return;
+    }
+
+    container.innerHTML = budgetRules.map(rule => `
+        <div class="p-4 bg-cream-50 rounded-xl">
+            <div class="flex items-center justify-between mb-2">
+                <div class="font-semibold text-warm-800">
+                    ${escapeHtml(rule.giver_name)} → ${escapeHtml(rule.receiver_name)}
+                </div>
+                <div class="text-lg font-bold text-terracotta-600">$${rule.monthly_amount.toFixed(2)}/mo</div>
+            </div>
+            <div class="flex items-center justify-between">
+                <div class="flex flex-wrap gap-1">
+                    ${rule.expense_type_names.map(name => `<span class="px-2 py-0.5 bg-terracotta-100 text-terracotta-700 text-xs rounded-full">${escapeHtml(name)}</span>`).join('')}
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="editBudgetRule(${rule.id})" class="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium">Edit</button>
+                    <button onclick="deleteBudgetRule(${rule.id})" class="text-sm text-rose-500 hover:text-rose-600 font-medium">Delete</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showBudgetRuleModal(id = null) {
+    const modal = document.getElementById('budget-rule-modal');
+    const title = document.getElementById('budget-rule-modal-title');
+    const giverSelect = document.getElementById('budget-giver');
+    const receiverSelect = document.getElementById('budget-receiver');
+    const amountInput = document.getElementById('budget-amount');
+    const idInput = document.getElementById('budget-rule-id');
+
+    // Clear checkboxes
+    document.querySelectorAll('#budget-expense-types input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+    if (id) {
+        const rule = budgetRules.find(r => r.id === id);
+        title.textContent = 'Edit Budget Rule';
+        giverSelect.value = rule.giver_user_id;
+        receiverSelect.value = rule.receiver_user_id;
+        amountInput.value = rule.monthly_amount;
+        idInput.value = id;
+
+        // Check appropriate expense types
+        rule.expense_type_ids.forEach(etId => {
+            const cb = document.querySelector(`#budget-expense-types input[value="${etId}"]`);
+            if (cb) cb.checked = true;
+        });
+
+        // Disable giver/receiver on edit (can't change them)
+        giverSelect.disabled = true;
+        receiverSelect.disabled = true;
+    } else {
+        title.textContent = 'Add Budget Rule';
+        giverSelect.value = '';
+        receiverSelect.value = '';
+        amountInput.value = '';
+        idInput.value = '';
+        giverSelect.disabled = false;
+        receiverSelect.disabled = false;
+    }
+
+    modal.classList.remove('hidden');
+}
+
+function hideBudgetRuleModal() {
+    document.getElementById('budget-rule-modal').classList.add('hidden');
+}
+
+function editBudgetRule(id) {
+    showBudgetRuleModal(id);
+}
+
+async function saveBudgetRule(e) {
+    e.preventDefault();
+    const id = document.getElementById('budget-rule-id').value;
+    const giver_user_id = parseInt(document.getElementById('budget-giver').value);
+    const receiver_user_id = parseInt(document.getElementById('budget-receiver').value);
+    const monthly_amount = parseFloat(document.getElementById('budget-amount').value);
+
+    const expense_type_ids = Array.from(document.querySelectorAll('#budget-expense-types input[type="checkbox"]:checked'))
+        .map(cb => parseInt(cb.value));
+
+    if (expense_type_ids.length === 0) {
+        alert('Please select at least one expense category.');
+        return;
+    }
+
+    const url = id ? `/api/budget-rules/${id}` : '/api/budget-rules';
+    const method = id ? 'PUT' : 'POST';
+
+    const body = id
+        ? { monthly_amount, expense_type_ids }
+        : { giver_user_id, receiver_user_id, monthly_amount, expense_type_ids };
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(body)
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            hideBudgetRuleModal();
+            loadBudgetRules();
+        } else {
+            alert(data.error || 'Failed to save budget rule');
+        }
+    } catch (error) {
+        console.error('Error saving budget rule:', error);
+        alert('Failed to save budget rule');
+    }
+}
+
+async function deleteBudgetRule(id) {
+    if (!confirm('Delete this budget rule?')) return;
+
+    try {
+        const response = await fetch(`/api/budget-rules/${id}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': csrfToken }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            loadBudgetRules();
+        } else {
+            alert(data.error || 'Failed to delete budget rule');
+        }
+    } catch (error) {
+        console.error('Error deleting budget rule:', error);
+        alert('Failed to delete budget rule');
+    }
+}
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
 {% endblock %}

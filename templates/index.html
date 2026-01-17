@@ -181,10 +181,35 @@
             </div>
 
             <div class="md:col-span-1">
-                <label for="category" class="block text-sm font-semibold text-warm-700 mb-1.5">Category</label>
+                <label for="expense_type" class="block text-sm font-semibold text-warm-700 mb-1.5">Expense Type</label>
+                <div class="flex items-center gap-1">
+                    <select
+                        id="expense_type"
+                        name="expense_type"
+                        class="flex-1 px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               text-warm-800 cursor-pointer transition-all duration-200"
+                    >
+                        <option value="">-- None --</option>
+                        {% for et in expense_types %}
+                        <option value="{{ et.id }}">{{ et.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <span id="auto-detected-badge" class="hidden px-2 py-1 bg-sage-100 text-sage-700 text-xs rounded-full whitespace-nowrap">
+                        Auto
+                    </span>
+                </div>
+            </div>
+        </form>
+
+        <!-- Split Category Row (outside form visually, but JS captures it) -->
+        <div class="mt-4 flex flex-wrap items-center gap-4">
+            <div class="flex-1 min-w-[200px] max-w-xs">
+                <label for="category" class="block text-sm font-semibold text-warm-700 mb-1.5">Split</label>
                 <select
                     id="category"
                     name="category"
+                    form="add-transaction-form"
                     class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
                            focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
                            text-warm-800 cursor-pointer transition-all duration-200"
@@ -198,7 +223,10 @@
                     {% endif %}
                 </select>
             </div>
-        </form>
+            <span id="split-auto-badge" class="hidden px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded-full whitespace-nowrap mt-6">
+                Auto-set from budget rule
+            </span>
+        </div>
 
         <div class="mt-4">
             <label for="notes" class="block text-sm font-semibold text-warm-700 mb-1.5">Notes (optional)</label>
@@ -252,6 +280,7 @@
                  data-currency="{{ txn.currency }}"
                  data-paid-by="{{ txn.paid_by_user_id }}"
                  data-category="{{ txn.category }}"
+                 data-expense-type="{{ txn.expense_type_id or '' }}"
                  data-notes="{{ txn.notes or '' }}">
                 <div class="flex justify-between items-start mb-2">
                     <div>
@@ -264,10 +293,18 @@
                     </div>
                 </div>
                 <div class="flex justify-between items-center">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-                                 bg-terracotta-100 text-terracotta-700 border border-terracotta-200">
-                        {{ txn.get_category_display_name(txn.category, household_members) }}
-                    </span>
+                    <div class="flex flex-wrap gap-1">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                     bg-terracotta-100 text-terracotta-700 border border-terracotta-200">
+                            {{ txn.get_category_display_name(txn.category, household_members) }}
+                        </span>
+                        {% if txn.expense_type %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                     bg-sage-100 text-sage-700 border border-sage-200">
+                            {{ txn.expense_type.name }}
+                        </span>
+                        {% endif %}
+                    </div>
                     {% if is_settled %}
                         <span class="text-warm-300 text-xs flex items-center gap-1">
                             {{ icon('cat-lock', size='sm') }}
@@ -316,6 +353,7 @@
                         data-currency="{{ txn.currency }}"
                         data-paid-by="{{ txn.paid_by_user_id }}"
                         data-category="{{ txn.category }}"
+                        data-expense-type="{{ txn.expense_type_id or '' }}"
                         data-notes="{{ txn.notes or '' }}">
                         <td class="py-3.5 px-4 text-sm text-warm-700">{{ txn.date.strftime('%Y-%m-%d') }}</td>
                         <td class="py-3.5 px-4">
@@ -332,10 +370,18 @@
                         </td>
                         <td class="py-3.5 px-4 text-sm text-warm-700">{{ txn.get_paid_by_display_name() }}</td>
                         <td class="py-3.5 px-4">
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
-                                         bg-terracotta-100 text-terracotta-700 border border-terracotta-200">
-                                {{ txn.get_category_display_name(txn.category, household_members) }}
-                            </span>
+                            <div class="flex flex-wrap gap-1">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                                             bg-terracotta-100 text-terracotta-700 border border-terracotta-200">
+                                    {{ txn.get_category_display_name(txn.category, household_members) }}
+                                </span>
+                                {% if txn.expense_type %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                                             bg-sage-100 text-sage-700 border border-sage-200">
+                                    {{ txn.expense_type.name }}
+                                </span>
+                                {% endif %}
+                            </div>
                         </td>
                         <td class="py-3.5 px-4 text-right">
                             {% if is_settled %}
@@ -554,7 +600,7 @@
                     </div>
 
                     <div>
-                        <label for="edit-category" class="block text-sm font-semibold text-warm-700 mb-1.5">Category</label>
+                        <label for="edit-category" class="block text-sm font-semibold text-warm-700 mb-1.5">Split</label>
                         <select
                             id="edit-category"
                             name="category"
@@ -571,6 +617,22 @@
                             {% endif %}
                         </select>
                     </div>
+                </div>
+
+                <div>
+                    <label for="edit-expense-type" class="block text-sm font-semibold text-warm-700 mb-1.5">Expense Type (optional)</label>
+                    <select
+                        id="edit-expense-type"
+                        name="expense_type"
+                        class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               text-warm-800 cursor-pointer transition-all duration-200"
+                    >
+                        <option value="">-- None --</option>
+                        {% for et in expense_types %}
+                        <option value="{{ et.id }}">{{ et.name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
 
                 <div>
@@ -619,6 +681,89 @@
 
 {% block extra_scripts %}
 <script>
+    // Budget rules and member data for auto-defaulting split
+    const budgetRulesData = {{ budget_rules_json | tojson | safe }};
+    {% if household_members|length >= 2 %}
+    const member1Id = {{ household_members[0].user_id }};
+    const member2Id = {{ household_members[1].user_id }};
+    {% else %}
+    const member1Id = null;
+    const member2Id = null;
+    {% endif %}
+
+    // Auto-default split based on expense type and paid_by
+    function updateSplitBasedOnBudget() {
+        const expenseTypeSelect = document.getElementById('expense_type');
+        const paidBySelect = document.getElementById('paid_by');
+        const splitSelect = document.getElementById('category');
+        const splitAutoBadge = document.getElementById('split-auto-badge');
+
+        if (!expenseTypeSelect || !paidBySelect || !splitSelect) return;
+
+        const expenseTypeId = parseInt(expenseTypeSelect.value);
+        const paidById = parseInt(paidBySelect.value);
+
+        // Debug logging
+        console.log('Budget auto-default:', {
+            expenseTypeId,
+            paidById,
+            member1Id,
+            member2Id,
+            budgetRulesData
+        });
+
+        if (!expenseTypeId || isNaN(paidById)) {
+            if (splitAutoBadge) splitAutoBadge.classList.add('hidden');
+            return;
+        }
+
+        // Find budget rule containing this expense type
+        const budgetRule = budgetRulesData.find(rule =>
+            rule.expense_type_ids && rule.expense_type_ids.includes(expenseTypeId)
+        );
+
+        if (!budgetRule) {
+            console.log('No budget rule found for expense type', expenseTypeId);
+            if (splitAutoBadge) splitAutoBadge.classList.add('hidden');
+            return;
+        }
+
+        console.log('Found budget rule:', budgetRule);
+
+        const giverId = budgetRule.giver_user_id;
+        const receiverId = budgetRule.receiver_user_id;
+
+        console.log('Comparing:', { paidById, giverId, receiverId, isGiverPaid: paidById === giverId, isReceiverPaid: paidById === receiverId });
+
+        let newSplit = null;
+
+        if (paidById === receiverId) {
+            // Receiver paid → Receiver's personal expense (spending from their budget)
+            // No reimbursement needed - they're using the budget they were given
+            if (receiverId === member1Id) {
+                newSplit = 'PERSONAL_ME';  // Member 1's personal expense
+            } else {
+                newSplit = 'PERSONAL_WIFE';  // Member 2's personal expense
+            }
+            console.log('Receiver paid -> their personal expense:', newSplit);
+        } else if (paidById === giverId) {
+            // Giver paid → Receiver should reimburse giver
+            // Giver paid for something that's part of receiver's budget
+            // So receiver owes giver
+            if (receiverId === member1Id) {
+                newSplit = 'WIFE_PAYS_FOR_ME';  // Member 2 (giver) paid → member 1 (receiver) owes
+            } else {
+                newSplit = 'I_PAY_FOR_WIFE';  // Member 1 (giver) paid → member 2 (receiver) owes
+            }
+            console.log('Giver paid -> receiver reimburses:', newSplit);
+        }
+
+        if (newSplit) {
+            splitSelect.value = newSplit;
+            if (splitAutoBadge) splitAutoBadge.classList.remove('hidden');
+        }
+    }
+
     // Custom confirm modal
     function showConfirm(title, message, type = 'warning') {
         return new Promise((resolve) => {
@@ -736,5 +881,87 @@
 
     // Transaction form submission handler (defined in app.js)
     document.getElementById('add-transaction-form').addEventListener('submit', handleTransactionSubmit);
+
+    // Auto-categorization on merchant blur
+    let autoDetectTimeout;
+    const merchantInput = document.getElementById('merchant');
+    const expenseTypeSelect = document.getElementById('expense_type');
+    const autoDetectedBadge = document.getElementById('auto-detected-badge');
+    const paidBySelect = document.getElementById('paid_by');
+    const splitAutoBadge = document.getElementById('split-auto-badge');
+
+    if (merchantInput && expenseTypeSelect) {
+        merchantInput.addEventListener('blur', async function() {
+            const merchant = this.value.trim();
+            if (!merchant) return;
+
+            // Only auto-detect if no expense type is selected
+            if (expenseTypeSelect.value) return;
+
+            try {
+                const response = await fetch('/api/auto-categorize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({ merchant })
+                });
+                const data = await response.json();
+
+                if (data.success && data.expense_type) {
+                    expenseTypeSelect.value = data.expense_type.id;
+                    autoDetectedBadge.classList.remove('hidden');
+                    // Also update split based on the auto-detected expense type
+                    updateSplitBasedOnBudget();
+                }
+            } catch (error) {
+                console.error('Auto-categorize error:', error);
+            }
+        });
+
+        // When expense type changes, update split and hide auto-detected badge
+        expenseTypeSelect.addEventListener('change', function() {
+            autoDetectedBadge.classList.add('hidden');
+            updateSplitBasedOnBudget();
+        });
+    }
+
+    // When paid_by changes, update split based on budget rules
+    if (paidBySelect) {
+        paidBySelect.addEventListener('change', function() {
+            updateSplitBasedOnBudget();
+        });
+    }
+
+    // When user manually changes split, hide the auto-set badge
+    const splitSelect = document.getElementById('category');
+    if (splitSelect && splitAutoBadge) {
+        splitSelect.addEventListener('change', function() {
+            splitAutoBadge.classList.add('hidden');
+        });
+    }
+
+    // Edit modal - populate expense type
+    function openEditModal(transactionId) {
+        const row = document.querySelector(`[data-id="${transactionId}"]`);
+        if (!row) return;
+
+        document.getElementById('edit-transaction-id').value = transactionId;
+        document.getElementById('edit-date').value = row.dataset.date;
+        document.getElementById('edit-merchant').value = row.dataset.merchant;
+        document.getElementById('edit-amount').value = row.dataset.amount;
+        document.getElementById('edit-currency').value = row.dataset.currency;
+        document.getElementById('edit-paid-by').value = row.dataset.paidBy;
+        document.getElementById('edit-category').value = row.dataset.category;
+        document.getElementById('edit-expense-type').value = row.dataset.expenseType || '';
+        document.getElementById('edit-notes').value = row.dataset.notes;
+
+        document.getElementById('edit-modal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+        document.getElementById('edit-modal').classList.add('hidden');
+    }
 </script>
 {% endblock %}

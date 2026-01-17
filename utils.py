@@ -87,13 +87,15 @@ def get_current_exchange_rate(from_currency, to_currency):
     return 1.4 if from_currency == 'USD' and to_currency == 'CAD' else 1.0
 
 
-def calculate_reconciliation(transactions, household_members):
+def calculate_reconciliation(transactions, household_members, budget_data=None):
     """
     Calculate who owes what based on transactions (NEW: dynamic household members).
 
     Args:
         transactions (list): List of Transaction model instances
         household_members (list): List of HouseholdMember instances
+        budget_data (list, optional): List of budget data dicts with 'giver_user_id', 'receiver_user_id',
+                                      and 'status' containing 'giver_reimbursement'
 
     Returns:
         dict: Summary containing:
@@ -103,6 +105,7 @@ def calculate_reconciliation(transactions, household_members):
             - settlement: Human-readable settlement message
             - breakdown: Category breakdown
             - member_names: Dict of {user_id: display_name}
+            - budget_reimbursements: List of budget reimbursement details
     """
     # Initialize tracking dictionaries for each household member
     user_payments = {}  # How much each user paid
@@ -167,6 +170,30 @@ def calculate_reconciliation(transactions, household_members):
         balance = user_payments[user_id] - user_shares[user_id]
         user_balances[user_id] = float(balance)
 
+    # Process budget reimbursements
+    # When giver pays for budget items, receiver owes giver that amount
+    budget_reimbursements = []
+    if budget_data:
+        for bd in budget_data:
+            giver_id = bd.get('giver_user_id')
+            receiver_id = bd.get('receiver_user_id')
+            status = bd.get('status', {})
+            reimbursement = float(status.get('giver_reimbursement', 0))
+
+            if reimbursement > 0.01 and giver_id in user_balances and receiver_id in user_balances:
+                # Giver paid for budget items, so receiver owes giver
+                # This increases giver's balance (owed to them)
+                # And decreases receiver's balance (they owe more)
+                user_balances[giver_id] += reimbursement
+                user_balances[receiver_id] -= reimbursement
+
+                budget_reimbursements.append({
+                    'giver_name': member_names.get(giver_id, 'Giver'),
+                    'receiver_name': member_names.get(receiver_id, 'Receiver'),
+                    'amount': reimbursement,
+                    'expense_types': bd.get('expense_type_names', [])
+                })
+
     # Format settlement message (for 2-person households)
     settlement = format_settlement_dynamic(user_balances, member_names)
 
@@ -190,7 +217,8 @@ def calculate_reconciliation(transactions, household_members):
         'user_balances': user_balances,
         'settlement': settlement,
         'breakdown': breakdown,
-        'member_names': member_names
+        'member_names': member_names,
+        'budget_reimbursements': budget_reimbursements
     }
 
 
