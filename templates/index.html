@@ -216,8 +216,8 @@
                 >
                     <option value="SHARED">🤝 Shared 50/50</option>
                     {% if household_members|length == 2 %}
-                        <option value="I_PAY_FOR_WIFE">💝 {{ household_members[0].display_name }} → {{ household_members[1].display_name }}</option>
-                        <option value="WIFE_PAYS_FOR_ME">💝 {{ household_members[1].display_name }} → {{ household_members[0].display_name }}</option>
+                        <option value="I_PAY_FOR_WIFE">💝 For {{ household_members[1].display_name }} (by {{ household_members[0].display_name }})</option>
+                        <option value="WIFE_PAYS_FOR_ME">💝 For {{ household_members[0].display_name }} (by {{ household_members[1].display_name }})</option>
                         <option value="PERSONAL_ME">👤 {{ household_members[0].display_name }} only</option>
                         <option value="PERSONAL_WIFE">👤 {{ household_members[1].display_name }} only</option>
                     {% endif %}
@@ -610,8 +610,8 @@
                         >
                             <option value="SHARED">🤝 Shared 50/50</option>
                             {% if household_members|length == 2 %}
-                                <option value="I_PAY_FOR_WIFE">💝 {{ household_members[0].display_name }} → {{ household_members[1].display_name }}</option>
-                                <option value="WIFE_PAYS_FOR_ME">💝 {{ household_members[1].display_name }} → {{ household_members[0].display_name }}</option>
+                                <option value="I_PAY_FOR_WIFE">💝 For {{ household_members[1].display_name }} (by {{ household_members[0].display_name }})</option>
+                                <option value="WIFE_PAYS_FOR_ME">💝 For {{ household_members[0].display_name }} (by {{ household_members[1].display_name }})</option>
                                 <option value="PERSONAL_ME">👤 {{ household_members[0].display_name }} only</option>
                                 <option value="PERSONAL_WIFE">👤 {{ household_members[1].display_name }} only</option>
                             {% endif %}

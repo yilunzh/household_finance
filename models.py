@@ -180,8 +180,8 @@ class Transaction(db.Model):
             name2 = household_members[1].display_name
             category_names = {
                 'SHARED': 'Shared 50/50',
-                'I_PAY_FOR_WIFE': f'{name1} pays for {name2}',
-                'WIFE_PAYS_FOR_ME': f'{name2} pays for {name1}',
+                'I_PAY_FOR_WIFE': f'For {name2} (by {name1})',
+                'WIFE_PAYS_FOR_ME': f'For {name1} (by {name2})',
                 'PERSONAL_ME': f'Personal ({name1})',
                 'PERSONAL_WIFE': f'Personal ({name2})'
             }
@@ -189,8 +189,8 @@ class Transaction(db.Model):
             # Fallback when members not provided
             category_names = {
                 'SHARED': 'Shared 50/50',
-                'I_PAY_FOR_WIFE': 'Pays for partner',
-                'WIFE_PAYS_FOR_ME': 'Partner pays',
+                'I_PAY_FOR_WIFE': 'For partner (by me)',
+                'WIFE_PAYS_FOR_ME': 'For me (by partner)',
                 'PERSONAL_ME': 'Personal',
                 'PERSONAL_WIFE': 'Personal (partner)'
             }
