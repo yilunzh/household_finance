@@ -692,25 +692,17 @@
     {% endif %}
 
     // Auto-default split based on expense type and paid_by
-    function updateSplitBasedOnBudget() {
-        const expenseTypeSelect = document.getElementById('expense_type');
-        const paidBySelect = document.getElementById('paid_by');
-        const splitSelect = document.getElementById('category');
-        const splitAutoBadge = document.getElementById('split-auto-badge');
+    // Parameters allow reuse for both add form and edit modal
+    function updateSplitBasedOnBudget(expenseTypeElId = 'expense_type', paidByElId = 'paid_by', splitElId = 'category', badgeElId = 'split-auto-badge') {
+        const expenseTypeSelect = document.getElementById(expenseTypeElId);
+        const paidBySelect = document.getElementById(paidByElId);
+        const splitSelect = document.getElementById(splitElId);
+        const splitAutoBadge = badgeElId ? document.getElementById(badgeElId) : null;
 
         if (!expenseTypeSelect || !paidBySelect || !splitSelect) return;
 
         const expenseTypeId = parseInt(expenseTypeSelect.value);
         const paidById = parseInt(paidBySelect.value);
-
-        // Debug logging
-        console.log('Budget auto-default:', {
-            expenseTypeId,
-            paidById,
-            member1Id,
-            member2Id,
-            budgetRulesData
-        });
 
         if (!expenseTypeId || isNaN(paidById)) {
             if (splitAutoBadge) splitAutoBadge.classList.add('hidden');
@@ -723,39 +715,29 @@
         );
 
         if (!budgetRule) {
-            console.log('No budget rule found for expense type', expenseTypeId);
             if (splitAutoBadge) splitAutoBadge.classList.add('hidden');
             return;
         }
 
-        console.log('Found budget rule:', budgetRule);
-
         const giverId = budgetRule.giver_user_id;
         const receiverId = budgetRule.receiver_user_id;
-
-        console.log('Comparing:', { paidById, giverId, receiverId, isGiverPaid: paidById === giverId, isReceiverPaid: paidById === receiverId });
 
         let newSplit = null;
 
         if (paidById === receiverId) {
             // Receiver paid → Receiver's personal expense (spending from their budget)
-            // No reimbursement needed - they're using the budget they were given
             if (receiverId === member1Id) {
-                newSplit = 'PERSONAL_ME';  // Member 1's personal expense
+                newSplit = 'PERSONAL_ME';
             } else {
-                newSplit = 'PERSONAL_WIFE';  // Member 2's personal expense
+                newSplit = 'PERSONAL_WIFE';
             }
-            console.log('Receiver paid -> their personal expense:', newSplit);
         } else if (paidById === giverId) {
             // Giver paid → Receiver should reimburse giver
-            // Giver paid for something that's part of receiver's budget
-            // So receiver owes giver
             if (receiverId === member1Id) {
-                newSplit = 'WIFE_PAYS_FOR_ME';  // Member 2 (giver) paid → member 1 (receiver) owes
+                newSplit = 'WIFE_PAYS_FOR_ME';
             } else {
-                newSplit = 'I_PAY_FOR_WIFE';  // Member 1 (giver) paid → member 2 (receiver) owes
+                newSplit = 'I_PAY_FOR_WIFE';
             }
-            console.log('Giver paid -> receiver reimburses:', newSplit);
         }
 
         if (newSplit) {
@@ -962,6 +944,22 @@
 
     function closeEditModal() {
         document.getElementById('edit-modal').classList.add('hidden');
+    }
+
+    // Edit modal - auto-default split based on expense type and paid_by
+    const editExpenseType = document.getElementById('edit-expense-type');
+    const editPaidBy = document.getElementById('edit-paid-by');
+
+    if (editExpenseType) {
+        editExpenseType.addEventListener('change', function() {
+            updateSplitBasedOnBudget('edit-expense-type', 'edit-paid-by', 'edit-category', null);
+        });
+    }
+
+    if (editPaidBy) {
+        editPaidBy.addEventListener('change', function() {
+            updateSplitBasedOnBudget('edit-expense-type', 'edit-paid-by', 'edit-category', null);
+        });
     }
 </script>
 {% endblock %}
