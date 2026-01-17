@@ -395,7 +395,7 @@ def index():
     transactions = Transaction.query.filter_by(
         household_id=household_id,
         month_year=month
-    ).order_by(Transaction.date.desc()).all()
+    ).order_by(Transaction.date.desc(), Transaction.created_at.desc()).all()
 
     # Calculate quick summary
     summary = calculate_reconciliation(transactions, household_members) if transactions else None

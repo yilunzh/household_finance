@@ -205,6 +205,9 @@ pytest tests/test_auth.py
 # Run Playwright browser tests
 python tests/test_phase5_invitations.py
 python tests/test_phase4_sync.py
+
+# Seed test users (test_alice@example.com / test_bob@example.com, password: password123)
+python seed_test_users.py
 ```
 
 ## Production Deployment (Render)
