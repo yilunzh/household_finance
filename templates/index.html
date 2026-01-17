@@ -175,7 +175,7 @@
                            text-warm-800 cursor-pointer transition-all duration-200"
                 >
                     {% for member in household_members %}
-                    <option value="{{ member.user_id }}">{{ member.display_name }}</option>
+                    <option value="{{ member.user_id }}" {% if member.user_id == current_user.id %}selected{% endif %}>{{ member.display_name }}</option>
                     {% endfor %}
                 </select>
             </div>
