@@ -171,14 +171,25 @@ class Transaction(db.Model):
             category: Category code (SHARED, I_PAY_FOR_WIFE, etc.)
             household_members: Optional list of HouseholdMember objects for dynamic names
         """
-        # Basic category names (will be enhanced in Phase 4 with dynamic member names)
-        category_names = {
-            'SHARED': 'Shared 50/50',
-            'I_PAY_FOR_WIFE': 'Member 1 pays for Member 2',
-            'WIFE_PAYS_FOR_ME': 'Member 2 pays for Member 1',
-            'PERSONAL_ME': 'Personal (Member 1)',
-            'PERSONAL_WIFE': 'Personal (Member 2)'
-        }
+        if household_members and len(household_members) >= 2:
+            name1 = household_members[0].display_name
+            name2 = household_members[1].display_name
+            category_names = {
+                'SHARED': 'Shared 50/50',
+                'I_PAY_FOR_WIFE': f'{name1} pays for {name2}',
+                'WIFE_PAYS_FOR_ME': f'{name2} pays for {name1}',
+                'PERSONAL_ME': f'Personal ({name1})',
+                'PERSONAL_WIFE': f'Personal ({name2})'
+            }
+        else:
+            # Fallback when members not provided
+            category_names = {
+                'SHARED': 'Shared 50/50',
+                'I_PAY_FOR_WIFE': 'Pays for partner',
+                'WIFE_PAYS_FOR_ME': 'Partner pays',
+                'PERSONAL_ME': 'Personal',
+                'PERSONAL_WIFE': 'Personal (partner)'
+            }
         return category_names.get(category, category)
 
 

@@ -700,7 +700,7 @@ def export_csv(month):
             txn.currency,
             f'{float(txn.amount_in_usd):.2f}',  # FIXED: was amount_in_cad
             txn.get_paid_by_display_name(),  # NEW: Use household member display name
-            Transaction.get_category_display_name(txn.category),
+            Transaction.get_category_display_name(txn.category, household_members),
             txn.notes or ''
         ])
 
