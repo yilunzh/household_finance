@@ -86,17 +86,22 @@
                 />
             </div>
 
-            <!-- Remember Me -->
-            <div class="flex items-center">
-                <input
-                    type="checkbox"
-                    id="remember"
-                    name="remember"
-                    class="h-4 w-4 text-terracotta-500 focus:ring-terracotta-400 border-warm-300 rounded transition-colors"
-                />
-                <label for="remember" class="ml-2 block text-sm text-warm-600">
-                    Remember me for 7 days
-                </label>
+            <!-- Remember Me & Forgot Password -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <input
+                        type="checkbox"
+                        id="remember"
+                        name="remember"
+                        class="h-4 w-4 text-terracotta-500 focus:ring-terracotta-400 border-warm-300 rounded transition-colors"
+                    />
+                    <label for="remember" class="ml-2 block text-sm text-warm-600">
+                        Remember me for 7 days
+                    </label>
+                </div>
+                <a href="{{ url_for('forgot_password') }}" class="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium transition-colors">
+                    Forgot password?
+                </a>
             </div>
 
             <!-- Submit Button -->

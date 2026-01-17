@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Check Your Email - Lucky Ledger{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-8 animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-lg border border-warm-200 px-8 py-10 relative overflow-hidden">
+        <!-- Decorative corner -->
+        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-sage-100 to-transparent rounded-bl-full opacity-60"></div>
+
+        <!-- Cat with envelope -->
+        <div class="flex justify-center mb-6">
+            <svg viewBox="0 0 100 100" class="w-24 h-24">
+                <circle cx="50" cy="55" r="38" fill="#FEF3C7" stroke="#D97706" stroke-width="2.5"/>
+                <!-- Ears -->
+                <path d="M22 43 L30 19 L42 37" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+                <path d="M58 37 L70 19 L78 43" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+                <!-- Happy closed eyes -->
+                <path d="M30 52 Q38 46 46 52" stroke="#78350F" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <path d="M54 52 Q62 46 70 52" stroke="#78350F" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <!-- Nose -->
+                <ellipse cx="50" cy="60" rx="4" ry="3" fill="#F59E0B"/>
+                <!-- Happy smile -->
+                <path d="M42 68 Q50 76 58 68" stroke="#78350F" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <!-- Envelope icon -->
+                <rect x="65" y="20" width="24" height="18" rx="2" fill="white" stroke="#c67c4e" stroke-width="2"/>
+                <path d="M65 22 L77 32 L89 22" stroke="#c67c4e" stroke-width="2" fill="none"/>
+            </svg>
+        </div>
+
+        <h2 class="text-2xl font-bold font-display text-center text-warm-800 mb-2">
+            Check Your Email
+        </h2>
+        <p class="text-center text-warm-500 mb-4">
+            If an account exists for <strong class="text-warm-700">{{ email }}</strong>, we've sent a password reset link.
+        </p>
+
+        <div class="bg-sage-50 border border-sage-200 rounded-xl p-4 mb-6">
+            <p class="text-sm text-sage-700 text-center">
+                The link will expire in <strong>1 hour</strong>. Check your spam folder if you don't see it.
+            </p>
+        </div>
+
+        <!-- Back to Login Link -->
+        <div class="text-center">
+            <a href="{{ url_for('login') }}" class="inline-flex items-center gap-2 text-terracotta-600 hover:text-terracotta-700 font-semibold transition-colors">
+                Back to login
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

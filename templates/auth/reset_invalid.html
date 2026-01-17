@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Link Expired - Lucky Ledger{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-8 animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-lg border border-warm-200 px-8 py-10 relative overflow-hidden">
+        <!-- Decorative corner -->
+        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-red-100 to-transparent rounded-bl-full opacity-60"></div>
+
+        <!-- Sad cat -->
+        <div class="flex justify-center mb-6">
+            <svg viewBox="0 0 100 100" class="w-24 h-24">
+                <circle cx="50" cy="55" r="38" fill="#FEF3C7" stroke="#D97706" stroke-width="2.5"/>
+                <!-- Ears -->
+                <path d="M22 43 L30 19 L42 37" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+                <path d="M58 37 L70 19 L78 43" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+                <!-- Sad eyes -->
+                <path d="M32 48 Q38 54 44 48" stroke="#78350F" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <path d="M56 48 Q62 54 68 48" stroke="#78350F" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <!-- Nose -->
+                <ellipse cx="50" cy="60" rx="4" ry="3" fill="#F59E0B"/>
+                <!-- Sad mouth -->
+                <path d="M42 72 Q50 66 58 72" stroke="#78350F" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <!-- X mark -->
+                <circle cx="78" cy="25" r="12" fill="#FEE2E2" stroke="#DC2626" stroke-width="2"/>
+                <line x1="72" y1="19" x2="84" y2="31" stroke="#DC2626" stroke-width="3" stroke-linecap="round"/>
+                <line x1="84" y1="19" x2="72" y2="31" stroke="#DC2626" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+        </div>
+
+        <h2 class="text-2xl font-bold font-display text-center text-warm-800 mb-2">
+            Link Expired
+        </h2>
+        <p class="text-center text-warm-500 mb-6">
+            This password reset link is invalid or has expired. Reset links are only valid for 1 hour.
+        </p>
+
+        <!-- Request New Link -->
+        <div class="text-center space-y-4">
+            <a href="{{ url_for('forgot_password') }}" class="inline-block w-full bg-terracotta-500 text-white py-3 px-4 rounded-xl
+                       hover:bg-terracotta-600 active:bg-terracotta-700
+                       focus:ring-4 focus:ring-terracotta-200
+                       font-semibold text-lg shadow-sm hover:shadow-md
+                       transform hover:-translate-y-0.5 active:translate-y-0
+                       transition-all duration-200 text-center">
+                Request New Link
+            </a>
+
+            <p class="text-sm text-warm-500">
+                <a href="{{ url_for('login') }}" class="text-terracotta-600 hover:text-terracotta-700 font-semibold transition-colors">
+                    Back to login
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

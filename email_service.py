@@ -133,3 +133,102 @@ If you didn't expect this invitation, you can safely ignore this email.
 def is_mail_configured():
     """Check if email is properly configured."""
     return bool(os.environ.get('MAIL_USERNAME'))
+
+
+def send_password_reset_email(user, token):
+    """
+    Send a password reset email.
+
+    Args:
+        user: User model instance
+        token: Password reset token string
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    try:
+        # Build the reset URL
+        site_url = os.environ.get('SITE_URL', 'http://localhost:5001')
+        reset_url = f"{site_url}/reset-password/{token}"
+
+        subject = "Reset your Lucky Ledger password"
+
+        # Build HTML body
+        html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: #c67c4e; color: white; padding: 20px; border-radius: 8px 8px 0 0; }}
+        .content {{ background: #faf7f5; padding: 30px; border: 1px solid #e5e0db; }}
+        .button {{ display: inline-block; background: #c67c4e; color: white !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }}
+        .button:hover {{ background: #a85d3a; }}
+        .footer {{ padding: 20px; font-size: 12px; color: #6b7280; text-align: center; }}
+        .expires {{ background: #fef3c7; border: 1px solid #f59e0b; padding: 10px; border-radius: 4px; margin-top: 20px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="margin: 0;">Lucky Ledger</h1>
+        </div>
+        <div class="content">
+            <h2>Reset Your Password</h2>
+            <p>Hi {user.name},</p>
+            <p>We received a request to reset your password. Click the button below to create a new password:</p>
+            <a href="{reset_url}" class="button">Reset Password</a>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #c67c4e;">{reset_url}</p>
+            <div class="expires">
+                <strong>Note:</strong> This link expires in 1 hour for security reasons.
+            </div>
+        </div>
+        <div class="footer">
+            <p>If you didn't request a password reset, you can safely ignore this email. Your password will not be changed.</p>
+            <p>Lucky Ledger - Track expenses together</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+        # Plain text version
+        text_body = f"""
+Reset your Lucky Ledger password
+
+Hi {user.name},
+
+We received a request to reset your password. Click the link below to create a new password:
+
+{reset_url}
+
+Note: This link expires in 1 hour for security reasons.
+
+If you didn't request a password reset, you can safely ignore this email. Your password will not be changed.
+"""
+
+        msg = Message(
+            subject=subject,
+            recipients=[user.email],
+            body=text_body,
+            html=html_body
+        )
+
+        # Check if mail sending is suppressed (development without SMTP config)
+        if current_app.config.get('MAIL_SUPPRESS_SEND'):
+            print(f"[EMAIL SUPPRESSED] Would send password reset to: {user.email}")
+            print(f"[EMAIL SUPPRESSED] Reset URL: {reset_url}")
+            return True
+
+        mail.send(msg)
+        print(f"[EMAIL] Password reset sent to: {user.email}")
+        return True
+
+    except Exception as e:
+        print(f"[EMAIL ERROR] Failed to send password reset: {e}")
+        import traceback
+        traceback.print_exc()
+        return False

@@ -26,7 +26,7 @@ from household_context import (
     get_current_household,
     get_current_household_members
 )
-from email_service import init_mail, send_invitation_email, is_mail_configured
+from email_service import init_mail, send_invitation_email, send_password_reset_email, is_mail_configured
 import secrets
 
 # Configure logging
@@ -125,6 +125,35 @@ def init_db():
     with app.app_context():
         db.create_all()
         print('Database tables created (if not already existing)')
+
+        # Run migrations for new columns
+        _run_migrations()
+
+
+def _run_migrations():
+    """Add new columns to existing tables if they don't exist."""
+    from sqlalchemy import text, inspect
+
+    inspector = inspect(db.engine)
+    columns = [col['name'] for col in inspector.get_columns('users')]
+
+    # Migration: Add password reset columns (added 2026-01)
+    if 'password_reset_token' not in columns:
+        try:
+            db.session.execute(text('ALTER TABLE users ADD COLUMN password_reset_token VARCHAR(64)'))
+            db.session.execute(text('CREATE UNIQUE INDEX ix_users_password_reset_token ON users (password_reset_token)'))
+            db.session.commit()
+            print('Migration: Added password_reset_token column')
+        except Exception as e:
+            print(f'Migration password_reset_token skipped: {e}')
+
+    if 'password_reset_expires' not in columns:
+        try:
+            db.session.execute(text('ALTER TABLE users ADD COLUMN password_reset_expires DATETIME'))
+            db.session.commit()
+            print('Migration: Added password_reset_expires column')
+        except Exception as e:
+            print(f'Migration password_reset_expires skipped: {e}')
 
 
 # Call initialization when module is loaded
@@ -267,6 +296,85 @@ def logout():
     logout_user()
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
+
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+@limiter.limit("3 per minute", methods=["POST"])
+def forgot_password():
+    """Request password reset."""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+
+        if not email:
+            flash('Please enter your email address.', 'danger')
+            return render_template('auth/forgot_password.html')
+
+        # Find user - but don't reveal if they exist
+        user = User.query.filter_by(email=email).first()
+
+        if user:
+            # Generate reset token
+            token = secrets.token_urlsafe(32)
+            user.password_reset_token = token
+            user.password_reset_expires = datetime.utcnow() + timedelta(hours=1)
+            db.session.commit()
+
+            # Send email
+            send_password_reset_email(user, token)
+            logger.info(f"Password reset requested for: {email}")
+
+        # Always show success message (don't reveal if email exists)
+        return render_template('auth/reset_sent.html', email=email)
+
+    return render_template('auth/forgot_password.html')
+
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+@limiter.limit("5 per minute", methods=["POST"])
+def reset_password(token):
+    """Reset password with token."""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    # Find user by token
+    user = User.query.filter_by(password_reset_token=token).first()
+
+    # Check if token is valid and not expired
+    if not user or not user.password_reset_expires or user.password_reset_expires < datetime.utcnow():
+        flash('This password reset link is invalid or has expired.', 'danger')
+        return render_template('auth/reset_invalid.html')
+
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        # Validation
+        if not password or not confirm_password:
+            flash('Please fill in all fields.', 'danger')
+            return render_template('auth/reset_password.html', token=token)
+
+        if password != confirm_password:
+            flash('Passwords do not match.', 'danger')
+            return render_template('auth/reset_password.html', token=token)
+
+        if len(password) < 8:
+            flash('Password must be at least 8 characters long.', 'danger')
+            return render_template('auth/reset_password.html', token=token)
+
+        # Update password and clear token
+        user.set_password(password)
+        user.password_reset_token = None
+        user.password_reset_expires = None
+        db.session.commit()
+
+        logger.info(f"Password reset completed for user: {user.email}")
+        flash('Your password has been reset successfully. Please log in.', 'success')
+        return redirect(url_for('login'))
+
+    return render_template('auth/reset_password.html', token=token)
 
 
 # ============================================================================

@@ -21,6 +21,8 @@ class User(db.Model, UserMixin):
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     last_login = db.Column(db.DateTime, nullable=True)
+    password_reset_token = db.Column(db.String(64), unique=True, nullable=True)
+    password_reset_expires = db.Column(db.DateTime, nullable=True)
 
     # Relationships
     household_memberships = db.relationship('HouseholdMember', back_populates='user', cascade='all, delete-orphan')
