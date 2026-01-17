@@ -1,6 +1,6 @@
 # Zhang Estate Expense Tracker - Technical Specification
 
-**Version**: 2.3 (Budget Tracking)
+**Version**: 2.4 (Password Reset & UI Polish)
 **Date**: January 2026
 **Status**: Implemented and Deployed to Production
 
@@ -34,7 +34,6 @@ Web-based expense tracking tool with automatic reconciliation calculations, focu
 **Out of Scope (Future):**
 - PDF parsing of bank statements
 - Banking API integration
-- Password reset flow
 - Two-factor authentication
 - Mobile app
 - Advanced charts/analytics
@@ -101,9 +100,12 @@ CREATE TABLE users (
     name VARCHAR(100) NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP
+    last_login TIMESTAMP,
+    password_reset_token VARCHAR(64) UNIQUE,
+    password_reset_expires TIMESTAMP
 );
 CREATE INDEX idx_users_email ON users(email);
+CREATE UNIQUE INDEX ix_users_password_reset_token ON users(password_reset_token);
 
 -- Households table (multi-tenancy)
 CREATE TABLE households (
@@ -274,6 +276,8 @@ User ──< HouseholdMember >── Household
 | GET/POST | `/register` | User registration | No (public) |
 | GET/POST | `/login` | User login | No (public) |
 | GET | `/logout` | User logout | Yes |
+| GET/POST | `/forgot-password` | Request password reset email | No (public) |
+| GET/POST | `/reset-password/<token>` | Reset password with token | No (public) |
 
 ### 4.2 Transaction Routes
 
@@ -718,8 +722,12 @@ household_tracker/
 │
 ├── templates/
 │   ├── auth/
-│   │   ├── login.html       # Login form
-│   │   └── register.html    # Registration form
+│   │   ├── login.html           # Login form
+│   │   ├── register.html        # Registration form
+│   │   ├── forgot_password.html # Request password reset
+│   │   ├── reset_password.html  # Enter new password
+│   │   ├── reset_sent.html      # Reset email sent confirmation
+│   │   └── reset_invalid.html   # Invalid/expired token
 │   ├── household/
 │   │   ├── setup.html       # Create household wizard
 │   │   ├── select.html      # Household switcher
@@ -791,6 +799,8 @@ gunicorn==21.2.0
 |-------|-------|
 | POST /login | 10/minute |
 | POST /register | 5/minute |
+| POST /forgot-password | 3/minute |
+| POST /reset-password | 5/minute |
 
 ### 9.3 Security Headers (Production)
 
@@ -828,6 +838,14 @@ Transaction.query.filter_by(month_year=month).all()
 - 7-day expiration
 - One-time use only
 - Tokens invalidated after acceptance
+
+### 9.7 Password Reset Security
+
+- 32-character random tokens (secrets.token_urlsafe)
+- 1-hour expiration (shorter than invitations for security)
+- One-time use only (token cleared after successful reset)
+- Does not reveal if email exists (always shows "check your email")
+- Rate limited to prevent email enumeration attacks
 
 ---
 
@@ -901,6 +919,17 @@ open http://localhost:5000
 - ✅ Expense type dropdown in transaction form (add and edit)
 - ✅ Settings page sections for expense types and budget rules
 - ✅ Database migration script for production deployment
+
+**✅ v2.4 - Password Reset & UI Polish (Completed)**
+- ✅ Forgot password flow with email reset link
+- ✅ Password reset token with 1-hour expiration
+- ✅ Rate limiting on forgot/reset endpoints
+- ✅ Auto-migration for new database columns on app startup
+- ✅ "Forgot password?" link on login page
+- ✅ Branded HTML email template for reset emails
+- ✅ UI: Notes field moved next to Split dropdown (same row)
+- ✅ UI: Visual divider between Add Transaction form and transaction list
+- ✅ Improved split category labels ("For X (by Y)" format)
 
 ### 10.3 Testing Checklist
 
@@ -1037,7 +1066,6 @@ The MVP is considered successful when:
 ## 13. Future Enhancements
 
 ### Phase 3 (Next)
-- Password reset flow
 - Email verification on signup
 - Two-factor authentication
 - Smart categorization rules
@@ -1217,9 +1245,10 @@ def format_settlement(me_balance, wife_balance):
 | 2.1 | Jan 2026 | Added Claude Code Stop hook for automated SPEC.md documentation updates |
 | 2.2 | Jan 2026 | Frontend redesign: warm theme, custom illustrations, animations |
 | 2.3 | Jan 2026 | Budget tracking: expense types, budget rules, auto-split, auto-categorization |
+| 2.4 | Jan 2026 | Password reset flow, UI spacing improvements, split category label clarity |
 
 ---
 
-**Document Version**: 2.3
+**Document Version**: 2.4
 **Last Updated**: January 17, 2026
 **GitHub Repository**: https://github.com/yilunzh/household_finance
