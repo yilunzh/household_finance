@@ -404,7 +404,6 @@ def calculate_user_stats(user_id):
     """
     from datetime import datetime
     from models import Transaction, Settlement, HouseholdMember, Household
-    from sqlalchemy import func
 
     current_year = datetime.utcnow().year
     ytd_start = f"{current_year}-01"
