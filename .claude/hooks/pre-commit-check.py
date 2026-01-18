@@ -46,15 +46,15 @@ def run_command(cmd, name):
 def main():
     checks = []
 
-    # Check branch policy: block non-trivial commits to main
+    # Check branch policy: block ALL commits to main
     branch = get_current_branch()
     file_count = get_staged_file_count()
-    if branch == "main" and file_count > 2:
+    if branch == "main" and file_count > 0:
         return {
             "decision": "block",
-            "reason": f"Cannot commit {file_count} files directly to main.\n"
+            "reason": f"Cannot commit directly to main.\n"
             f"Create a feature branch: git checkout -b feature/<name>\n"
-            f"Only trivial changes (1-2 files) allowed on main.",
+            f"Then open a PR to merge into main.",
         }
 
     # Lint only changed files (skip if no Python files staged)
