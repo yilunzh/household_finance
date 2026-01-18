@@ -15,7 +15,8 @@ from decimal import Decimal
 
 from models import (
     db, Transaction, Settlement, User, Household, HouseholdMember, Invitation,
-    ExpenseType, AutoCategoryRule, BudgetRule, BudgetRuleExpenseType, BudgetSnapshot
+    ExpenseType, AutoCategoryRule, BudgetRule, BudgetRuleExpenseType, BudgetSnapshot,
+    SplitRule, SplitRuleExpenseType
 )
 from utils import get_exchange_rate, calculate_reconciliation
 from budget_utils import calculate_budget_status, get_yearly_cumulative, create_or_update_budget_snapshot
@@ -154,6 +155,53 @@ def _run_migrations():
             print('Migration: Added password_reset_expires column')
         except Exception as e:
             print(f'Migration password_reset_expires skipped: {e}')
+
+    # Migration: Create split_rules table (added 2026-01)
+    if 'split_rules' not in inspector.get_table_names():
+        try:
+            db.session.execute(text('''
+                CREATE TABLE split_rules (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    household_id INTEGER NOT NULL REFERENCES households(id),
+                    member1_percent INTEGER NOT NULL DEFAULT 50,
+                    member2_percent INTEGER NOT NULL DEFAULT 50,
+                    is_default BOOLEAN DEFAULT FALSE NOT NULL,
+                    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            '''))
+            db.session.execute(text(
+                'CREATE INDEX idx_split_rules_household ON split_rules(household_id)'
+            ))
+            db.session.commit()
+            print('Migration: Created split_rules table')
+        except Exception as e:
+            db.session.rollback()
+            print(f'Migration split_rules skipped: {e}')
+
+    # Migration: Create split_rule_expense_types table (added 2026-01)
+    if 'split_rule_expense_types' not in inspector.get_table_names():
+        try:
+            db.session.execute(text('''
+                CREATE TABLE split_rule_expense_types (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    split_rule_id INTEGER NOT NULL REFERENCES split_rules(id),
+                    expense_type_id INTEGER NOT NULL REFERENCES expense_types(id),
+                    UNIQUE(split_rule_id, expense_type_id)
+                )
+            '''))
+            db.session.execute(text(
+                'CREATE INDEX idx_split_rule_expense_types_rule ON split_rule_expense_types(split_rule_id)'
+            ))
+            db.session.execute(text(
+                'CREATE INDEX idx_split_rule_expense_types_type ON split_rule_expense_types(expense_type_id)'
+            ))
+            db.session.commit()
+            print('Migration: Created split_rule_expense_types table')
+        except Exception as e:
+            db.session.rollback()
+            print(f'Migration split_rule_expense_types skipped: {e}')
 
 
 # Call initialization when module is loaded
@@ -397,8 +445,18 @@ def index():
         month_year=month
     ).order_by(Transaction.date.desc(), Transaction.created_at.desc()).all()
 
-    # Calculate quick summary
-    summary = calculate_reconciliation(transactions, household_members) if transactions else None
+    # Calculate quick summary with split rules
+    from utils import build_split_rules_lookup
+    split_rules_lookup = build_split_rules_lookup(household_id)
+    if transactions:
+        summary = calculate_reconciliation(transactions, household_members, None, split_rules_lookup)
+    else:
+        summary = None
+
+    # Build split info dict for template display: {expense_type_id: (member1_pct, member2_pct)}
+    split_display_info = {}
+    for key, rule in split_rules_lookup.items():
+        split_display_info[key] = (rule.member1_percent, rule.member2_percent)
 
     # Get list of available months for dropdown (FILTERED BY HOUSEHOLD)
     existing_months = db.session.query(Transaction.month_year).distinct().filter(
@@ -444,7 +502,8 @@ def index():
         is_settled=is_settled,
         household_members=household_members,
         expense_types=expense_types,
-        budget_rules_json=budget_rules_json
+        budget_rules_json=budget_rules_json,
+        split_display_info=split_display_info
     )
 
 
@@ -697,8 +756,12 @@ def mark_month_settled():
         if not transactions:
             return jsonify({'success': False, 'error': 'Cannot settle a month with no transactions.'}), 400
 
-        # Calculate reconciliation with household members
-        summary = calculate_reconciliation(transactions, household_members)
+        # Get split rules for custom SHARED splits
+        from utils import build_split_rules_lookup
+        split_rules_lookup = build_split_rules_lookup(household_id)
+
+        # Calculate reconciliation with household members and split rules
+        summary = calculate_reconciliation(transactions, household_members, None, split_rules_lookup)
 
         # Extract balances (NEW: use dynamic user balances)
         # For now, assume 2-person household (will be enhanced in Phase 4)
@@ -843,8 +906,12 @@ def reconciliation(month=None):
             'status': status,
         })
 
-    # Calculate reconciliation with household members and budget data
-    summary = calculate_reconciliation(transactions, household_members, budget_data)
+    # Get split rules for custom SHARED splits
+    from utils import build_split_rules_lookup
+    split_rules_lookup = build_split_rules_lookup(household_id)
+
+    # Calculate reconciliation with household members, budget data, and split rules
+    summary = calculate_reconciliation(transactions, household_members, budget_data, split_rules_lookup)
 
     # Get list of available months (FILTERED BY HOUSEHOLD)
     all_months = db.session.query(Transaction.month_year).distinct().filter(
@@ -857,6 +924,18 @@ def reconciliation(month=None):
     # Check if month is settled (HOUSEHOLD-SCOPED)
     settlement = Settlement.get_settlement(household_id, month)
 
+    # Get split rules for display
+    split_rules = SplitRule.query.filter_by(
+        household_id=household_id,
+        is_active=True
+    ).all()
+    split_rules_data = [r.to_dict(household_members) for r in split_rules]
+
+    # Build split info dict for template display: {expense_type_id: (member1_pct, member2_pct)}
+    split_display_info = {}
+    for key, rule in split_rules_lookup.items():
+        split_display_info[key] = (rule.member1_percent, rule.member2_percent)
+
     return render_template(
         'reconciliation.html',
         summary=summary,
@@ -865,7 +944,9 @@ def reconciliation(month=None):
         transactions=transactions,
         settlement=settlement,
         household_members=household_members,
-        budget_data=budget_data
+        budget_data=budget_data,
+        split_rules=split_rules_data,
+        split_display_info=split_display_info
     )
 
 
@@ -1907,6 +1988,210 @@ def delete_budget_rule(rule_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 400
+
+
+# ============================================================================
+# Split Rules API Routes
+# ============================================================================
+
+@app.route('/api/split-rules', methods=['GET'])
+@household_required
+def get_split_rules():
+    """Get all split rules for the current household."""
+    household_id = get_current_household_id()
+    household_members = get_current_household_members()
+
+    rules = SplitRule.query.filter_by(
+        household_id=household_id,
+        is_active=True
+    ).all()
+
+    return jsonify({
+        'success': True,
+        'rules': [r.to_dict(household_members) for r in rules]
+    })
+
+
+@app.route('/api/split-rules', methods=['POST'])
+@household_required
+def create_split_rule():
+    """Create a new split rule."""
+    try:
+        household_id = get_current_household_id()
+        household_members = get_current_household_members()
+        data = request.json
+
+        member1_percent = int(data.get('member1_percent', 50))
+        member2_percent = int(data.get('member2_percent', 50))
+        is_default = bool(data.get('is_default', False))
+        expense_type_ids = data.get('expense_type_ids', [])
+
+        # Validation
+        if member1_percent + member2_percent != 100:
+            return jsonify({'success': False, 'error': 'Percentages must sum to 100.'}), 400
+
+        if member1_percent < 0 or member2_percent < 0:
+            return jsonify({'success': False, 'error': 'Percentages cannot be negative.'}), 400
+
+        # If it's a default rule, check no other default exists
+        if is_default:
+            existing_default = SplitRule.query.filter_by(
+                household_id=household_id,
+                is_default=True,
+                is_active=True
+            ).first()
+            if existing_default:
+                return jsonify({'success': False, 'error': 'A default split rule already exists.'}), 400
+        else:
+            # Non-default rules require expense types
+            if not expense_type_ids:
+                return jsonify({'success': False, 'error': 'Select at least one expense category, or mark as default.'}), 400
+
+        # Create the rule
+        rule = SplitRule(
+            household_id=household_id,
+            member1_percent=member1_percent,
+            member2_percent=member2_percent,
+            is_default=is_default
+        )
+        db.session.add(rule)
+        db.session.flush()  # Get the ID
+
+        # Handle expense type associations
+        # Auto-remove from other rules if already assigned (per design spec)
+        for et_id in expense_type_ids:
+            # Remove from other rules
+            SplitRuleExpenseType.query.filter_by(
+                expense_type_id=et_id
+            ).filter(
+                SplitRuleExpenseType.split_rule_id != rule.id
+            ).delete(synchronize_session='fetch')
+
+            # Add to this rule
+            assoc = SplitRuleExpenseType(
+                split_rule_id=rule.id,
+                expense_type_id=et_id
+            )
+            db.session.add(assoc)
+
+        db.session.commit()
+
+        # Auto-delete any rules that are now empty (no expense types and not default)
+        _cleanup_empty_split_rules(household_id, exclude_rule_id=rule.id)
+
+        return jsonify({'success': True, 'rule': rule.to_dict(household_members)})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@app.route('/api/split-rules/<int:rule_id>', methods=['PUT'])
+@household_required
+def update_split_rule(rule_id):
+    """Update a split rule."""
+    try:
+        household_id = get_current_household_id()
+        household_members = get_current_household_members()
+
+        split_rule = SplitRule.query.filter_by(
+            id=rule_id,
+            household_id=household_id
+        ).first_or_404()
+
+        data = request.json
+
+        # Update percentages
+        if 'member1_percent' in data and 'member2_percent' in data:
+            member1_percent = int(data['member1_percent'])
+            member2_percent = int(data['member2_percent'])
+
+            if member1_percent + member2_percent != 100:
+                return jsonify({'success': False, 'error': 'Percentages must sum to 100.'}), 400
+
+            if member1_percent < 0 or member2_percent < 0:
+                return jsonify({'success': False, 'error': 'Percentages cannot be negative.'}), 400
+
+            split_rule.member1_percent = member1_percent
+            split_rule.member2_percent = member2_percent
+
+        # Update expense types
+        if 'expense_type_ids' in data:
+            expense_type_ids = data['expense_type_ids']
+
+            # Non-default rules need at least one expense type
+            if not split_rule.is_default and not expense_type_ids:
+                return jsonify({'success': False, 'error': 'Non-default rules require at least one expense category.'}), 400
+
+            # Remove existing associations for this rule
+            SplitRuleExpenseType.query.filter_by(split_rule_id=rule_id).delete()
+
+            # Add new associations, removing from other rules
+            for et_id in expense_type_ids:
+                # Remove from other rules
+                SplitRuleExpenseType.query.filter_by(
+                    expense_type_id=et_id
+                ).filter(
+                    SplitRuleExpenseType.split_rule_id != rule_id
+                ).delete(synchronize_session='fetch')
+
+                # Add to this rule
+                assoc = SplitRuleExpenseType(
+                    split_rule_id=rule_id,
+                    expense_type_id=et_id
+                )
+                db.session.add(assoc)
+
+        db.session.commit()
+
+        # Auto-delete any rules that are now empty
+        _cleanup_empty_split_rules(household_id, exclude_rule_id=rule_id)
+
+        return jsonify({'success': True, 'rule': split_rule.to_dict(household_members)})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@app.route('/api/split-rules/<int:rule_id>', methods=['DELETE'])
+@household_required
+def delete_split_rule(rule_id):
+    """Deactivate a split rule (soft delete)."""
+    try:
+        household_id = get_current_household_id()
+
+        split_rule = SplitRule.query.filter_by(
+            id=rule_id,
+            household_id=household_id
+        ).first_or_404()
+
+        split_rule.is_active = False
+        db.session.commit()
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+def _cleanup_empty_split_rules(household_id, exclude_rule_id=None):
+    """Delete split rules that have no expense types and are not default."""
+    rules = SplitRule.query.filter_by(
+        household_id=household_id,
+        is_active=True,
+        is_default=False
+    ).all()
+
+    for rule in rules:
+        if rule.id == exclude_rule_id:
+            continue
+        # Check if rule has any expense types
+        if not rule.expense_types:
+            rule.is_active = False
+
+    db.session.commit()
 
 
 # ============================================================================

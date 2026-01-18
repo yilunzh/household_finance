@@ -202,28 +202,35 @@
             </div>
         </form>
 
-        <!-- Split + Notes Row (outside form visually, but JS captures it) -->
-        <div class="mt-4 flex flex-wrap items-end gap-4">
-            <div class="min-w-[200px] max-w-xs">
+        <!-- Split + Notes Row (aligned with grid above) -->
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-7 gap-4 items-start">
+            <div class="md:col-span-3">
                 <label for="category" class="block text-sm font-semibold text-warm-700 mb-1.5">Split</label>
-                <select
-                    id="category"
-                    name="category"
-                    form="add-transaction-form"
-                    class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
-                           focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
-                           text-warm-800 cursor-pointer transition-all duration-200"
-                >
-                    <option value="SHARED">🤝 Shared 50/50</option>
-                    {% if household_members|length == 2 %}
-                        <option value="I_PAY_FOR_WIFE">💝 For {{ household_members[1].display_name }} (by {{ household_members[0].display_name }})</option>
-                        <option value="WIFE_PAYS_FOR_ME">💝 For {{ household_members[0].display_name }} (by {{ household_members[1].display_name }})</option>
-                        <option value="PERSONAL_ME">👤 {{ household_members[0].display_name }} only</option>
-                        <option value="PERSONAL_WIFE">👤 {{ household_members[1].display_name }} only</option>
-                    {% endif %}
-                </select>
+                <div class="flex items-center gap-2">
+                    <select
+                        id="category"
+                        name="category"
+                        form="add-transaction-form"
+                        class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               text-warm-800 cursor-pointer transition-all duration-200"
+                        onchange="updateSplitInfoText()"
+                    >
+                        <option value="SHARED">🤝 Shared</option>
+                        {% if household_members|length == 2 %}
+                            <option value="I_PAY_FOR_WIFE">💝 For {{ household_members[1].display_name }} (by {{ household_members[0].display_name }})</option>
+                            <option value="WIFE_PAYS_FOR_ME">💝 For {{ household_members[0].display_name }} (by {{ household_members[1].display_name }})</option>
+                            <option value="PERSONAL_ME">👤 {{ household_members[0].display_name }} only</option>
+                            <option value="PERSONAL_WIFE">👤 {{ household_members[1].display_name }} only</option>
+                        {% endif %}
+                    </select>
+                    <span id="split-auto-badge" class="hidden px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded-full whitespace-nowrap">
+                        Auto
+                    </span>
+                </div>
+                <p id="split-info-text" class="text-xs text-warm-500 mt-1">Split depends on expense type. Configure in Settings.</p>
             </div>
-            <div class="flex-1 min-w-[200px]">
+            <div class="md:col-span-4">
                 <label for="notes" class="block text-sm font-semibold text-warm-700 mb-1.5">Notes (optional)</label>
                 <input
                     type="text"
@@ -235,9 +242,6 @@
                            placeholder-warm-400 text-warm-800 transition-all duration-200"
                 >
             </div>
-            <span id="split-auto-badge" class="hidden px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded-full whitespace-nowrap">
-                Auto-set from budget rule
-            </span>
         </div>
 
         <div class="mt-5">
@@ -298,7 +302,19 @@
                     <div class="flex flex-wrap gap-1">
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
                                      bg-terracotta-100 text-terracotta-700 border border-terracotta-200">
-                            {{ txn.get_category_display_name(txn.category, household_members) }}
+                            {% if txn.category == 'SHARED' %}
+                                {% if txn.expense_type_id in split_display_info %}
+                                    {% set split = split_display_info.get(txn.expense_type_id) %}
+                                    Shared {{ split[0] }}/{{ split[1] }}
+                                {% elif None in split_display_info %}
+                                    {% set split = split_display_info.get(None) %}
+                                    Shared {{ split[0] }}/{{ split[1] }}
+                                {% else %}
+                                    Shared 50/50
+                                {% endif %}
+                            {% else %}
+                                {{ txn.get_category_display_name(txn.category, household_members) }}
+                            {% endif %}
                         </span>
                         {% if txn.expense_type %}
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
@@ -375,7 +391,19 @@
                             <div class="flex flex-wrap gap-1">
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
                                              bg-terracotta-100 text-terracotta-700 border border-terracotta-200">
-                                    {{ txn.get_category_display_name(txn.category, household_members) }}
+                                    {% if txn.category == 'SHARED' %}
+                                        {% if txn.expense_type_id in split_display_info %}
+                                            {% set split = split_display_info.get(txn.expense_type_id) %}
+                                            Shared {{ split[0] }}/{{ split[1] }}
+                                        {% elif None in split_display_info %}
+                                            {% set split = split_display_info.get(None) %}
+                                            Shared {{ split[0] }}/{{ split[1] }}
+                                        {% else %}
+                                            Shared 50/50
+                                        {% endif %}
+                                    {% else %}
+                                        {{ txn.get_category_display_name(txn.category, household_members) }}
+                                    {% endif %}
                                 </span>
                                 {% if txn.expense_type %}
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
@@ -610,7 +638,7 @@
                                    focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
                                    text-warm-800 cursor-pointer transition-all duration-200"
                         >
-                            <option value="SHARED">🤝 Shared 50/50</option>
+                            <option value="SHARED">🤝 Shared</option>
                             {% if household_members|length == 2 %}
                                 <option value="I_PAY_FOR_WIFE">💝 For {{ household_members[1].display_name }} (by {{ household_members[0].display_name }})</option>
                                 <option value="WIFE_PAYS_FOR_ME">💝 For {{ household_members[0].display_name }} (by {{ household_members[1].display_name }})</option>
@@ -692,6 +720,24 @@
     const member1Id = null;
     const member2Id = null;
     {% endif %}
+
+    // Show/hide split info text based on category selection
+    function updateSplitInfoText() {
+        const categorySelect = document.getElementById('category');
+        const splitInfoText = document.getElementById('split-info-text');
+        if (!categorySelect || !splitInfoText) return;
+
+        if (categorySelect.value === 'SHARED') {
+            splitInfoText.classList.remove('hidden');
+        } else {
+            splitInfoText.classList.add('hidden');
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateSplitInfoText();
+    });
 
     // Auto-default split based on expense type and paid_by
     // Parameters allow reuse for both add form and edit modal

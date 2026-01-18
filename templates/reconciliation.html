@@ -276,6 +276,32 @@
 </div>
 {% endif %}
 
+<!-- Split Rules Info -->
+{% if split_rules %}
+<div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-6 mb-6">
+    <h3 class="text-lg font-bold font-display mb-4 text-warm-800 flex items-center gap-2">
+        {{ icon('cat-balance', size='lg') }}
+        <span>Active Split Rules</span>
+    </h3>
+    <p class="text-sm text-warm-500 mb-3">These rules determine how "Shared" expenses are divided.</p>
+    <div class="space-y-2">
+        {% for rule in split_rules %}
+        <div class="flex items-center justify-between p-3 bg-cream-50 rounded-xl">
+            <div class="font-medium text-warm-700">{{ rule.description }}</div>
+            <div class="flex flex-wrap gap-1">
+                {% if rule.is_default %}
+                <span class="px-2 py-0.5 bg-sage-100 text-sage-700 text-xs rounded-full">Default</span>
+                {% endif %}
+                {% for name in rule.expense_type_names %}
+                <span class="px-2 py-0.5 bg-terracotta-100 text-terracotta-700 text-xs rounded-full">{{ name }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
 <!-- Category Breakdown -->
 <div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-6 mb-6">
     <h3 class="text-lg font-bold font-display mb-4 text-warm-800 flex items-center gap-2">
@@ -375,7 +401,19 @@
                         <td class="py-3.5 px-4">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
                                          bg-terracotta-100 text-terracotta-700 border border-terracotta-200">
-                                {{ txn.get_category_display_name(txn.category, household_members) }}
+                                {% if txn.category == 'SHARED' %}
+                                    {% if txn.expense_type_id in split_display_info %}
+                                        {% set split = split_display_info.get(txn.expense_type_id) %}
+                                        Shared {{ split[0] }}/{{ split[1] }}
+                                    {% elif None in split_display_info %}
+                                        {% set split = split_display_info.get(None) %}
+                                        Shared {{ split[0] }}/{{ split[1] }}
+                                    {% else %}
+                                        Shared 50/50
+                                    {% endif %}
+                                {% else %}
+                                    {{ txn.get_category_display_name(txn.category, household_members) }}
+                                {% endif %}
                             </span>
                         </td>
                     </tr>

@@ -165,22 +165,46 @@
             </form>
         </div>
 
-        <!-- Budget Rules -->
+        <!-- Expense Rules (Split Rules + Budget Rules) -->
         <div class="mb-8 pt-6 border-t border-warm-100">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-warm-700 flex items-center gap-2">
-                    {{ icon('cat-coins', size='lg') }}
-                    <span>Budget Rules</span>
-                </h3>
-                <button
-                    onclick="showBudgetRuleModal()"
-                    class="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium transition-colors"
-                >
-                    + Add Rule
-                </button>
+            <h3 class="text-lg font-semibold text-warm-700 mb-4 flex items-center gap-2">
+                {{ icon('cat-coins', size='lg') }}
+                <span>Expense Rules</span>
+            </h3>
+
+            <!-- Split Rules Subsection -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-md font-medium text-warm-600">Split Rules</h4>
+                    <button
+                        onclick="showSplitRuleModal()"
+                        class="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium transition-colors"
+                    >
+                        + Add Split Rule
+                    </button>
+                </div>
+                <p class="text-sm text-warm-400 mb-3">
+                    Customize how shared expenses are split between household members. Default is 50/50.
+                </p>
+                <div id="split-rules-list" class="space-y-3">
+                    <p class="text-warm-400 text-sm italic" id="no-split-rules">Loading...</p>
+                </div>
             </div>
-            <div id="budget-rules-list" class="space-y-3">
-                <p class="text-warm-400 text-sm italic" id="no-budget-rules">Loading...</p>
+
+            <!-- Budget Rules Subsection -->
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-md font-medium text-warm-600">Budget Rules</h4>
+                    <button
+                        onclick="showBudgetRuleModal()"
+                        class="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium transition-colors"
+                    >
+                        + Add Budget Rule
+                    </button>
+                </div>
+                <div id="budget-rules-list" class="space-y-3">
+                    <p class="text-warm-400 text-sm italic" id="no-budget-rules">Loading...</p>
+                </div>
             </div>
         </div>
 
@@ -397,24 +421,137 @@
     </div>
 </div>
 
+<!-- Split Rule Modal -->
+<div id="split-rule-modal" class="hidden fixed inset-0 bg-warm-900/50 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 animate-scale-in">
+        <div class="p-6">
+            <h3 class="text-xl font-bold font-display text-warm-800 mb-4" id="split-rule-modal-title">Add Split Rule</h3>
+            <form id="split-rule-form" class="space-y-4">
+                <input type="hidden" id="split-rule-id" value="">
+
+                <!-- Split Percentages -->
+                <div>
+                    <label class="block text-sm font-semibold text-warm-700 mb-2">Split Ratio</label>
+                    <div class="flex items-center gap-3">
+                        <div class="flex-1">
+                            <label class="block text-xs text-warm-500 mb-1" id="split-member1-label">Owner</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="split-member1-percent" required min="0" max="100"
+                                    class="w-20 px-3 py-2 bg-cream-50 border-2 border-warm-200 rounded-xl
+                                           focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                                           text-warm-800 transition-all duration-200 text-center"
+                                    value="50" onchange="updateSplitPercent(1)">
+                                <span class="text-warm-600">%</span>
+                            </div>
+                        </div>
+                        <div class="text-warm-400 text-2xl">/</div>
+                        <div class="flex-1">
+                            <label class="block text-xs text-warm-500 mb-1" id="split-member2-label">Partner</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="split-member2-percent" required min="0" max="100"
+                                    class="w-20 px-3 py-2 bg-cream-50 border-2 border-warm-200 rounded-xl
+                                           focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                                           text-warm-800 transition-all duration-200 text-center"
+                                    value="50" onchange="updateSplitPercent(2)">
+                                <span class="text-warm-600">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p id="split-validation-error" class="text-xs text-rose-500 mt-1 hidden">Percentages must sum to 100.</p>
+                </div>
+
+                <!-- Default Rule Checkbox -->
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="split-is-default"
+                        class="rounded border-warm-300 text-terracotta-500 focus:ring-terracotta-400"
+                        onchange="toggleDefaultSplit()">
+                    <label for="split-is-default" class="text-sm text-warm-700">
+                        Default rule (applies to all SHARED expenses without a specific rule)
+                    </label>
+                </div>
+
+                <!-- Expense Types -->
+                <div id="split-expense-types-section">
+                    <label class="block text-sm font-semibold text-warm-700 mb-1.5">Expense Categories</label>
+                    <div id="split-expense-types" class="space-y-2 max-h-40 overflow-y-auto p-2 bg-cream-50 rounded-xl border-2 border-warm-200">
+                        <p class="text-warm-400 text-sm">Loading categories...</p>
+                    </div>
+                    <p class="text-xs text-warm-400 mt-1">Select which expense categories use this split. Categories already in other rules will be reassigned.</p>
+                </div>
+
+                <div class="flex gap-3 justify-end pt-2">
+                    <button type="button" onclick="hideSplitRuleModal()"
+                        class="px-4 py-2 text-warm-600 hover:text-warm-800 font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-xl font-semibold transition-all">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 // Global state for budget settings
 let expenseTypes = [];
 let autoCategoryRules = [];
 let budgetRules = [];
+let splitRules = [];
 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+// Member names (will be populated)
+let memberNames = {};
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadExpenseTypes();
     loadAutoCategoryRules();
     loadBudgetRules();
+    loadSplitRules();
+    loadMemberNames();
 
     // Form handlers
     document.getElementById('expense-type-form').addEventListener('submit', saveExpenseType);
     document.getElementById('auto-category-form').addEventListener('submit', saveAutoCategoryRule);
     document.getElementById('budget-rule-form').addEventListener('submit', saveBudgetRule);
+    document.getElementById('split-rule-form').addEventListener('submit', saveSplitRule);
 });
+
+// Load member names from the page
+function loadMemberNames() {
+    // Get member names from the members list in the page
+    const memberElements = document.querySelectorAll('.flex.items-center.justify-between.p-4.bg-cream-50.rounded-2xl .font-semibold.text-warm-800');
+    const members = [];
+    memberElements.forEach(el => {
+        const fullText = el.textContent.trim();
+        // Remove "(you)" suffix if present
+        const name = fullText.replace(/\s*\(you\)\s*$/, '').trim();
+        members.push(name);
+    });
+
+    // Find owner (has crown icon) - owner is member1
+    const ownerEl = document.querySelector('.bg-terracotta-100.text-terracotta-700');
+    if (ownerEl) {
+        const ownerRow = ownerEl.closest('.flex.items-center.justify-between.p-4');
+        if (ownerRow) {
+            const ownerName = ownerRow.querySelector('.font-semibold.text-warm-800').textContent.trim().replace(/\s*\(you\)\s*$/, '');
+            // Find non-owner
+            const otherName = members.find(n => n !== ownerName) || 'Partner';
+            memberNames = { member1: ownerName, member2: otherName };
+        }
+    }
+
+    // Update modal labels if we have names
+    if (memberNames.member1) {
+        document.getElementById('split-member1-label').textContent = memberNames.member1;
+    }
+    if (memberNames.member2) {
+        document.getElementById('split-member2-label').textContent = memberNames.member2;
+    }
+}
 
 // ============================================================================
 // Expense Types
@@ -835,6 +972,239 @@ async function deleteBudgetRule(id) {
     } catch (error) {
         console.error('Error deleting budget rule:', error);
         alert('Failed to delete budget rule');
+    }
+}
+
+// ============================================================================
+// Split Rules
+// ============================================================================
+
+async function loadSplitRules() {
+    try {
+        const response = await fetch('/api/split-rules');
+        const data = await response.json();
+        if (data.success) {
+            splitRules = data.rules;
+            renderSplitRules();
+            updateSplitExpenseTypeCheckboxes();
+        }
+    } catch (error) {
+        console.error('Error loading split rules:', error);
+    }
+}
+
+function renderSplitRules() {
+    const container = document.getElementById('split-rules-list');
+    if (splitRules.length === 0) {
+        container.innerHTML = '<p class="text-warm-400 text-sm italic">No split rules yet. All SHARED expenses will be split 50/50.</p>';
+        return;
+    }
+
+    container.innerHTML = splitRules.map(rule => {
+        const categoryNames = rule.expense_type_names.length > 0
+            ? rule.expense_type_names.map(name => `<span class="px-2 py-0.5 bg-terracotta-100 text-terracotta-700 text-xs rounded-full">${escapeHtml(name)}</span>`).join('')
+            : '';
+        const defaultBadge = rule.is_default
+            ? '<span class="px-2 py-0.5 bg-sage-100 text-sage-700 text-xs rounded-full">Default</span>'
+            : '';
+
+        return `
+            <div class="p-4 bg-cream-50 rounded-xl">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="font-semibold text-warm-800">
+                        ${escapeHtml(rule.description)}
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="editSplitRule(${rule.id})" class="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium">Edit</button>
+                        <button onclick="deleteSplitRule(${rule.id})" class="text-sm text-rose-500 hover:text-rose-600 font-medium">Delete</button>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-1">
+                    ${defaultBadge}
+                    ${categoryNames}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function updateSplitExpenseTypeCheckboxes() {
+    const container = document.getElementById('split-expense-types');
+    if (expenseTypes.length === 0) {
+        container.innerHTML = '<p class="text-warm-400 text-sm">No expense categories. Create some first.</p>';
+        return;
+    }
+
+    // Build a map of which expense types are in which split rules
+    const usedExpenseTypes = {};
+    splitRules.forEach(rule => {
+        rule.expense_type_ids.forEach(etId => {
+            if (!usedExpenseTypes[etId]) {
+                usedExpenseTypes[etId] = rule.id;
+            }
+        });
+    });
+
+    container.innerHTML = expenseTypes.map(et => {
+        const usedByRuleId = usedExpenseTypes[et.id];
+        const warningIcon = usedByRuleId ? '<span class="text-amber-500 ml-1" title="Already in another rule">⚠</span>' : '';
+
+        return `
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="split_expense_type_ids" value="${et.id}"
+                    class="rounded border-warm-300 text-terracotta-500 focus:ring-terracotta-400">
+                <span class="text-warm-700">${escapeHtml(et.name)}</span>${warningIcon}
+            </label>
+        `;
+    }).join('');
+}
+
+function showSplitRuleModal(id = null) {
+    const modal = document.getElementById('split-rule-modal');
+    const title = document.getElementById('split-rule-modal-title');
+    const idInput = document.getElementById('split-rule-id');
+    const member1Input = document.getElementById('split-member1-percent');
+    const member2Input = document.getElementById('split-member2-percent');
+    const isDefaultCheckbox = document.getElementById('split-is-default');
+    const expenseTypesSection = document.getElementById('split-expense-types-section');
+
+    // Refresh expense type checkboxes
+    updateSplitExpenseTypeCheckboxes();
+
+    // Clear checkboxes
+    document.querySelectorAll('#split-expense-types input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+    if (id) {
+        const rule = splitRules.find(r => r.id === id);
+        title.textContent = 'Edit Split Rule';
+        idInput.value = id;
+        member1Input.value = rule.member1_percent;
+        member2Input.value = rule.member2_percent;
+        isDefaultCheckbox.checked = rule.is_default;
+
+        // Check appropriate expense types
+        rule.expense_type_ids.forEach(etId => {
+            const cb = document.querySelector(`#split-expense-types input[value="${etId}"]`);
+            if (cb) cb.checked = true;
+        });
+
+        // Show/hide expense types based on default
+        expenseTypesSection.style.display = rule.is_default ? 'none' : 'block';
+    } else {
+        title.textContent = 'Add Split Rule';
+        idInput.value = '';
+        member1Input.value = '50';
+        member2Input.value = '50';
+        isDefaultCheckbox.checked = false;
+        expenseTypesSection.style.display = 'block';
+    }
+
+    // Hide validation error
+    document.getElementById('split-validation-error').classList.add('hidden');
+
+    modal.classList.remove('hidden');
+}
+
+function hideSplitRuleModal() {
+    document.getElementById('split-rule-modal').classList.add('hidden');
+}
+
+function editSplitRule(id) {
+    showSplitRuleModal(id);
+}
+
+function updateSplitPercent(changedMember) {
+    const member1Input = document.getElementById('split-member1-percent');
+    const member2Input = document.getElementById('split-member2-percent');
+    const errorEl = document.getElementById('split-validation-error');
+
+    const val1 = parseInt(member1Input.value) || 0;
+    const val2 = parseInt(member2Input.value) || 0;
+
+    if (val1 + val2 !== 100) {
+        errorEl.classList.remove('hidden');
+    } else {
+        errorEl.classList.add('hidden');
+    }
+}
+
+function toggleDefaultSplit() {
+    const isDefault = document.getElementById('split-is-default').checked;
+    const expenseTypesSection = document.getElementById('split-expense-types-section');
+    expenseTypesSection.style.display = isDefault ? 'none' : 'block';
+}
+
+async function saveSplitRule(e) {
+    e.preventDefault();
+    const id = document.getElementById('split-rule-id').value;
+    const member1_percent = parseInt(document.getElementById('split-member1-percent').value);
+    const member2_percent = parseInt(document.getElementById('split-member2-percent').value);
+    const is_default = document.getElementById('split-is-default').checked;
+
+    // Validate sum
+    if (member1_percent + member2_percent !== 100) {
+        document.getElementById('split-validation-error').classList.remove('hidden');
+        return;
+    }
+
+    const expense_type_ids = Array.from(document.querySelectorAll('#split-expense-types input[type="checkbox"]:checked'))
+        .map(cb => parseInt(cb.value));
+
+    // Validate: non-default rules need expense types
+    if (!is_default && expense_type_ids.length === 0) {
+        alert('Please select at least one expense category, or mark as default rule.');
+        return;
+    }
+
+    const url = id ? `/api/split-rules/${id}` : '/api/split-rules';
+    const method = id ? 'PUT' : 'POST';
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                member1_percent,
+                member2_percent,
+                is_default,
+                expense_type_ids
+            })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            hideSplitRuleModal();
+            loadSplitRules();
+        } else {
+            alert(data.error || 'Failed to save split rule');
+        }
+    } catch (error) {
+        console.error('Error saving split rule:', error);
+        alert('Failed to save split rule');
+    }
+}
+
+async function deleteSplitRule(id) {
+    if (!confirm('Delete this split rule? Affected expenses will revert to 50/50 split.')) return;
+
+    try {
+        const response = await fetch(`/api/split-rules/${id}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': csrfToken }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            loadSplitRules();
+        } else {
+            alert(data.error || 'Failed to delete split rule');
+        }
+    } catch (error) {
+        console.error('Error deleting split rule:', error);
+        alert('Failed to delete split rule');
     }
 }
 

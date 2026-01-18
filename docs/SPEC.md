@@ -1,6 +1,6 @@
 # Zhang Estate Expense Tracker - Technical Specification
 
-**Version**: 2.5 (UX Improvements)
+**Version**: 2.5 (Custom Split Percentages & UX Improvements)
 **Date**: January 2026
 **Status**: Implemented and Deployed to Production
 
@@ -233,6 +233,27 @@ CREATE TABLE budget_snapshots (
 
 -- Add expense_type_id to transactions (nullable for backward compatibility)
 ALTER TABLE transactions ADD COLUMN expense_type_id INTEGER REFERENCES expense_types(id);
+
+-- Split rules (custom split percentages for shared expenses)
+CREATE TABLE split_rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id) ON DELETE CASCADE,
+    member1_percent INTEGER NOT NULL DEFAULT 50,  -- Owner's percentage (0-100)
+    member2_percent INTEGER NOT NULL DEFAULT 50,  -- Other member's percentage (0-100)
+    is_default BOOLEAN DEFAULT FALSE,  -- If true, applies to all SHARED without specific rule
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_split_rules_household ON split_rules(household_id);
+
+-- Split rule expense types (many-to-many: which expense types use this split)
+CREATE TABLE split_rule_expense_types (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    split_rule_id INTEGER NOT NULL REFERENCES split_rules(id) ON DELETE CASCADE,
+    expense_type_id INTEGER NOT NULL REFERENCES expense_types(id) ON DELETE CASCADE,
+    UNIQUE(split_rule_id, expense_type_id)
+);
 ```
 
 **Key Design Decisions:**
@@ -242,18 +263,25 @@ ALTER TABLE transactions ADD COLUMN expense_type_id INTEGER REFERENCES expense_t
 - **Settlements**: One per household per month (UNIQUE constraint)
 - **Budget rules**: Giver provides budget to receiver for specific expense types
 - **Auto-categorization**: Merchant keywords auto-detect expense types
+- **Split rules**: Custom percentages (e.g., 60/40) with default + per-expense-type overrides
 
 ### 3.2 Transaction Categories
 
 | Category | Display Name | Split Logic |
 |----------|--------------|-------------|
-| SHARED | Shared 50/50 | Each member pays 50% |
+| SHARED | Shared (custom %) | Each member pays their configured percentage (default 50/50) |
 | I_PAY_FOR_WIFE | Member 1 pays for Member 2 | Member 2 owes 100% |
 | WIFE_PAYS_FOR_ME | Member 2 pays for Member 1 | Member 1 owes 100% |
 | PERSONAL_ME | Personal (Member 1) | No split (neutral) |
 | PERSONAL_WIFE | Personal (Member 2) | No split (neutral) |
 
 **Note**: Category names are legacy from v1.0. Display names in the UI are dynamic based on household member `display_name` fields.
+
+**Custom Split Percentages (v2.5):**
+- SHARED transactions use configurable split percentages (e.g., 60/40, 70/30)
+- Default split rule applies to all SHARED transactions without a specific expense type rule
+- Per-expense-type split rules override the default (e.g., Groceries at 60/40, Dining at 50/50)
+- UI displays actual percentages: "Shared 60/40" instead of generic "Shared"
 
 ### 3.3 Entity Relationships
 
@@ -939,10 +967,15 @@ python seed_test_users.py
 - ✅ UI: Visual divider between Add Transaction form and transaction list
 - ✅ Improved split category labels ("For X (by Y)" format)
 
-**✅ v2.5 - UX Improvements (Completed)**
+**✅ v2.5 - UX Improvements & Custom Split Percentages (Completed)**
 - ✅ Transaction sorting: date desc, then created_at desc (newest additions first for same date)
 - ✅ Paid By field defaults to logged-in user when adding transactions
 - ✅ Test user seeding script (`seed_test_users.py`) for local development
+- ✅ Form layout: Split and Notes fields aligned to grid (3/4 column split matching row above)
+- ✅ Custom split percentages: configurable splits beyond 50/50 (e.g., 60/40, 70/30)
+- ✅ Split rules: default household split + per-expense-type overrides
+- ✅ Split rule management UI in Settings page
+- ✅ Transaction list displays actual split percentages (e.g., "Shared 60/40")
 
 ### 10.3 Testing Checklist
 
@@ -1089,7 +1122,6 @@ The MVP is considered successful when:
 - PDF bank statement parsing
 - Receipt photo upload
 - Spending trends charts
-- Custom split percentages
 - Audit log of changes
 
 ### Phase 5 (Enterprise)
@@ -1259,9 +1291,10 @@ def format_settlement(me_balance, wife_balance):
 | 2.2 | Jan 2026 | Frontend redesign: warm theme, custom illustrations, animations |
 | 2.3 | Jan 2026 | Budget tracking: expense types, budget rules, auto-split, auto-categorization |
 | 2.4 | Jan 2026 | Password reset flow, UI spacing improvements, split category label clarity |
+| 2.5 | Jan 2026 | Custom split percentages, split rules UI, UX improvements (sorting, form alignment) |
 
 ---
 
-**Document Version**: 2.4
-**Last Updated**: January 17, 2026
+**Document Version**: 2.5
+**Last Updated**: January 18, 2026
 **GitHub Repository**: https://github.com/yilunzh/household_finance

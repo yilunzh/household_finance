@@ -87,7 +87,106 @@ def get_current_exchange_rate(from_currency, to_currency):
     return 1.4 if from_currency == 'USD' and to_currency == 'CAD' else 1.0
 
 
-def calculate_reconciliation(transactions, household_members, budget_data=None):
+def get_split_for_expense_type(household_id, expense_type_id, split_rules_lookup=None):
+    """
+    Get the split percentages for an expense type.
+
+    Args:
+        household_id (int): The household ID
+        expense_type_id (int or None): The expense type ID (can be None)
+        split_rules_lookup (dict, optional): Pre-loaded lookup dict {expense_type_id: SplitRule}
+                                             If None, will query database
+
+    Returns:
+        tuple: (member1_percent, member2_percent) as Decimal (0-1 range, e.g., 0.5 for 50%)
+               Member1 is always the owner, Member2 is the other member.
+    """
+    default_split = (Decimal('0.5'), Decimal('0.5'))
+
+    if split_rules_lookup is not None:
+        # Use pre-loaded lookup
+        # First, check if there's a specific rule for this expense type
+        if expense_type_id in split_rules_lookup:
+            rule = split_rules_lookup[expense_type_id]
+            return (
+                Decimal(str(rule.member1_percent)) / 100,
+                Decimal(str(rule.member2_percent)) / 100
+            )
+        # Fall back to default rule (None key) if it exists
+        if None in split_rules_lookup:
+            rule = split_rules_lookup[None]
+            return (
+                Decimal(str(rule.member1_percent)) / 100,
+                Decimal(str(rule.member2_percent)) / 100
+            )
+        return default_split
+
+    # Query database for split rule
+    from models import SplitRule, SplitRuleExpenseType
+
+    # First, try to find a rule that covers this specific expense type
+    if expense_type_id:
+        rule_link = SplitRuleExpenseType.query.join(SplitRule).filter(
+            SplitRule.household_id == household_id,
+            SplitRule.is_active == True,
+            SplitRuleExpenseType.expense_type_id == expense_type_id
+        ).first()
+
+        if rule_link:
+            return (
+                Decimal(str(rule_link.split_rule.member1_percent)) / 100,
+                Decimal(str(rule_link.split_rule.member2_percent)) / 100
+            )
+
+    # Fall back to default rule (is_default=True)
+    default_rule = SplitRule.query.filter_by(
+        household_id=household_id,
+        is_default=True,
+        is_active=True
+    ).first()
+
+    if default_rule:
+        return (
+            Decimal(str(default_rule.member1_percent)) / 100,
+            Decimal(str(default_rule.member2_percent)) / 100
+        )
+
+    return default_split
+
+
+def build_split_rules_lookup(household_id):
+    """
+    Build a lookup dictionary for split rules.
+
+    Args:
+        household_id (int): The household ID
+
+    Returns:
+        dict: {expense_type_id: SplitRule} where None key = default rule
+    """
+    from models import SplitRule, SplitRuleExpenseType
+
+    lookup = {}
+
+    # Get all active split rules for this household
+    rules = SplitRule.query.filter_by(
+        household_id=household_id,
+        is_active=True
+    ).all()
+
+    for rule in rules:
+        if rule.is_default:
+            # Default rule (applies when no specific rule matches)
+            lookup[None] = rule
+        else:
+            # Map each expense type to this rule
+            for expense_link in rule.expense_types:
+                lookup[expense_link.expense_type_id] = rule
+
+    return lookup
+
+
+def calculate_reconciliation(transactions, household_members, budget_data=None, split_rules_lookup=None):
     """
     Calculate who owes what based on transactions (NEW: dynamic household members).
 
@@ -96,6 +195,8 @@ def calculate_reconciliation(transactions, household_members, budget_data=None):
         household_members (list): List of HouseholdMember instances
         budget_data (list, optional): List of budget data dicts with 'giver_user_id', 'receiver_user_id',
                                       and 'status' containing 'giver_reimbursement'
+        split_rules_lookup (dict, optional): Pre-loaded lookup dict {expense_type_id: SplitRule}
+                                             for custom SHARED splits. If None, will use 50/50.
 
     Returns:
         dict: Summary containing:
@@ -133,14 +234,22 @@ def calculate_reconciliation(transactions, household_members, budget_data=None):
         # Calculate each person's share based on category
         # NOTE: For 2-person households only (will be enhanced in Phase 4 for 3+ members)
         if len(household_members) == 2:
-            member_ids = list(user_payments.keys())
-            user1_id = member_ids[0]
-            user2_id = member_ids[1]
+            # Determine member ordering: owner is always member1
+            owner = next((m for m in household_members if m.role == 'owner'), household_members[0])
+            other = next((m for m in household_members if m.user_id != owner.user_id), household_members[1])
+            user1_id = owner.user_id  # Owner
+            user2_id = other.user_id  # Other member
 
             if txn.category == 'SHARED':
-                # 50/50 split
-                user_shares[user1_id] += amount_usd * Decimal('0.5')
-                user_shares[user2_id] += amount_usd * Decimal('0.5')
+                # Use custom split if available, otherwise 50/50
+                if split_rules_lookup is not None:
+                    m1_pct, m2_pct = get_split_for_expense_type(
+                        None, txn.expense_type_id, split_rules_lookup
+                    )
+                else:
+                    m1_pct, m2_pct = Decimal('0.5'), Decimal('0.5')
+                user_shares[user1_id] += amount_usd * m1_pct
+                user_shares[user2_id] += amount_usd * m2_pct
             elif txn.category == 'I_PAY_FOR_WIFE':
                 # Member 1 pays for Member 2 (Member 2 owes 100%)
                 user_shares[user2_id] += amount_usd

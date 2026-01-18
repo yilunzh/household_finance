@@ -181,7 +181,7 @@ class Transaction(db.Model):
             name1 = household_members[0].display_name
             name2 = household_members[1].display_name
             category_names = {
-                'SHARED': 'Shared 50/50',
+                'SHARED': 'Shared',
                 'I_PAY_FOR_WIFE': f'For {name2} (by {name1})',
                 'WIFE_PAYS_FOR_ME': f'For {name1} (by {name2})',
                 'PERSONAL_ME': f'Personal ({name1})',
@@ -190,7 +190,7 @@ class Transaction(db.Model):
         else:
             # Fallback when members not provided
             category_names = {
-                'SHARED': 'Shared 50/50',
+                'SHARED': 'Shared',
                 'I_PAY_FOR_WIFE': 'For partner (by me)',
                 'WIFE_PAYS_FOR_ME': 'For me (by partner)',
                 'PERSONAL_ME': 'Personal',
@@ -446,3 +446,85 @@ class BudgetSnapshot(db.Model):
             'net_balance': float(self.net_balance),
             'is_finalized': self.is_finalized
         }
+
+
+class SplitRule(db.Model):
+    """Split rule: defines how SHARED expenses are divided between members for specific expense types."""
+
+    __tablename__ = 'split_rules'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    household_id = db.Column(db.Integer, db.ForeignKey('households.id'), nullable=False, index=True)
+
+    # Split percentages (0-100). member1 = owner, member2 = other member
+    member1_percent = db.Column(db.Integer, nullable=False, default=50)
+    member2_percent = db.Column(db.Integer, nullable=False, default=50)
+
+    # If True, applies to all SHARED transactions without a specific expense type rule
+    is_default = db.Column(db.Boolean, default=False, nullable=False)
+
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    household = db.relationship('Household', backref='split_rules')
+    expense_types = db.relationship('SplitRuleExpenseType', back_populates='split_rule', cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<SplitRule {self.id}: {self.member1_percent}/{self.member2_percent}>'
+
+    def get_expense_type_ids(self):
+        """Get list of expense type IDs for this rule."""
+        return [et.expense_type_id for et in self.expense_types]
+
+    def get_expense_type_names(self):
+        """Get list of expense type names for this rule."""
+        return [et.expense_type.name for et in self.expense_types if et.expense_type]
+
+    def get_split_description(self, household_members):
+        """Get human-readable split description like 'Alice 60%, Bob 40%'.
+
+        Member ordering: Owner is always first (member1).
+        """
+        if not household_members or len(household_members) < 2:
+            return f"{self.member1_percent}/{self.member2_percent}"
+
+        # Find owner and other member
+        owner = next((m for m in household_members if m.role == 'owner'), household_members[0])
+        other = next((m for m in household_members if m.user_id != owner.user_id), household_members[1])
+
+        return f"{owner.display_name} {self.member1_percent}%, {other.display_name} {self.member2_percent}%"
+
+    def to_dict(self, household_members=None):
+        """Convert split rule to dictionary for JSON."""
+        return {
+            'id': self.id,
+            'household_id': self.household_id,
+            'member1_percent': self.member1_percent,
+            'member2_percent': self.member2_percent,
+            'is_default': self.is_default,
+            'expense_type_ids': self.get_expense_type_ids(),
+            'expense_type_names': self.get_expense_type_names(),
+            'description': self.get_split_description(household_members) if household_members else f"{self.member1_percent}/{self.member2_percent}",
+            'is_active': self.is_active
+        }
+
+
+class SplitRuleExpenseType(db.Model):
+    """Association table for split rules and expense types (many-to-many)."""
+
+    __tablename__ = 'split_rule_expense_types'
+    __table_args__ = (
+        db.UniqueConstraint('split_rule_id', 'expense_type_id', name='unique_split_rule_expense_type'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    split_rule_id = db.Column(db.Integer, db.ForeignKey('split_rules.id'), nullable=False, index=True)
+    expense_type_id = db.Column(db.Integer, db.ForeignKey('expense_types.id'), nullable=False, index=True)
+
+    split_rule = db.relationship('SplitRule', back_populates='expense_types')
+    expense_type = db.relationship('ExpenseType')
+
+    def __repr__(self):
+        return f'<SplitRuleExpenseType: Rule {self.split_rule_id} -> Type {self.expense_type_id}>'
