@@ -33,6 +33,16 @@
             "timeout": 120000
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/branch-check.py\"",
+            "timeout": 5000
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -63,6 +73,15 @@
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/spec-update-check.py\"",
             "timeout": 30000
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-handoff.py\"",
+            "timeout": 10000
           }
         ]
       }
