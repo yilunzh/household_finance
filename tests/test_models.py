@@ -338,7 +338,7 @@ class TestTransactionModel:
         from models import Transaction
 
         with app.app_context():
-            assert Transaction.get_category_display_name('SHARED') == 'Shared 50/50'
+            assert Transaction.get_category_display_name('SHARED') == 'Shared'
             # Category display names may vary - just check they're not empty/unknown
             i_pay_display = Transaction.get_category_display_name('I_PAY_FOR_WIFE')
             assert i_pay_display and 'Unknown' not in i_pay_display

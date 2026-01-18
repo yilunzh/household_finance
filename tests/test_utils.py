@@ -149,19 +149,21 @@ class TestCalculateReconciliation:
 
         with app.app_context():
             class MockMember:
-                def __init__(self, user_id, display_name):
+                def __init__(self, user_id, display_name, role='member'):
                     self.user_id = user_id
                     self.display_name = display_name
+                    self.role = role
 
             class MockTransaction:
                 def __init__(self, amount_in_usd, paid_by_user_id, category):
                     self.amount_in_usd = amount_in_usd
                     self.paid_by_user_id = paid_by_user_id
                     self.category = category
+                    self.expense_type_id = None
 
             members = [
-                MockMember(1, 'Alice'),
-                MockMember(2, 'Bob')
+                MockMember(1, 'Alice', 'owner'),
+                MockMember(2, 'Bob', 'member')
             ]
 
             # Alice pays $100 shared expense
@@ -187,19 +189,21 @@ class TestCalculateReconciliation:
 
         with app.app_context():
             class MockMember:
-                def __init__(self, user_id, display_name):
+                def __init__(self, user_id, display_name, role='member'):
                     self.user_id = user_id
                     self.display_name = display_name
+                    self.role = role
 
             class MockTransaction:
                 def __init__(self, amount_in_usd, paid_by_user_id, category):
                     self.amount_in_usd = amount_in_usd
                     self.paid_by_user_id = paid_by_user_id
                     self.category = category
+                    self.expense_type_id = None
 
             members = [
-                MockMember(1, 'Alice'),
-                MockMember(2, 'Bob')
+                MockMember(1, 'Alice', 'owner'),
+                MockMember(2, 'Bob', 'member')
             ]
 
             # Alice pays $80 for Bob
@@ -221,19 +225,21 @@ class TestCalculateReconciliation:
 
         with app.app_context():
             class MockMember:
-                def __init__(self, user_id, display_name):
+                def __init__(self, user_id, display_name, role='member'):
                     self.user_id = user_id
                     self.display_name = display_name
+                    self.role = role
 
             class MockTransaction:
                 def __init__(self, amount_in_usd, paid_by_user_id, category):
                     self.amount_in_usd = amount_in_usd
                     self.paid_by_user_id = paid_by_user_id
                     self.category = category
+                    self.expense_type_id = None
 
             members = [
-                MockMember(1, 'Alice'),
-                MockMember(2, 'Bob')
+                MockMember(1, 'Alice', 'owner'),
+                MockMember(2, 'Bob', 'member')
             ]
 
             # Bob pays $60 for Alice
@@ -255,19 +261,21 @@ class TestCalculateReconciliation:
 
         with app.app_context():
             class MockMember:
-                def __init__(self, user_id, display_name):
+                def __init__(self, user_id, display_name, role='member'):
                     self.user_id = user_id
                     self.display_name = display_name
+                    self.role = role
 
             class MockTransaction:
                 def __init__(self, amount_in_usd, paid_by_user_id, category):
                     self.amount_in_usd = amount_in_usd
                     self.paid_by_user_id = paid_by_user_id
                     self.category = category
+                    self.expense_type_id = None
 
             members = [
-                MockMember(1, 'Alice'),
-                MockMember(2, 'Bob')
+                MockMember(1, 'Alice', 'owner'),
+                MockMember(2, 'Bob', 'member')
             ]
 
             # Alice buys personal item for herself
@@ -289,19 +297,21 @@ class TestCalculateReconciliation:
 
         with app.app_context():
             class MockMember:
-                def __init__(self, user_id, display_name):
+                def __init__(self, user_id, display_name, role='member'):
                     self.user_id = user_id
                     self.display_name = display_name
+                    self.role = role
 
             class MockTransaction:
                 def __init__(self, amount_in_usd, paid_by_user_id, category):
                     self.amount_in_usd = amount_in_usd
                     self.paid_by_user_id = paid_by_user_id
                     self.category = category
+                    self.expense_type_id = None
 
             members = [
-                MockMember(1, 'Alice'),
-                MockMember(2, 'Bob')
+                MockMember(1, 'Alice', 'owner'),
+                MockMember(2, 'Bob', 'member')
             ]
 
             transactions = [
