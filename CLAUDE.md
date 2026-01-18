@@ -36,6 +36,19 @@ NO_RELOAD=1 python app.py
 
 Access at: http://localhost:5001
 
+### Development Workflow
+
+When implementing new features or fixing bugs:
+
+1. **Before starting**: Run `pytest` to ensure all unit tests pass
+2. **During development**: Write/update unit tests in `tests/test_*.py` for new functionality
+3. **Before deploying**: Run `pytest` and fix any failing tests - all tests must pass before push to main
+
+Unit test files:
+- `tests/test_models.py` - Database models and schema
+- `tests/test_utils.py` - Business logic (reconciliation, exchange rates)
+- `tests/test_budget.py` - Budget tracking features
+
 ### Environment Variables
 
 Copy `.env.example` to `.env` and configure:
