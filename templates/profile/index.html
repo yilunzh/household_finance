@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Profile - Lucky Ledger{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-lg border border-warm-200 p-8">
+        <h2 class="text-2xl font-bold font-display text-warm-800 mb-6 flex items-center gap-3">
+            {{ icon('cat-face', size='xl') }}
+            <span>Your Profile</span>
+        </h2>
+
+        <!-- Profile Info Card -->
+        <div class="mb-8 p-5 bg-gradient-to-br from-terracotta-50 via-white to-cream-100 rounded-2xl border border-warm-200">
+            <div class="flex items-start gap-4">
+                <div class="w-16 h-16 bg-terracotta-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <span class="text-terracotta-600 font-bold text-2xl">{{ current_user.name[0].upper() }}</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-xl font-bold text-warm-800 truncate">{{ current_user.name }}</h3>
+                    <p class="text-warm-500 truncate">{{ current_user.email }}</p>
+                    <div class="flex flex-wrap gap-4 mt-2 text-sm text-warm-400">
+                        <span>Member since {{ current_user.created_at.strftime('%b %Y') }}</span>
+                        {% if current_user.last_login %}
+                        <span>Last login {{ current_user.last_login.strftime('%b %d, %Y') }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="mb-8">
+            <h3 class="text-lg font-semibold text-warm-700 mb-4 flex items-center gap-2">
+                {{ icon('cat-coins', size='lg') }}
+                <span>Year-to-Date Summary</span>
+            </h3>
+            <div id="stats-container">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-cream-50 rounded-xl p-4 border border-warm-100 animate-pulse">
+                        <div class="h-4 bg-warm-200 rounded w-24 mb-2"></div>
+                        <div class="h-8 bg-warm-200 rounded w-20"></div>
+                    </div>
+                    <div class="bg-cream-50 rounded-xl p-4 border border-warm-100 animate-pulse">
+                        <div class="h-4 bg-warm-200 rounded w-24 mb-2"></div>
+                        <div class="h-8 bg-warm-200 rounded w-20"></div>
+                    </div>
+                    <div class="bg-cream-50 rounded-xl p-4 border border-warm-100 animate-pulse">
+                        <div class="h-4 bg-warm-200 rounded w-24 mb-2"></div>
+                        <div class="h-8 bg-warm-200 rounded w-20"></div>
+                    </div>
+                    <div class="bg-cream-50 rounded-xl p-4 border border-warm-100 animate-pulse">
+                        <div class="h-4 bg-warm-200 rounded w-24 mb-2"></div>
+                        <div class="h-8 bg-warm-200 rounded w-20"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Update Name -->
+        <div class="mb-8 pt-6 border-t border-warm-100">
+            <h3 class="text-lg font-semibold text-warm-700 mb-4 flex items-center gap-2">
+                {{ icon('cat-sparkle', size='lg') }}
+                <span>Update Name</span>
+            </h3>
+            <form method="POST" action="{{ url_for('profile_update_name') }}" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="flex gap-3">
+                    <input
+                        type="text"
+                        name="name"
+                        value="{{ current_user.name }}"
+                        required
+                        maxlength="100"
+                        class="flex-1 px-4 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               text-warm-800 transition-all duration-200"
+                    >
+                    <button
+                        type="submit"
+                        class="px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-xl font-semibold transition-all duration-200"
+                    >
+                        Save
+                    </button>
+                </div>
+                <p class="text-sm text-warm-400">
+                    This is your account name. Household-specific display names are managed in each household's settings.
+                </p>
+            </form>
+        </div>
+
+        <!-- Change Email -->
+        <div class="mb-8 pt-6 border-t border-warm-100">
+            <h3 class="text-lg font-semibold text-warm-700 mb-4 flex items-center gap-2">
+                {{ icon('cat-envelope', size='lg') }}
+                <span>Change Email</span>
+            </h3>
+            {% if current_user.pending_email %}
+            <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl mb-4">
+                <p class="text-amber-700">
+                    <strong>Verification pending:</strong> We sent a link to <strong>{{ current_user.pending_email }}</strong>.
+                    Please check your email and click the link to confirm the change.
+                </p>
+                <form method="POST" action="{{ url_for('profile_cancel_email_change') }}" class="mt-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="text-sm text-amber-700 hover:text-amber-800 font-medium underline">
+                        Cancel pending change
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+            <form method="POST" action="{{ url_for('profile_request_email_change') }}" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div>
+                    <label for="new_email" class="block text-sm font-semibold text-warm-700 mb-2">
+                        New Email Address
+                    </label>
+                    <input
+                        type="email"
+                        id="new_email"
+                        name="new_email"
+                        required
+                        maxlength="120"
+                        placeholder="your.new@email.com"
+                        class="w-full px-4 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               text-warm-800 transition-all duration-200"
+                    >
+                </div>
+                <div>
+                    <label for="email_password" class="block text-sm font-semibold text-warm-700 mb-2">
+                        Current Password
+                    </label>
+                    <input
+                        type="password"
+                        id="email_password"
+                        name="password"
+                        required
+                        placeholder="Enter your password to confirm"
+                        class="w-full px-4 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               text-warm-800 transition-all duration-200"
+                    >
+                </div>
+                <button
+                    type="submit"
+                    class="px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-xl font-semibold transition-all duration-200"
+                >
+                    Send Verification Email
+                </button>
+                <p class="text-sm text-warm-400">
+                    A verification link will be sent to your new email address.
+                </p>
+            </form>
+        </div>
+
+        <!-- Change Password -->
+        <div class="mb-8 pt-6 border-t border-warm-100">
+            <h3 class="text-lg font-semibold text-warm-700 mb-4 flex items-center gap-2">
+                {{ icon('cat-lock', size='lg') }}
+                <span>Change Password</span>
+            </h3>
+            <form method="POST" action="{{ url_for('profile_change_password') }}" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div>
+                    <label for="current_password" class="block text-sm font-semibold text-warm-700 mb-2">
+                        Current Password
+                    </label>
+                    <input
+                        type="password"
+                        id="current_password"
+                        name="current_password"
+                        required
+                        class="w-full px-4 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               text-warm-800 transition-all duration-200"
+                    >
+                </div>
+                <div>
+                    <label for="new_password" class="block text-sm font-semibold text-warm-700 mb-2">
+                        New Password
+                    </label>
+                    <input
+                        type="password"
+                        id="new_password"
+                        name="new_password"
+                        required
+                        minlength="8"
+                        class="w-full px-4 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               text-warm-800 transition-all duration-200"
+                    >
+                </div>
+                <div>
+                    <label for="confirm_password" class="block text-sm font-semibold text-warm-700 mb-2">
+                        Confirm New Password
+                    </label>
+                    <input
+                        type="password"
+                        id="confirm_password"
+                        name="confirm_password"
+                        required
+                        minlength="8"
+                        class="w-full px-4 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                               text-warm-800 transition-all duration-200"
+                    >
+                </div>
+                <button
+                    type="submit"
+                    class="px-5 py-2.5 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-xl font-semibold transition-all duration-200"
+                >
+                    Update Password
+                </button>
+            </form>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="pt-6 border-t border-warm-100">
+            <h3 class="text-lg font-semibold text-rose-500 mb-4 flex items-center gap-2">
+                {{ icon('cat-alert', size='lg') }}
+                <span>Danger Zone</span>
+            </h3>
+
+            <div class="p-5 bg-rose-50 border-2 border-rose-200 rounded-2xl">
+                <h4 class="font-semibold text-rose-700 mb-2">Delete Account</h4>
+                <p class="text-sm text-rose-600 mb-4">
+                    This will permanently delete your account. Your past transactions will be preserved
+                    for reconciliation purposes but will show "Deleted Member" as the payer.
+                </p>
+                <form method="POST" action="{{ url_for('profile_delete_account') }}" id="delete-account-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="space-y-3">
+                        <div>
+                            <label for="delete_password" class="block text-sm font-semibold text-rose-700 mb-1">
+                                Enter your password
+                            </label>
+                            <input
+                                type="password"
+                                id="delete_password"
+                                name="password"
+                                required
+                                class="w-full px-4 py-2.5 bg-white border-2 border-rose-200 rounded-xl
+                                       focus:border-rose-400 focus:ring-4 focus:ring-rose-100
+                                       text-warm-800 transition-all duration-200"
+                            >
+                        </div>
+                        <div>
+                            <label for="confirm_delete" class="block text-sm font-semibold text-rose-700 mb-1">
+                                Type DELETE to confirm
+                            </label>
+                            <input
+                                type="text"
+                                id="confirm_delete"
+                                name="confirm_delete"
+                                required
+                                placeholder="DELETE"
+                                class="w-full px-4 py-2.5 bg-white border-2 border-rose-200 rounded-xl
+                                       focus:border-rose-400 focus:ring-4 focus:ring-rose-100
+                                       text-warm-800 transition-all duration-200"
+                            >
+                        </div>
+                        <button
+                            type="submit"
+                            class="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-semibold transition-all duration-200"
+                        >
+                            Delete My Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-6 text-center">
+        <a href="/" class="text-warm-500 hover:text-terracotta-600 font-medium transition-colors">
+            &larr; Back to Transactions
+        </a>
+    </div>
+</div>
+
+<script>
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+// Load stats on page load
+document.addEventListener('DOMContentLoaded', loadStats);
+
+async function loadStats() {
+    try {
+        const response = await fetch('/api/profile/stats', {
+            headers: { 'X-CSRFToken': csrfToken }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            renderStats(data.stats);
+        } else {
+            document.getElementById('stats-container').innerHTML = `
+                <p class="text-warm-400 text-sm">Unable to load statistics.</p>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading stats:', error);
+        document.getElementById('stats-container').innerHTML = `
+            <p class="text-warm-400 text-sm">Unable to load statistics.</p>
+        `;
+    }
+}
+
+function renderStats(stats) {
+    const container = document.getElementById('stats-container');
+
+    // Format currency
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2
+        }).format(amount);
+    };
+
+    container.innerHTML = `
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="bg-cream-50 rounded-xl p-4 border border-warm-100">
+                <div class="text-warm-500 text-sm mb-1">Total Paid</div>
+                <div class="text-2xl font-bold text-warm-800">${formatCurrency(stats.ytd_total_paid)}</div>
+            </div>
+            <div class="bg-cream-50 rounded-xl p-4 border border-warm-100">
+                <div class="text-warm-500 text-sm mb-1">Monthly Average</div>
+                <div class="text-2xl font-bold text-warm-800">${formatCurrency(stats.monthly_average)}</div>
+            </div>
+            <div class="bg-sage-50 rounded-xl p-4 border border-sage-200">
+                <div class="text-sage-600 text-sm mb-1">Owed to You</div>
+                <div class="text-2xl font-bold text-sage-700">${formatCurrency(stats.total_owed_to_user)}</div>
+                <div class="text-xs text-sage-500 mt-1">
+                    ${formatCurrency(stats.settled_owed_to_user)} settled, ${formatCurrency(stats.active_owed_to_user)} active
+                </div>
+            </div>
+            <div class="bg-rose-50 rounded-xl p-4 border border-rose-200">
+                <div class="text-rose-600 text-sm mb-1">You Owe</div>
+                <div class="text-2xl font-bold text-rose-700">${formatCurrency(stats.total_owed_by_user)}</div>
+                <div class="text-xs text-rose-500 mt-1">
+                    ${formatCurrency(stats.settled_owed_by_user)} settled, ${formatCurrency(stats.active_owed_by_user)} active
+                </div>
+            </div>
+        </div>
+
+        ${stats.household_breakdown.length > 1 ? `
+            <div class="mt-4">
+                <h4 class="text-sm font-semibold text-warm-600 mb-2">By Household</h4>
+                <div class="space-y-2">
+                    ${stats.household_breakdown.map(h => `
+                        <div class="flex items-center justify-between p-3 bg-cream-50 rounded-xl">
+                            <span class="font-medium text-warm-700">${escapeHtml(h.household_name)}</span>
+                            <span class="text-warm-600">${formatCurrency(h.total_paid)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+
+        ${stats.monthly_trend.length > 0 ? `
+            <div class="mt-4">
+                <h4 class="text-sm font-semibold text-warm-600 mb-2">Monthly Trend</h4>
+                <div class="flex gap-2 overflow-x-auto pb-2">
+                    ${stats.monthly_trend.map(m => `
+                        <div class="flex-shrink-0 text-center p-2 bg-cream-50 rounded-lg min-w-[60px]">
+                            <div class="text-xs text-warm-400">${m.month}</div>
+                            <div class="text-sm font-semibold text-warm-700">${formatCurrency(m.amount)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+    `;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Confirm delete account
+document.getElementById('delete-account-form').addEventListener('submit', function(e) {
+    const confirmInput = document.getElementById('confirm_delete').value;
+    if (confirmInput !== 'DELETE') {
+        e.preventDefault();
+        alert('Please type DELETE to confirm account deletion.');
+        return false;
+    }
+    return confirm('Are you absolutely sure? This action cannot be undone.');
+});
+</script>
+{% endblock %}

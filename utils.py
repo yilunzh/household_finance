@@ -390,3 +390,157 @@ def format_settlement(me_balance, wife_balance):
         return f"Bibi owes Pi ${abs(float(wife_balance)):.2f}"
     else:
         return "All settled up!"
+
+
+def calculate_user_stats(user_id):
+    """
+    Calculate YTD statistics for a user across all households.
+
+    Args:
+        user_id (int): The user's ID
+
+    Returns:
+        dict: Statistics including total spent, reimbursements, monthly trends
+    """
+    from datetime import datetime
+    from models import Transaction, Settlement, HouseholdMember, Household
+    from sqlalchemy import func
+
+    current_year = datetime.utcnow().year
+    ytd_start = f"{current_year}-01"
+
+    # Get all household memberships for user
+    memberships = HouseholdMember.query.filter_by(user_id=user_id).all()
+    household_ids = [m.household_id for m in memberships]
+
+    if not household_ids:
+        return {
+            'ytd_total_paid': 0,
+            'monthly_average': 0,
+            'total_owed_to_user': 0,
+            'settled_owed_to_user': 0,
+            'active_owed_to_user': 0,
+            'total_owed_by_user': 0,
+            'settled_owed_by_user': 0,
+            'active_owed_by_user': 0,
+            'household_breakdown': [],
+            'monthly_trend': []
+        }
+
+    # Calculate YTD total paid by user across all households
+    ytd_transactions = Transaction.query.filter(
+        Transaction.paid_by_user_id == user_id,
+        Transaction.household_id.in_(household_ids),
+        Transaction.month_year >= ytd_start
+    ).all()
+
+    ytd_total_paid = sum(float(t.amount_in_usd) for t in ytd_transactions)
+
+    # Calculate monthly breakdown for trends
+    monthly_data = {}
+    for t in ytd_transactions:
+        month = t.month_year
+        if month not in monthly_data:
+            monthly_data[month] = 0
+        monthly_data[month] += float(t.amount_in_usd)
+
+    # Sort by month and create trend list
+    sorted_months = sorted(monthly_data.keys())
+    monthly_trend = [
+        {'month': m[5:], 'amount': monthly_data[m]}  # e.g., "01", "02"
+        for m in sorted_months
+    ]
+
+    # Calculate monthly average
+    months_with_data = len(monthly_data) if monthly_data else 1
+    monthly_average = ytd_total_paid / months_with_data
+
+    # Calculate reimbursements from settlements
+    # Settled amounts owed TO user (user was owed money)
+    settled_to_user = Settlement.query.filter(
+        Settlement.to_user_id == user_id,
+        Settlement.household_id.in_(household_ids),
+        Settlement.month_year >= ytd_start
+    ).all()
+    settled_owed_to_user = sum(float(s.settlement_amount) for s in settled_to_user)
+
+    # Settled amounts owed BY user (user owed money)
+    settled_by_user = Settlement.query.filter(
+        Settlement.from_user_id == user_id,
+        Settlement.household_id.in_(household_ids),
+        Settlement.month_year >= ytd_start
+    ).all()
+    settled_owed_by_user = sum(float(s.settlement_amount) for s in settled_by_user)
+
+    # For active (unsettled) reimbursements, we need to calculate from transactions
+    # Get all unsettled months
+    settled_months = set(s.month_year for s in Settlement.query.filter(
+        Settlement.household_id.in_(household_ids),
+        Settlement.month_year >= ytd_start
+    ).all())
+
+    active_owed_to_user = Decimal('0')
+    active_owed_by_user = Decimal('0')
+
+    # Calculate active balances for unsettled months
+    for membership in memberships:
+        household_id = membership.household_id
+        household_members = HouseholdMember.query.filter_by(household_id=household_id).all()
+
+        if len(household_members) < 2:
+            continue
+
+        # Get unsettled transactions for this household
+        unsettled_transactions = Transaction.query.filter(
+            Transaction.household_id == household_id,
+            Transaction.month_year >= ytd_start,
+            ~Transaction.month_year.in_(settled_months)
+        ).all()
+
+        if not unsettled_transactions:
+            continue
+
+        # Build split rules lookup
+        split_rules_lookup = build_split_rules_lookup(household_id)
+
+        # Calculate reconciliation
+        summary = calculate_reconciliation(unsettled_transactions, household_members, None, split_rules_lookup)
+
+        # Find this user's balance in the summary
+        for member_summary in summary.get('members', []):
+            if member_summary.get('user_id') == user_id:
+                balance = Decimal(str(member_summary.get('balance', 0)))
+                if balance > 0:
+                    # User is owed money
+                    active_owed_to_user += balance
+                else:
+                    # User owes money
+                    active_owed_by_user += abs(balance)
+                break
+
+    # Per-household breakdown
+    household_breakdown = []
+    for membership in memberships:
+        household = Household.query.get(membership.household_id)
+        household_paid = sum(
+            float(t.amount_in_usd) for t in ytd_transactions
+            if t.household_id == membership.household_id
+        )
+        if household_paid > 0:
+            household_breakdown.append({
+                'household_name': household.name,
+                'total_paid': household_paid
+            })
+
+    return {
+        'ytd_total_paid': round(ytd_total_paid, 2),
+        'monthly_average': round(monthly_average, 2),
+        'total_owed_to_user': round(float(settled_owed_to_user) + float(active_owed_to_user), 2),
+        'settled_owed_to_user': round(settled_owed_to_user, 2),
+        'active_owed_to_user': round(float(active_owed_to_user), 2),
+        'total_owed_by_user': round(float(settled_owed_by_user) + float(active_owed_by_user), 2),
+        'settled_owed_by_user': round(settled_owed_by_user, 2),
+        'active_owed_by_user': round(float(active_owed_by_user), 2),
+        'household_breakdown': household_breakdown,
+        'monthly_trend': monthly_trend
+    }
