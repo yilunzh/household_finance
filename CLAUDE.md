@@ -55,6 +55,15 @@ Before making ANY changes:
 
 Only small, trivial changes (typo fixes, config tweaks) can go directly to main.
 
+### Merge Requirements
+
+Before merging any PR:
+1. **All CI checks must pass** - lint, tests, security review
+2. **Wait for checks to complete** - Do NOT merge while checks are "in progress"
+3. **If CI fails** - Fix issues in the branch, push, wait for CI again
+
+Never merge a PR with failing or pending CI checks.
+
 ### Phase 1: CLARIFY FIRST (Ask Questions Before Coding)
 
 Before writing ANY implementation code, you MUST:
