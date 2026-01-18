@@ -2,7 +2,7 @@
 Utility functions for household expense tracker.
 """
 import requests
-from datetime import datetime, date
+from datetime import date
 from decimal import Decimal
 
 # Cache for exchange rates to minimize API calls
@@ -128,7 +128,7 @@ def get_split_for_expense_type(household_id, expense_type_id, split_rules_lookup
     if expense_type_id:
         rule_link = SplitRuleExpenseType.query.join(SplitRule).filter(
             SplitRule.household_id == household_id,
-            SplitRule.is_active == True,
+            SplitRule.is_active.is_(True),
             SplitRuleExpenseType.expense_type_id == expense_type_id
         ).first()
 
@@ -164,7 +164,7 @@ def build_split_rules_lookup(household_id):
     Returns:
         dict: {expense_type_id: SplitRule} where None key = default rule
     """
-    from models import SplitRule, SplitRuleExpenseType
+    from models import SplitRule
 
     lookup = {}
 

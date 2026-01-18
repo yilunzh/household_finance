@@ -237,7 +237,7 @@ def register():
 
         # Validation
         if not email or not password or not name:
-            print(f"[DEBUG] Validation failed: missing fields")
+            print("[DEBUG] Validation failed: missing fields")
             flash('All fields are required.', 'danger')
             return render_template('auth/register.html')
 
@@ -260,14 +260,14 @@ def register():
         user.set_password(password)
 
         try:
-            print(f"[DEBUG] Attempting to save user to database...")
+            print("[DEBUG] Attempting to save user to database...")
             db.session.add(user)
             db.session.commit()
-            print(f"[DEBUG] User saved successfully!")
+            print("[DEBUG] User saved successfully!")
 
             # Auto-login after registration
             login_user(user, remember=True)
-            print(f"[DEBUG] User logged in successfully!")
+            print("[DEBUG] User logged in successfully!")
 
             flash(f'Welcome, {user.name}! Your account has been created.', 'success')
             # TODO: Phase 2 - Redirect to household setup
@@ -1025,7 +1025,6 @@ def send_invitation():
 
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
-        display_name = request.form.get('display_name', '').strip()
 
         # Validation
         if not email:
@@ -1627,7 +1626,7 @@ def delete_expense_type(expense_type_id):
         budget_usage = BudgetRuleExpenseType.query.filter_by(
             expense_type_id=expense_type_id
         ).join(BudgetRule).filter(
-            BudgetRule.is_active == True
+            BudgetRule.is_active.is_(True)
         ).first()
 
         if budget_usage:
@@ -1867,7 +1866,7 @@ def create_budget_rule():
                 expense_type_id=et_id
             ).join(BudgetRule).filter(
                 BudgetRule.household_id == household_id,
-                BudgetRule.is_active == True
+                BudgetRule.is_active.is_(True)
             ).first()
 
             if existing_usage:
@@ -1937,7 +1936,7 @@ def update_budget_rule(rule_id):
                     expense_type_id=et_id
                 ).join(BudgetRule).filter(
                     BudgetRule.household_id == household_id,
-                    BudgetRule.is_active == True,
+                    BudgetRule.is_active.is_(True),
                     BudgetRule.id != rule_id
                 ).first()
 
