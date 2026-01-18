@@ -164,7 +164,7 @@
                     {{ icon('cat-clipboard', size='md') }}
                     <span>Transactions ({{ rule_data.status.transactions|length }})</span>
                 </h4>
-                <div class="space-y-2 max-h-64 overflow-y-auto">
+                <div class="space-y-2">
                     {% for txn in rule_data.status.transactions %}
                     <div class="flex items-center justify-between p-3 bg-cream-50 rounded-xl">
                         <div class="flex items-center gap-3">

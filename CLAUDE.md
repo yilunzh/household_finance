@@ -126,6 +126,11 @@ Before saying "done":
 2. If user-facing: present options for review
 3. Mark todo items completed
 
+**For UI/template changes, also:**
+1. Seed or create test data if needed to exercise the feature
+2. Use Playwright MCP tools to navigate to the affected page and verify the change works
+3. Take a screenshot to confirm the visual result
+
 ### User-Facing Changes (Escalate)
 
 For templates, error messages, reconciliation output, CSV exports, and emails:
