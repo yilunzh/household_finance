@@ -180,6 +180,23 @@ Custom hooks are in `.claude/hooks/`:
 
 See `docs/archive/HOOKS_SPEC_UPDATE.md` for details.
 
+## Local App Management
+
+Before starting the app, always check if it's already running:
+```bash
+# Check if app is running on port 5001
+lsof -i :5001
+
+# If running, you'll see Python process - no need to start again
+# If you need to restart (e.g., to reset rate limits or pick up code changes):
+kill <PID> && python app.py
+
+# To start fresh when port is free:
+source venv/bin/activate && python app.py
+```
+
+**Rate limiting note**: The app uses in-memory rate limiting. If you hit "Too Many Requests" (50/hour limit), restart the app to reset limits.
+
 ## Common Gotchas
 
 1. **Port 5001**: Avoids macOS AirPlay conflict on port 5000
@@ -193,22 +210,20 @@ See `docs/archive/HOOKS_SPEC_UPDATE.md` for details.
 ## Testing
 
 ```bash
-# Run with auto-reload disabled for stable browser tests
-NO_RELOAD=1 python app.py
-
-# Run all tests with pytest
-pytest tests/
+# Run unit tests (default - excludes flaky Playwright E2E tests)
+pytest
 
 # Run specific test file
-pytest tests/test_auth.py
+pytest tests/test_models.py
 
-# Run Playwright browser tests
-python tests/test_phase5_invitations.py
-python tests/test_phase4_sync.py
+# Run E2E Playwright tests (currently flaky, excluded by default)
+# pytest tests/test_auth.py tests/test_transactions.py --ignore=""
 
 # Seed test users (test_alice@example.com / test_bob@example.com, password: password123)
 python seed_test_users.py
 ```
+
+**Note:** Playwright E2E tests are excluded by default in pytest.ini due to flakiness. Unit tests are in `test_budget.py`, `test_models.py`, and `test_utils.py`.
 
 ## Production Deployment (Render)
 
