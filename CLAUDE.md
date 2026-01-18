@@ -64,6 +64,28 @@ Before merging any PR:
 
 Never merge a PR with failing or pending CI checks.
 
+### CI & Quality Guidelines
+
+**1. Don't add CI checks the codebase doesn't pass**
+- Before adding a new CI check (linter, formatter, etc.), verify existing code passes it
+- Either fix existing code first, OR don't add the check yet
+- Example: Don't add `black --check` if code isn't already formatted with black
+
+**2. Test hooks locally before merging**
+- Run hook scripts directly to verify they work: `python .claude/hooks/<hook>.py`
+- Check output format is valid JSON with expected fields
+- Verify hooks don't error on edge cases (no staged files, etc.)
+
+**3. Align local hooks with CI**
+- Pre-commit hook and CI should run the same checks
+- If CI uses `pytest -m unit`, local hook should too
+- Prevents "works locally, fails in CI" issues
+
+**4. Keep PRs small and focused**
+- Smaller PRs = easier to debug when CI fails
+- One logical change per PR when possible
+- Large changes should be broken into sequential PRs
+
 ### Phase 1: CLARIFY FIRST (Ask Questions Before Coding)
 
 Before writing ANY implementation code, you MUST:
