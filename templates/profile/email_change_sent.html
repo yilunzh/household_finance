@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Verify Your Email - Lucky Ledger{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-12 animate-fade-in">
+    <div class="bg-white rounded-3xl shadow-lg border border-warm-200 p-8 text-center">
+        <div class="w-16 h-16 bg-terracotta-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            {{ icon('cat-envelope', size='xl') }}
+        </div>
+        <h2 class="text-2xl font-bold font-display text-warm-800 mb-4">Check Your Email</h2>
+        <p class="text-warm-600 mb-6">
+            We've sent a verification link to <strong class="text-warm-800">{{ new_email }}</strong>.
+            Click the link in the email to confirm your new email address.
+        </p>
+        <p class="text-sm text-warm-400 mb-6">
+            The link will expire in 1 hour. If you don't see the email, check your spam folder.
+        </p>
+        <a href="{{ url_for('profile') }}" class="inline-block px-6 py-3 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-xl font-semibold transition-all duration-200">
+            Back to Profile
+        </a>
+    </div>
+</div>
+{% endblock %}

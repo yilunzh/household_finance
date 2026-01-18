@@ -24,6 +24,11 @@ class User(db.Model, UserMixin):
     password_reset_token = db.Column(db.String(64), unique=True, nullable=True)
     password_reset_expires = db.Column(db.DateTime, nullable=True)
 
+    # Email change verification fields
+    pending_email = db.Column(db.String(120), nullable=True)
+    email_change_token = db.Column(db.String(64), unique=True, nullable=True)
+    email_change_expires = db.Column(db.DateTime, nullable=True)
+
     # Relationships
     household_memberships = db.relationship('HouseholdMember', back_populates='user', cascade='all, delete-orphan')
 
@@ -126,7 +131,7 @@ class Transaction(db.Model):
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     currency = db.Column(db.String(3), nullable=False)  # USD or CAD
     amount_in_usd = db.Column(db.Numeric(10, 2), nullable=False)
-    paid_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    paid_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)  # Nullable for anonymized deleted users
     category = db.Column(db.String(20), nullable=False)
     expense_type_id = db.Column(db.Integer, db.ForeignKey('expense_types.id'), nullable=True, index=True)
     notes = db.Column(db.Text, nullable=True)
@@ -163,11 +168,13 @@ class Transaction(db.Model):
 
     def get_paid_by_display_name(self):
         """Get display name for the user who paid."""
+        if self.paid_by_user_id is None:
+            return "Deleted Member"
         member = HouseholdMember.query.filter_by(
             household_id=self.household_id,
             user_id=self.paid_by_user_id
         ).first()
-        return member.display_name if member else "Unknown"
+        return member.display_name if member else "Former Member"
 
     @staticmethod
     def get_category_display_name(category, household_members=None):

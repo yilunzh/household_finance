@@ -232,3 +232,106 @@ If you didn't request a password reset, you can safely ignore this email. Your p
         import traceback
         traceback.print_exc()
         return False
+
+
+def send_email_change_verification(user, new_email, token):
+    """
+    Send email change verification to the new email address.
+
+    Args:
+        user: User model instance
+        new_email: The new email address to verify
+        token: Email change verification token string
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    try:
+        # Build the verification URL
+        site_url = os.environ.get('SITE_URL', 'http://localhost:5001')
+        verify_url = f"{site_url}/profile/confirm-email/{token}"
+
+        subject = "Verify your new email address - Lucky Ledger"
+
+        # Build HTML body
+        html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: #c67c4e; color: white; padding: 20px; border-radius: 8px 8px 0 0; }}
+        .content {{ background: #faf7f5; padding: 30px; border: 1px solid #e5e0db; }}
+        .button {{ display: inline-block; background: #c67c4e; color: white !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }}
+        .button:hover {{ background: #a85d3a; }}
+        .footer {{ padding: 20px; font-size: 12px; color: #6b7280; text-align: center; }}
+        .expires {{ background: #fef3c7; border: 1px solid #f59e0b; padding: 10px; border-radius: 4px; margin-top: 20px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="margin: 0;">Lucky Ledger</h1>
+        </div>
+        <div class="content">
+            <h2>Verify Your New Email</h2>
+            <p>Hi {user.name},</p>
+            <p>You requested to change your Lucky Ledger email address to this address.</p>
+            <p>Click the button below to confirm this email change:</p>
+            <a href="{verify_url}" class="button">Verify Email Address</a>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #c67c4e;">{verify_url}</p>
+            <div class="expires">
+                <strong>Note:</strong> This link expires in 1 hour for security reasons.
+            </div>
+        </div>
+        <div class="footer">
+            <p>If you didn't request this email change, you can safely ignore this email. Your email address will not be changed.</p>
+            <p>Lucky Ledger - Track expenses together</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+        # Plain text version
+        text_body = f"""
+Verify your new email address - Lucky Ledger
+
+Hi {user.name},
+
+You requested to change your Lucky Ledger email address to this address.
+
+Click the link below to confirm this email change:
+
+{verify_url}
+
+Note: This link expires in 1 hour for security reasons.
+
+If you didn't request this email change, you can safely ignore this email. Your email address will not be changed.
+"""
+
+        msg = Message(
+            subject=subject,
+            recipients=[new_email],  # Send to the NEW email address
+            body=text_body,
+            html=html_body
+        )
+
+        # Check if mail sending is suppressed (development without SMTP config)
+        if current_app.config.get('MAIL_SUPPRESS_SEND'):
+            print(f"[EMAIL SUPPRESSED] Would send email verification to: {new_email}")
+            print(f"[EMAIL SUPPRESSED] Verification URL: {verify_url}")
+            return True
+
+        mail.send(msg)
+        print(f"[EMAIL] Email change verification sent to: {new_email}")
+        return True
+
+    except Exception as e:
+        print(f"[EMAIL ERROR] Failed to send email change verification: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
