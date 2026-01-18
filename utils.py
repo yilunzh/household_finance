@@ -472,16 +472,10 @@ def calculate_user_stats(user_id):
     settled_owed_by_user = sum(float(s.settlement_amount) for s in settled_by_user)
 
     # For active (unsettled) reimbursements, we need to calculate from transactions
-    # Get all unsettled months
-    settled_months = set(s.month_year for s in Settlement.query.filter(
-        Settlement.household_id.in_(household_ids),
-        Settlement.month_year >= ytd_start
-    ).all())
-
     active_owed_to_user = Decimal('0')
     active_owed_by_user = Decimal('0')
 
-    # Calculate active balances for unsettled months
+    # Calculate active balances for unsettled months (per household)
     for membership in memberships:
         household_id = membership.household_id
         household_members = HouseholdMember.query.filter_by(household_id=household_id).all()
@@ -489,12 +483,25 @@ def calculate_user_stats(user_id):
         if len(household_members) < 2:
             continue
 
+        # Get settled months for THIS household only
+        household_settled_months = set(s.month_year for s in Settlement.query.filter(
+            Settlement.household_id == household_id,
+            Settlement.month_year >= ytd_start
+        ).all())
+
         # Get unsettled transactions for this household
-        unsettled_transactions = Transaction.query.filter(
-            Transaction.household_id == household_id,
-            Transaction.month_year >= ytd_start,
-            ~Transaction.month_year.in_(settled_months)
-        ).all()
+        if household_settled_months:
+            unsettled_transactions = Transaction.query.filter(
+                Transaction.household_id == household_id,
+                Transaction.month_year >= ytd_start,
+                ~Transaction.month_year.in_(household_settled_months)
+            ).all()
+        else:
+            # No settled months - all transactions are unsettled
+            unsettled_transactions = Transaction.query.filter(
+                Transaction.household_id == household_id,
+                Transaction.month_year >= ytd_start
+            ).all()
 
         if not unsettled_transactions:
             continue
@@ -505,17 +512,16 @@ def calculate_user_stats(user_id):
         # Calculate reconciliation
         summary = calculate_reconciliation(unsettled_transactions, household_members, None, split_rules_lookup)
 
-        # Find this user's balance in the summary
-        for member_summary in summary.get('members', []):
-            if member_summary.get('user_id') == user_id:
-                balance = Decimal(str(member_summary.get('balance', 0)))
-                if balance > 0:
-                    # User is owed money
-                    active_owed_to_user += balance
-                else:
-                    # User owes money
-                    active_owed_by_user += abs(balance)
-                break
+        # Find this user's balance in user_balances dict
+        user_balances = summary.get('user_balances', {})
+        if user_id in user_balances:
+            balance = Decimal(str(user_balances[user_id]))
+            if balance > 0:
+                # User is owed money
+                active_owed_to_user += balance
+            else:
+                # User owes money
+                active_owed_by_user += abs(balance)
 
     # Per-household breakdown
     household_breakdown = []
