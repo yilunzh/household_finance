@@ -36,15 +36,99 @@ NO_RELOAD=1 python app.py
 
 Access at: http://localhost:5001
 
-### Development Workflow
+## Development Workflow
 
-When implementing new features or fixing bugs:
+### Phase 0: BRANCH FIRST (Feature Branches Required)
 
-1. **Before starting**: Run `pytest` to ensure all unit tests pass
-2. **During development**: Write/update unit tests in `tests/test_*.py` for new functionality
-3. **Before deploying**: Run `pytest` and fix any failing tests - all tests must pass before push to main
+Before making ANY changes:
 
-Unit test files:
+1. **Check current branch**: `git branch --show-current`
+2. **For new features**: Create feature branch
+   ```bash
+   git checkout -b feature/<feature-name>
+   ```
+3. **For bug fixes**: Create fix branch
+   ```bash
+   git checkout -b fix/<bug-description>
+   ```
+4. **NEVER commit directly to main** - All changes go through branches → PR
+
+Only small, trivial changes (typo fixes, config tweaks) can go directly to main.
+
+### Phase 1: CLARIFY FIRST (Ask Questions Before Coding)
+
+Before writing ANY implementation code, you MUST:
+
+1. **Read related code** - Understand existing patterns
+2. **Ask clarifying questions** about:
+   - Ambiguous requirements ("Should X also handle Y?")
+   - User-facing text (error messages, labels, emails)
+   - Edge cases ("What happens if Z?")
+   - Scope boundaries ("Does this include W?")
+3. **Wait for answers** - Do NOT assume. Wrong assumptions = rework.
+
+Example good clarification:
+> "Before implementing the export feature:
+> 1. Should CSV include settled months only, or all months?
+> 2. What columns should be included?
+> 3. Should there be a date range filter?"
+
+### Phase 2: PLAN (Create Todo List)
+
+After clarification, create a todo list with:
+- Implementation steps
+- Test steps (which tests to update/add)
+- Verification step ("Run pytest, confirm passing")
+
+### Phase 3: IMPLEMENT (Autonomous Execution)
+
+Now proceed WITHOUT asking for confirmation:
+1. Make incremental changes
+2. Run related tests after each change
+3. Fix failures immediately
+4. Continue to next step
+
+### Phase 4: VERIFY (Before Claiming Done)
+
+Before saying "done":
+1. Run `pytest tests/` - all must pass
+2. If user-facing: present options for review
+3. Mark todo items completed
+
+### User-Facing Changes (Escalate)
+
+For templates, error messages, reconciliation output, CSV exports, and emails:
+1. Propose 2-3 options
+2. Recommend one with rationale
+3. Wait for selection before implementing
+
+Example:
+> "For the error message when a user tries to edit a settled month:
+> 1. **'This month is settled and cannot be edited'** (Recommended - clear and direct)
+> 2. 'Settlement locked. Unlock in Reconciliation to edit.'
+> 3. 'Cannot modify transactions in settled periods.'
+> Which do you prefer?"
+
+### Backend Changes (Autonomous)
+
+For routes, models, business logic, test structure:
+- Follow existing patterns
+- Implement without asking
+- Just verify tests pass
+
+### Decision Quick Reference
+
+| Change Type | Action |
+|------------|--------|
+| New route | Autonomous - add @household_required, filter by household_id |
+| Model change | Autonomous - update test_models.py first |
+| Business logic | Autonomous - update test_utils.py first |
+| Error message | ESCALATE - propose options |
+| Template change | ESCALATE - propose options |
+| Email text | ESCALATE - propose options |
+| CSV format | ESCALATE - propose options |
+
+### Unit Test Files
 - `tests/test_models.py` - Database models and schema
 - `tests/test_utils.py` - Business logic (reconciliation, exchange rates)
 - `tests/test_budget.py` - Budget tracking features
@@ -188,10 +272,17 @@ The Stop hook gathers context (git changes, conversation, plan) and prompts for 
 
 ### Hooks
 Custom hooks are in `.claude/hooks/`:
+- `pre-commit-check.py` - **Blocking**: Runs tests + lint before commits; blocks >2 files on main
+- `post-edit-verify.py` - **Advisory**: Reminds to run tests after editing Python files
+- `completion-checklist.py` - **Blocking**: Ensures tests were run before session ends
 - `spec-update-check.py` - Triggers SPEC.md updates on key phrases
 - `sync-structure.py` - Generates project tree for SPEC.md
 
-See `docs/archive/HOOKS_SPEC_UPDATE.md` for details.
+### Subagents
+Custom subagents are in `.claude/agents/`:
+- `test-first.md` - TDD specialist, auto-invoked for new features
+
+See `docs/archive/HOOKS_SPEC_UPDATE.md` for hook details.
 
 ## Local App Management
 
@@ -276,9 +367,14 @@ docs/
 
 .claude/                       # Claude Code configuration
 ├── settings.json              # MCP servers and hooks config
-└── hooks/                     # Custom hooks
-    ├── spec-update-check.py   # SPEC.md update trigger
-    └── sync-structure.py      # Project tree generator
+├── hooks/                     # Custom hooks
+│   ├── pre-commit-check.py    # Blocking: tests + lint + branch policy
+│   ├── post-edit-verify.py    # Advisory: test reminders after edits
+│   ├── completion-checklist.py # Blocking: ensures tests run
+│   ├── spec-update-check.py   # SPEC.md update trigger
+│   └── sync-structure.py      # Project tree generator
+└── agents/                    # Custom subagents
+    └── test-first.md          # TDD specialist for new features
 
 tests/                         # Python test scripts
 ├── test_auth.py               # Authentication unit tests
