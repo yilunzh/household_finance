@@ -7,7 +7,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 
 import jwt
-from flask import request, jsonify, g, current_app
+from flask import request, jsonify, g
 
 from models import User, HouseholdMember, RefreshToken
 from extensions import db

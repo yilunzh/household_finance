@@ -233,7 +233,7 @@ def api_create_settlement():
             'settlement': settlement.to_dict()
         }), 201
 
-    except Exception as e:
+    except Exception:
         db.session.rollback()
         return jsonify({'error': 'Failed to create settlement'}), 500
 
@@ -263,6 +263,6 @@ def api_delete_settlement(month):
 
         return jsonify({'success': True})
 
-    except Exception as e:
+    except Exception:
         db.session.rollback()
         return jsonify({'error': 'Failed to remove settlement'}), 500

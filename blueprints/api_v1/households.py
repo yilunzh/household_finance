@@ -11,7 +11,7 @@ from flask import request, jsonify, g
 
 from extensions import db
 from models import Household, HouseholdMember, User, ExpenseType
-from api_decorators import jwt_required, api_household_required, api_household_owner_required
+from api_decorators import jwt_required
 from blueprints.api_v1 import api_v1_bp
 
 
@@ -156,7 +156,7 @@ def api_create_household():
             'household': _household_to_dict(household, g.current_user_id)
         }), 201
 
-    except Exception as e:
+    except Exception:
         db.session.rollback()
         return jsonify({'error': 'Failed to create household'}), 500
 
@@ -250,6 +250,6 @@ def api_leave_household(household_id):
 
         return jsonify({'success': True})
 
-    except Exception as e:
+    except Exception:
         db.session.rollback()
         return jsonify({'error': 'Failed to leave household'}), 500

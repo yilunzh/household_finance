@@ -124,7 +124,7 @@ def api_register():
             'households': []  # New user has no households
         }), 201
 
-    except Exception as e:
+    except Exception:
         db.session.rollback()
         return jsonify({'error': 'Registration failed'}), 500
 

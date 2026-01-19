@@ -135,7 +135,7 @@ def api_create_transaction():
 
     except TransactionService.ValidationError as e:
         return jsonify({'error': str(e)}), 400
-    except Exception as e:
+    except Exception:
         return jsonify({'error': 'Failed to create transaction'}), 500
 
 
@@ -200,7 +200,7 @@ def api_update_transaction(transaction_id):
 
     except TransactionService.ValidationError as e:
         return jsonify({'error': str(e)}), 400
-    except Exception as e:
+    except Exception:
         return jsonify({'error': 'Failed to update transaction'}), 500
 
 
@@ -223,5 +223,5 @@ def api_delete_transaction(transaction_id):
 
     except TransactionService.ValidationError as e:
         return jsonify({'error': str(e)}), 400
-    except Exception as e:
+    except Exception:
         return jsonify({'error': 'Failed to delete transaction'}), 500
