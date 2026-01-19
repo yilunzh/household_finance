@@ -42,3 +42,6 @@ screenshots/
 
 # Claude Code
 .claude/settings.local.json
+.claude/.step-counter
+.claude/session-context.md
+.claude/handoff.md

@@ -119,6 +119,36 @@ Now proceed WITHOUT asking for confirmation:
 3. Fix failures immediately
 4. Continue to next step
 
+### Context Checkpoints (IMPORTANT)
+
+**Every 3-5 major code edits**, update `.claude/session-context.md` with:
+
+```markdown
+## Current Goal
+What we're trying to accomplish
+
+## Decisions Made
+- Key choice 1 and rationale
+- Key choice 2 and rationale
+
+## Files Modified
+- file1.py - what changed
+- file2.html - what changed
+
+## What's Next
+- Remaining step 1
+- Remaining step 2
+```
+
+**Why this matters:**
+- Prevents context loss during long sessions
+- Hooks will remind you at 3 edits, insist at 5 edits
+- Session end is blocked if incomplete work detected without handoff
+
+**For multi-session work**, write `.claude/handoff.md` before ending with the same sections.
+
+See global `~/.claude/CLAUDE.md` for full context management details.
+
 ### Phase 4: VERIFY (Before Claiming Done)
 
 Before saying "done":
@@ -310,7 +340,10 @@ The Stop hook gathers context (git changes, conversation, plan) and prompts for 
 Custom hooks are in `.claude/hooks/`:
 - `pre-commit-check.py` - **Blocking**: Runs tests + lint before commits; blocks >2 files on main
 - `post-edit-verify.py` - **Advisory**: Reminds to run tests after editing Python files
+- `checkpoint-reminder.py` - **Advisory**: Reminds to checkpoint every 3-5 edits
+- `checkpoint-validator.py` - **Advisory**: Validates checkpoint has required sections
 - `completion-checklist.py` - **Blocking**: Ensures tests were run before session ends
+- `session-handoff.py` - **Blocking**: Detects incomplete work via git/step count/todos
 - `spec-update-check.py` - Triggers SPEC.md updates on key phrases
 - `sync-structure.py` - Generates project tree for SPEC.md
 

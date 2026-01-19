@@ -55,6 +55,26 @@
             "timeout": 5000
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|TodoWrite",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/checkpoint-reminder.py\"",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/checkpoint-validator.py\"",
+            "timeout": 5000
+          }
+        ]
       }
     ],
     "Stop": [
