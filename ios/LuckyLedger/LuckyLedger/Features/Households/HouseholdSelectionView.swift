@@ -47,20 +47,12 @@ struct HouseholdSelectionView: View {
                                                 .font(.headline)
                                                 .foregroundStyle(.primary)
 
-                                            if let role = household.role {
-                                                Text(role.capitalized)
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
-                                            }
-                                        }
-
-                                        Spacer()
-
-                                        if let memberCount = household.memberCount {
-                                            Label("\(memberCount)", systemImage: "person.2")
+                                            Text(household.role.capitalized)
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
                                         }
+
+                                        Spacer()
 
                                         Image(systemName: "chevron.right")
                                             .font(.caption)

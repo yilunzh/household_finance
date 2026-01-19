@@ -60,13 +60,11 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
 
-                        if let displayName = user.displayName {
-                            HStack {
-                                Text("Display Name")
-                                Spacer()
-                                Text(displayName)
-                                    .foregroundStyle(.secondary)
-                            }
+                        HStack {
+                            Text("Name")
+                            Spacer()
+                            Text(user.name)
+                                .foregroundStyle(.secondary)
                         }
                     }
                 } header: {

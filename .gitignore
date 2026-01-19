@@ -47,3 +47,4 @@ screenshots/
 .claude/handoff.md
 .playwright-verified
 .playwright-mcp/
+ios/LuckyLedger/build/

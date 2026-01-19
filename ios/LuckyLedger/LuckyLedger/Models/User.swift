@@ -3,28 +3,43 @@ import Foundation
 struct User: Codable, Identifiable, Sendable {
     let id: Int
     let email: String
-    let displayName: String?
+    let name: String
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
         case id
         case email
-        case displayName = "display_name"
+        case name
         case createdAt = "created_at"
+    }
+}
+
+// Household info returned in auth response (different from full Household model)
+struct UserHousehold: Codable, Identifiable, Sendable, Hashable {
+    let id: Int
+    let name: String
+    let role: String
+    let displayName: String
+    let joinedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case role
+        case displayName = "display_name"
+        case joinedAt = "joined_at"
     }
 }
 
 struct AuthResponse: Codable, Sendable {
     let accessToken: String
     let refreshToken: String
-    let expiresIn: Int
     let user: User
-    let households: [Household]
+    let households: [UserHousehold]
 
     enum CodingKeys: String, CodingKey {
         case accessToken = "access_token"
         case refreshToken = "refresh_token"
-        case expiresIn = "expires_in"
         case user
         case households
     }
@@ -32,10 +47,8 @@ struct AuthResponse: Codable, Sendable {
 
 struct TokenRefreshResponse: Codable, Sendable {
     let accessToken: String
-    let expiresIn: Int
 
     enum CodingKeys: String, CodingKey {
         case accessToken = "access_token"
-        case expiresIn = "expires_in"
     }
 }

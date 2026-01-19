@@ -192,8 +192,8 @@ actor NetworkManager {
 
         let tokenResponse = try decoder.decode(TokenRefreshResponse.self, from: data)
 
-        // Save new access token
-        try await keychain.saveAccessToken(tokenResponse.accessToken, expiresIn: tokenResponse.expiresIn)
+        // Save new access token (default 15 min expiry since API doesn't return it)
+        try await keychain.saveAccessToken(tokenResponse.accessToken, expiresIn: 900)
 
         // Resume any waiting requests
         for continuation in refreshContinuations {
@@ -230,8 +230,8 @@ actor NetworkManager {
 
         let authResponse = try decoder.decode(AuthResponse.self, from: data)
 
-        // Save tokens
-        try await keychain.saveAccessToken(authResponse.accessToken, expiresIn: authResponse.expiresIn)
+        // Save tokens (default 15 min expiry since API doesn't return it)
+        try await keychain.saveAccessToken(authResponse.accessToken, expiresIn: 900)
         try await keychain.saveRefreshToken(authResponse.refreshToken)
 
         return authResponse
@@ -265,8 +265,8 @@ actor NetworkManager {
 
         let authResponse = try decoder.decode(AuthResponse.self, from: data)
 
-        // Save tokens
-        try await keychain.saveAccessToken(authResponse.accessToken, expiresIn: authResponse.expiresIn)
+        // Save tokens (default 15 min expiry since API doesn't return it)
+        try await keychain.saveAccessToken(authResponse.accessToken, expiresIn: 900)
         try await keychain.saveRefreshToken(authResponse.refreshToken)
 
         return authResponse

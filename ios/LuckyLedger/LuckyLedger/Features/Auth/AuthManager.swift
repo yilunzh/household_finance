@@ -5,7 +5,7 @@ import Observation
 final class AuthManager: Sendable {
     private(set) var isAuthenticated = false
     private(set) var currentUser: User?
-    private(set) var households: [Household] = []
+    private(set) var households: [UserHousehold] = []
     private(set) var currentHouseholdId: Int?
 
     private(set) var isLoading = false
@@ -118,11 +118,20 @@ final class AuthManager: Sendable {
     @MainActor
     func fetchHouseholds() async {
         do {
-            let response: HouseholdListResponse = try await network.request(
+            let response: HouseholdsApiResponse = try await network.request(
                 endpoint: Endpoints.households,
                 requiresAuth: true
             )
-            households = response.households
+            // Convert API response to UserHousehold
+            households = response.households.map { h in
+                UserHousehold(
+                    id: h.id,
+                    name: h.name,
+                    role: h.role,
+                    displayName: h.displayName,
+                    joinedAt: h.createdAt  // API returns created_at, use as joined_at
+                )
+            }
         } catch {
             // Silently fail - households list might just be empty
         }
@@ -145,14 +154,21 @@ final class AuthManager: Sendable {
 
         do {
             let body = ["name": name]
-            let response: HouseholdResponse = try await network.request(
+            let response: CreateHouseholdResponse = try await network.request(
                 endpoint: Endpoints.households,
                 method: .post,
                 body: body,
                 requiresAuth: true
             )
-            households.append(response.household)
-            selectHousehold(response.household.id)
+            let newHousehold = UserHousehold(
+                id: response.household.id,
+                name: response.household.name,
+                role: response.household.role,
+                displayName: response.household.displayName,
+                joinedAt: response.household.createdAt
+            )
+            households.append(newHousehold)
+            selectHousehold(newHousehold.id)
             return true
         } catch let apiError as APIError {
             error = apiError.errorDescription
@@ -174,6 +190,28 @@ private struct UserMeResponse: Codable {
     let user: User
 }
 
-private struct HouseholdResponse: Codable {
-    let household: Household
+// Response from GET /households
+private struct HouseholdsApiResponse: Codable {
+    let households: [HouseholdApiItem]
+}
+
+private struct HouseholdApiItem: Codable {
+    let id: Int
+    let name: String
+    let role: String
+    let displayName: String
+    let createdAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case role
+        case displayName = "display_name"
+        case createdAt = "created_at"
+    }
+}
+
+// Response from POST /households
+private struct CreateHouseholdResponse: Codable {
+    let household: HouseholdApiItem
 }
