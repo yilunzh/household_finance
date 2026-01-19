@@ -3,10 +3,9 @@ Email service for sending household invitations.
 """
 import os
 from flask import current_app, render_template, url_for
-from flask_mail import Mail, Message
+from flask_mail import Message
 
-# Initialize Flask-Mail (will be configured by app)
-mail = Mail()
+from extensions import mail
 
 
 def init_mail(app):

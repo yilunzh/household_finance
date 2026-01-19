@@ -6,21 +6,18 @@ import csv
 import logging
 from io import StringIO
 from flask import Flask, render_template, request, jsonify, Response, flash, redirect, url_for
-from flask_wtf.csrf import CSRFProtect
 from flask_login import login_user, logout_user, current_user, login_required
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+from extensions import db, csrf, limiter, login_manager, mail
 from models import (
-    db, Transaction, Settlement, User, Household, HouseholdMember, Invitation,
+    Transaction, Settlement, User, Household, HouseholdMember, Invitation,
     ExpenseType, AutoCategoryRule, BudgetRule, BudgetRuleExpenseType, BudgetSnapshot,
     SplitRule, SplitRuleExpenseType
 )
 from utils import get_exchange_rate, calculate_reconciliation
 from budget_utils import calculate_budget_status, get_yearly_cumulative, create_or_update_budget_snapshot
-from auth import login_manager
 from decorators import household_required
 from household_context import (
     get_current_household_id,
@@ -28,7 +25,11 @@ from household_context import (
     get_current_household_members
 )
 from email_service import init_mail, send_invitation_email, send_password_reset_email, is_mail_configured
+from config import config, get_config_name
 import secrets
+
+# Import auth to register the user_loader callback
+import auth  # noqa: F401
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -37,40 +38,16 @@ logger = logging.getLogger(__name__)
 # Initialize Flask app
 app = Flask(__name__)
 
-# Configuration
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+# Load configuration from centralized config module
+config_name = get_config_name()
+app.config.from_object(config[config_name])
 
-# Use different database path for production (persistent disk) vs development
-if os.environ.get('FLASK_ENV') == 'production':
-    # Production: use /data directory which is mounted to persistent disk on Render
-    # Note: 4 slashes = sqlite:// + absolute path /data/database.db
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////data/database.db'
-else:
-    # Development: use instance folder locally
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
-
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Session security configuration
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-# Only enable SECURE cookies in production (requires HTTPS)
-app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
-
-# Initialize extensions
+# Initialize extensions with app
 db.init_app(app)
-csrf = CSRFProtect(app)
+csrf.init_app(app)
 login_manager.init_app(app)
+limiter.init_app(app)  # Reads RATELIMIT_* from app.config
 init_mail(app)  # Initialize Flask-Mail for invitations
-
-# Initialize rate limiter
-limiter = Limiter(
-    key_func=get_remote_address,
-    app=app,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://",
-)
 
 
 # ============================================================================
@@ -80,7 +57,7 @@ limiter = Limiter(
 @app.before_request
 def enforce_https():
     """Redirect HTTP to HTTPS in production."""
-    if os.environ.get('FLASK_ENV') == 'production':
+    if not app.debug:  # Production mode
         # Check X-Forwarded-Proto header (set by reverse proxies like Render)
         if request.headers.get('X-Forwarded-Proto') == 'http':
             url = request.url.replace('http://', 'https://', 1)
@@ -102,19 +79,13 @@ def add_security_headers(response):
     # Referrer policy
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
 
-    # Content Security Policy (relaxed for CDN resources)
-    if os.environ.get('FLASK_ENV') == 'production':
-        response.headers['Content-Security-Policy'] = (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; "
-            "img-src 'self' data:; "
-            "font-src 'self'; "
-            "connect-src 'self';"
-        )
+    # Content Security Policy (relaxed for CDN resources) - production only
+    csp_policy = app.config.get('CSP_POLICY')
+    if csp_policy:
+        response.headers['Content-Security-Policy'] = csp_policy
 
     # Strict Transport Security (HTTPS only in production)
-    if os.environ.get('FLASK_ENV') == 'production':
+    if not app.debug:
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
 
     return response
@@ -2526,10 +2497,8 @@ if __name__ == '__main__':
     # Default to 5001 for local development (avoids macOS AirPlay Receiver conflict)
     port = int(os.environ.get('PORT', 5001))
 
-    # Disable debug mode in production for security
-    debug_mode = os.environ.get('FLASK_ENV') != 'production'
-
     # Allow disabling auto-reload for stable testing (NO_RELOAD=1 python app.py)
     use_reloader = os.environ.get('NO_RELOAD') != '1'
 
-    app.run(debug=debug_mode, host='0.0.0.0', port=port, use_reloader=use_reloader)
+    # Debug mode is set by config (True for development, False for production)
+    app.run(debug=app.debug, host='0.0.0.0', port=port, use_reloader=use_reloader)
