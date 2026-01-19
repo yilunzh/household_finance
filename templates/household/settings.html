@@ -17,7 +17,7 @@
                 {{ icon('cat-house', size='lg') }}
                 <span>Household Details</span>
             </h3>
-            <form method="POST" action="{{ url_for('update_household') }}" class="space-y-4">
+            <form method="POST" action="{{ url_for('household.update_household') }}" class="space-y-4">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="rename">
 
@@ -55,7 +55,7 @@
                     {{ icon('cat-group', size='lg') }}
                     <span>Members</span>
                 </h3>
-                <a href="{{ url_for('send_invitation') }}" class="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium transition-colors">
+                <a href="{{ url_for('invitations.send_invitation') }}" class="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium transition-colors">
                     + Invite Member
                 </a>
             </div>
@@ -86,7 +86,7 @@
                         {% endif %}
 
                         {% if is_owner and member.user_id != current_user.id %}
-                        <form method="POST" action="{{ url_for('remove_member', member_id=member.id) }}" class="inline">
+                        <form method="POST" action="{{ url_for('household.remove_member', member_id=member.id) }}" class="inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button
                                 type="submit"
@@ -119,7 +119,7 @@
                             (sent {{ invite.created_at.strftime('%b %d') }})
                         </span>
                     </div>
-                    <form method="POST" action="{{ url_for('cancel_invitation', invitation_id=invite.id) }}" class="inline">
+                    <form method="POST" action="{{ url_for('invitations.cancel_invitation', invitation_id=invite.id) }}" class="inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="text-sm text-rose-500 hover:text-rose-600 font-medium transition-colors">
                             Cancel
@@ -137,7 +137,7 @@
                 {{ icon('cat-sparkle', size='lg') }}
                 <span>Your Display Name</span>
             </h3>
-            <form method="POST" action="{{ url_for('update_household') }}" class="space-y-4">
+            <form method="POST" action="{{ url_for('household.update_household') }}" class="space-y-4">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="update_display_name">
 
@@ -268,7 +268,7 @@
                             {% endif %}
                         </p>
                     </div>
-                    <form method="POST" action="{{ url_for('leave_household') }}">
+                    <form method="POST" action="{{ url_for('household.leave_household') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button
                             type="submit"

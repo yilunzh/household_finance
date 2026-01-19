@@ -67,7 +67,7 @@ def app():
 @pytest.fixture(scope='session')
 def db(app):
     """Get database instance."""
-    from models import db as _db
+    from extensions import db as _db
     with app.app_context():
         _db.create_all()
     return _db

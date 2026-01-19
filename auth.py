@@ -1,16 +1,8 @@
 """
 Flask-Login authentication configuration.
 """
-from flask_login import LoginManager
-from models import db, User
-
-# Create LoginManager instance
-login_manager = LoginManager()
-
-# Configure login view
-login_manager.login_view = 'login'
-login_manager.login_message_category = 'info'
-login_manager.login_message = 'Please log in to access this page.'
+from models import User
+from extensions import login_manager
 
 
 @login_manager.user_loader

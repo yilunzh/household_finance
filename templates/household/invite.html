@@ -30,7 +30,7 @@
             Send an invitation to join "{{ household.name }}"
         </p>
 
-        <form method="POST" action="{{ url_for('send_invitation') }}" class="space-y-5">
+        <form method="POST" action="{{ url_for('invitations.send_invitation') }}" class="space-y-5">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <div>
@@ -102,7 +102,7 @@
                             (sent {{ invite.created_at.strftime('%b %d, %Y') }})
                         </span>
                     </div>
-                    <form method="POST" action="{{ url_for('cancel_invitation', invitation_id=invite.id) }}" class="inline">
+                    <form method="POST" action="{{ url_for('invitations.cancel_invitation', invitation_id=invite.id) }}" class="inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="text-sm text-rose-500 hover:text-rose-600 font-medium transition-colors">
                             Cancel

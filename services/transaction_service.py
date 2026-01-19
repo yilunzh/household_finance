@@ -1,0 +1,267 @@
+"""
+Transaction service.
+
+Handles transaction CRUD operations and validation.
+"""
+from decimal import Decimal
+from datetime import datetime
+
+from extensions import db
+from models import Transaction, Settlement, HouseholdMember, ExpenseType
+from services.currency_service import CurrencyService
+
+
+class TransactionService:
+    """Service for transaction operations."""
+
+    class ValidationError(Exception):
+        """Raised when transaction validation fails."""
+        pass
+
+    @staticmethod
+    def validate_paid_by(household_id, user_id):
+        """
+        Validate that a user belongs to the household.
+
+        Args:
+            household_id (int): The household ID
+            user_id (int): The user ID
+
+        Returns:
+            HouseholdMember: The member record
+
+        Raises:
+            ValidationError: If user is not a member
+        """
+        member = HouseholdMember.query.filter_by(
+            household_id=household_id,
+            user_id=user_id
+        ).first()
+
+        if not member:
+            raise TransactionService.ValidationError(
+                'Invalid user selected. User is not a member of this household.'
+            )
+
+        return member
+
+    @staticmethod
+    def validate_expense_type(household_id, expense_type_id):
+        """
+        Validate that an expense type belongs to the household.
+
+        Args:
+            household_id (int): The household ID
+            expense_type_id (int): The expense type ID
+
+        Returns:
+            ExpenseType or None: The expense type if valid, None otherwise
+        """
+        if not expense_type_id:
+            return None
+
+        expense_type = ExpenseType.query.filter_by(
+            id=expense_type_id,
+            household_id=household_id,
+            is_active=True
+        ).first()
+
+        return expense_type
+
+    @staticmethod
+    def check_month_settled(household_id, month_year):
+        """
+        Check if a month is settled (locked).
+
+        Args:
+            household_id (int): The household ID
+            month_year (str): The month in YYYY-MM format
+
+        Returns:
+            bool: True if month is settled
+        """
+        return Settlement.is_month_settled(household_id, month_year)
+
+    @staticmethod
+    def create_transaction(household_id, data):
+        """
+        Create a new transaction with validation.
+
+        Args:
+            household_id (int): The household ID
+            data (dict): Transaction data containing:
+                - date (str): Date in YYYY-MM-DD format
+                - merchant (str): Merchant name
+                - amount (float/str): Transaction amount
+                - currency (str): Currency code
+                - paid_by (int): User ID who paid
+                - category (str): Transaction category
+                - expense_type_id (int, optional): Expense type ID
+                - notes (str, optional): Notes
+
+        Returns:
+            Transaction: The created transaction
+
+        Raises:
+            ValidationError: If validation fails
+        """
+        # Parse date
+        txn_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        month_year = txn_date.strftime('%Y-%m')
+
+        # Check if month is settled
+        if TransactionService.check_month_settled(household_id, month_year):
+            raise TransactionService.ValidationError(
+                f'Cannot add transaction to settled month {month_year}. This month is locked.'
+            )
+
+        # Validate paid_by
+        paid_by_user_id = int(data['paid_by'])
+        TransactionService.validate_paid_by(household_id, paid_by_user_id)
+
+        # Convert currency
+        amount = Decimal(str(data['amount']))
+        currency = data['currency']
+        amount_in_usd = CurrencyService.convert_to_usd(amount, currency, txn_date)
+
+        # Validate expense type
+        expense_type_id = data.get('expense_type_id')
+        if expense_type_id:
+            expense_type = TransactionService.validate_expense_type(
+                household_id, int(expense_type_id)
+            )
+            expense_type_id = expense_type.id if expense_type else None
+
+        # Create transaction
+        transaction = Transaction(
+            household_id=household_id,
+            date=txn_date,
+            merchant=data['merchant'],
+            amount=amount,
+            currency=currency,
+            amount_in_usd=amount_in_usd,
+            paid_by_user_id=paid_by_user_id,
+            category=data['category'],
+            expense_type_id=expense_type_id,
+            notes=data.get('notes', ''),
+            month_year=month_year
+        )
+
+        db.session.add(transaction)
+        db.session.commit()
+
+        return transaction
+
+    @staticmethod
+    def update_transaction(household_id, transaction_id, data):
+        """
+        Update an existing transaction with validation.
+
+        Args:
+            household_id (int): The household ID
+            transaction_id (int): The transaction ID
+            data (dict): Fields to update
+
+        Returns:
+            Transaction: The updated transaction
+
+        Raises:
+            ValidationError: If validation fails
+        """
+        # Verify ownership
+        transaction = Transaction.query.filter_by(
+            id=transaction_id,
+            household_id=household_id
+        ).first()
+
+        if not transaction:
+            raise TransactionService.ValidationError('Transaction not found.')
+
+        # Check if OLD month is settled
+        if TransactionService.check_month_settled(household_id, transaction.month_year):
+            raise TransactionService.ValidationError(
+                f'Cannot edit transaction in settled month {transaction.month_year}. This month is locked.'
+            )
+
+        # Check if NEW month (if date changed) is settled
+        if 'date' in data:
+            new_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+            new_month_year = new_date.strftime('%Y-%m')
+            if new_month_year != transaction.month_year:
+                if TransactionService.check_month_settled(household_id, new_month_year):
+                    raise TransactionService.ValidationError(
+                        f'Cannot move transaction to settled month {new_month_year}. That month is locked.'
+                    )
+
+        # Update fields
+        if 'date' in data:
+            transaction.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+            transaction.month_year = transaction.date.strftime('%Y-%m')
+
+        if 'merchant' in data:
+            transaction.merchant = data['merchant']
+
+        if 'amount' in data or 'currency' in data:
+            amount = Decimal(str(data.get('amount', transaction.amount)))
+            currency = data.get('currency', transaction.currency)
+
+            transaction.amount = amount
+            transaction.currency = currency
+            transaction.amount_in_usd = CurrencyService.convert_to_usd(
+                amount, currency, transaction.date
+            )
+
+        if 'paid_by' in data:
+            paid_by_user_id = int(data['paid_by'])
+            TransactionService.validate_paid_by(household_id, paid_by_user_id)
+            transaction.paid_by_user_id = paid_by_user_id
+
+        if 'category' in data:
+            transaction.category = data['category']
+
+        if 'expense_type_id' in data:
+            expense_type_id = data['expense_type_id']
+            if expense_type_id:
+                expense_type = TransactionService.validate_expense_type(
+                    household_id, int(expense_type_id)
+                )
+                transaction.expense_type_id = expense_type.id if expense_type else None
+            else:
+                transaction.expense_type_id = None
+
+        if 'notes' in data:
+            transaction.notes = data['notes']
+
+        db.session.commit()
+
+        return transaction
+
+    @staticmethod
+    def delete_transaction(household_id, transaction_id):
+        """
+        Delete a transaction with validation.
+
+        Args:
+            household_id (int): The household ID
+            transaction_id (int): The transaction ID
+
+        Raises:
+            ValidationError: If validation fails
+        """
+        # Verify ownership
+        transaction = Transaction.query.filter_by(
+            id=transaction_id,
+            household_id=household_id
+        ).first()
+
+        if not transaction:
+            raise TransactionService.ValidationError('Transaction not found.')
+
+        # Check if month is settled
+        if TransactionService.check_month_settled(household_id, transaction.month_year):
+            raise TransactionService.ValidationError(
+                f'Cannot delete transaction in settled month {transaction.month_year}. This month is locked.'
+            )
+
+        db.session.delete(transaction)
+        db.session.commit()
