@@ -1,41 +1,149 @@
 #!/usr/bin/env python3
-"""Ensure handoff file is written before ending session with incomplete work."""
+"""Stop hook: Detect incomplete work more reliably.
+
+Uses multiple signals instead of keyword matching:
+1. Git status (uncommitted changes)
+2. Step counter (edits without checkpoint)
+3. Transcript patterns (in_progress todos)
+
+Blocks if 2+ signals detected, advisory warning if 1 signal.
+"""
 import json
 import os
+import subprocess
+import sys
 from pathlib import Path
 from datetime import datetime, timedelta
 
 
-def main():
-    transcript = os.environ.get("CLAUDE_TRANSCRIPT", "")
+def get_uncommitted_changes():
+    """Check git for uncommitted changes to tracked files."""
+    try:
+        cwd = os.environ.get("CLAUDE_PROJECT_DIR", ".")
+
+        # Check for staged changes
+        staged = subprocess.run(["git", "diff", "--cached", "--name-only"], capture_output=True, text=True, cwd=cwd)
+
+        # Check for unstaged changes to tracked files
+        unstaged = subprocess.run(["git", "diff", "--name-only"], capture_output=True, text=True, cwd=cwd)
+
+        staged_files = [f for f in staged.stdout.strip().split("\n") if f]
+        unstaged_files = [f for f in unstaged.stdout.strip().split("\n") if f]
+
+        # Filter to code files only (ignore .claude/ files and config)
+        code_extensions = [".py", ".js", ".ts", ".html", ".css"]
+        skip_patterns = [".claude/", "requirements", ".env", ".gitignore", "pytest.ini"]
+
+        def is_code_file(f):
+            is_code = any(f.endswith(ext) for ext in code_extensions)
+            is_skipped = any(pattern in f for pattern in skip_patterns)
+            return is_code and not is_skipped
+
+        code_changes = list(set(f for f in staged_files + unstaged_files if is_code_file(f)))
+
+        return code_changes
+    except Exception:
+        return []
+
+
+def get_step_count():
+    """Read step counter to see edit activity."""
     project_dir = os.environ.get("CLAUDE_PROJECT_DIR", ".")
+    counter_path = Path(project_dir) / ".claude" / ".step-counter"
 
-    # Check for incomplete work indicators
-    transcript_lower = transcript.lower()
+    if not counter_path.exists():
+        return 0
 
-    incomplete_indicators = [
-        "todo" in transcript_lower and "in_progress" in transcript_lower,
-        "will continue" in transcript_lower,
-        "next step" in transcript_lower and "later" in transcript_lower,
-        "not finished" in transcript_lower,
-    ]
+    try:
+        with open(counter_path, "r") as f:
+            data = json.load(f)
+            return data.get("count", 0)
+    except (json.JSONDecodeError, IOError):
+        return 0
 
-    has_incomplete_work = any(incomplete_indicators)
 
-    if not has_incomplete_work:
+def check_transcript_for_incomplete_todos():
+    """Check transcript for in_progress todo items."""
+    transcript = os.environ.get("CLAUDE_TRANSCRIPT", "")
+
+    if not transcript:
+        return False
+
+    # Look for TodoWrite with in_progress items
+    # Check for the actual status pattern in JSON
+    if '"status": "in_progress"' in transcript or "'status': 'in_progress'" in transcript:
+        # Find the last occurrence of in_progress
+        last_in_progress = transcript.rfind("in_progress")
+        remaining = transcript[last_in_progress:]
+
+        # If there's no "completed" shortly after in the same context,
+        # work is likely still incomplete
+        # Look within 500 chars for completion
+        return "completed" not in remaining[:500].lower()
+
+    return False
+
+
+def handoff_exists_and_recent():
+    """Check if handoff.md exists and is recent."""
+    project_dir = os.environ.get("CLAUDE_PROJECT_DIR", ".")
+    handoff_path = Path(project_dir) / ".claude" / "handoff.md"
+
+    if not handoff_path.exists():
+        return False
+
+    mtime = datetime.fromtimestamp(handoff_path.stat().st_mtime)
+    return datetime.now() - mtime < timedelta(minutes=5)
+
+
+def main():
+    # Skip if handoff already written
+    if handoff_exists_and_recent():
         return {"decision": "allow"}
 
-    # Check if handoff file exists and is recent (within last 5 minutes)
-    handoff_path = Path(project_dir) / ".claude" / "handoff.md"
-    if handoff_path.exists():
-        mtime = datetime.fromtimestamp(handoff_path.stat().st_mtime)
-        if datetime.now() - mtime < timedelta(minutes=5):
-            return {"decision": "allow"}
+    # Collect signals
+    signals = []
 
-    return {
-        "decision": "block",
-        "reason": "Incomplete work detected. Write .claude/handoff.md before ending session.",
-    }
+    # Signal 1: Uncommitted code changes
+    uncommitted = get_uncommitted_changes()
+    if uncommitted:
+        file_list = ", ".join(uncommitted[:5])
+        if len(uncommitted) > 5:
+            file_list += f" (+{len(uncommitted) - 5} more)"
+        signals.append(f"Uncommitted changes: {file_list}")
+
+    # Signal 2: High step count without recent checkpoint
+    step_count = get_step_count()
+    if step_count >= 3:
+        signals.append(f"{step_count} edits since last checkpoint")
+
+    # Signal 3: In-progress todos
+    if check_transcript_for_incomplete_todos():
+        signals.append("Active in_progress todo items")
+
+    # Require 2+ signals to block (reduces false positives)
+    if len(signals) >= 2:
+        return {
+            "decision": "block",
+            "reason": (
+                "Incomplete work detected:\n"
+                + "\n".join(f"  - {s}" for s in signals)
+                + "\n\nWrite .claude/handoff.md before ending session with:\n"
+                "  - What we were doing\n"
+                "  - Where we stopped\n"
+                "  - Key decisions\n"
+                "  - Next steps"
+            ),
+        }
+
+    # Single signal: advisory warning only
+    if len(signals) == 1:
+        return {
+            "decision": "allow",
+            "message": f"Note: {signals[0]}. Consider writing .claude/handoff.md if work is incomplete.",
+        }
+
+    return {"decision": "allow"}
 
 
 if __name__ == "__main__":
