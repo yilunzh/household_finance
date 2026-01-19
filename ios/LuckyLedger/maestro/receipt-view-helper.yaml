@@ -1,0 +1,21 @@
+appId: com.luckyledger.app
+---
+# Helper to view an existing receipt
+# Called when "View Receipt" is visible
+
+# Tap on the receipt to view it full screen
+- tapOn: "View Receipt"
+
+# Wait for the full screen view to appear
+- extendedWaitUntil:
+    visible: "Done"
+    timeout: 5000
+
+# Verify we're NOT seeing the error state
+- assertNotVisible: "Failed to load receipt"
+
+# Close the full screen view
+- tapOn: "Done"
+
+# Verify we're back in the detail view
+- assertVisible: "Receipt"

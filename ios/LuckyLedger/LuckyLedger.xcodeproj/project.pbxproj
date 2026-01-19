@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		08E4271826373ECCEE257BF3 /* Household.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6913A655331AF5FA6BDBED8A /* Household.swift */; };
+		D1A2B3C4E5F6789012345678 /* TransactionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012345678 /* TransactionDetailView.swift */; };
+		E2B3C4D5F6A789012345678A /* ImageCompressor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A789012345678B /* ImageCompressor.swift */; };
 		2CAEC1084DDA190087F765DA /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 283193AB80FD302903B95E06 /* MainTabView.swift */; };
 		4C0367679F8A49565862AC18 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D2C68127F2A09779A35326 /* APIError.swift */; };
 		4FC563EC9ACECE8044A23675 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D8847620F0EFC0B72D32FF /* NetworkManager.swift */; };
@@ -42,6 +44,8 @@
 
 /* Begin PBXFileReference section */
 		00D8847620F0EFC0B72D32FF /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6789012345678 /* TransactionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionDetailView.swift; sourceTree = "<group>"; };
+		B2C3D4E5F6A789012345678B /* ImageCompressor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCompressor.swift; sourceTree = "<group>"; };
 		0B9E41CD769FEEFCDEF164C9 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
 		22ABFDEC63BE6E4F235442DE /* AuthManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManagerTests.swift; sourceTree = "<group>"; };
 		283193AB80FD302903B95E06 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
@@ -74,8 +78,17 @@
 			children = (
 				0FA30195D7EB6E5DDD41F802 /* Keychain */,
 				B73A9E40F56B9B7743A247B0 /* Network */,
+				C3D4E5F6A789012345678BCD /* Utilities */,
 			);
 			path = Core;
+			sourceTree = "<group>";
+		};
+		C3D4E5F6A789012345678BCD /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				B2C3D4E5F6A789012345678B /* ImageCompressor.swift */,
+			);
+			path = Utilities;
 			sourceTree = "<group>";
 		};
 		06143E5893F10D0ABC40CDE6 /* Reconciliation */ = {
@@ -99,6 +112,7 @@
 			isa = PBXGroup;
 			children = (
 				7941B4D6567138FA4805E44F /* AddTransactionSheet.swift */,
+				A1B2C3D4E5F6789012345678 /* TransactionDetailView.swift */,
 				5E44F120BE0337E5BA116E43 /* TransactionsView.swift */,
 				D53B747421C96BB9988BE43A /* TransactionsViewModel.swift */,
 			);
@@ -302,9 +316,11 @@
 				EE9B5462DC5C8DACF5847BE3 /* ReconciliationView.swift in Sources */,
 				A1E374010A256AA97F0E2BAF /* ReconciliationViewModel.swift in Sources */,
 				60E169E6C5B8C4D458233419 /* Transaction.swift in Sources */,
+				D1A2B3C4E5F6789012345678 /* TransactionDetailView.swift in Sources */,
 				56AA001AD0DDD8C9B0C56961 /* TransactionsView.swift in Sources */,
 				F1A6FF05ED3B9049FC9CC74A /* TransactionsViewModel.swift in Sources */,
 				C239A16DD562CBF73DEAF4A1 /* User.swift in Sources */,
+				E2B3C4D5F6A789012345678A /* ImageCompressor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

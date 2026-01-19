@@ -4,6 +4,7 @@ struct TransactionsView: View {
     @Environment(AuthManager.self) private var authManager
     @State private var viewModel = TransactionsViewModel()
     @State private var showAddSheet = false
+    @State private var selectedTransaction: Transaction?
 
     var body: some View {
         NavigationStack {
@@ -39,16 +40,21 @@ struct TransactionsView: View {
                 } else {
                     List {
                         ForEach(viewModel.transactions) { transaction in
-                            TransactionRowView(transaction: transaction)
-                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                    Button(role: .destructive) {
-                                        Task {
-                                            await viewModel.deleteTransaction(transaction.id)
-                                        }
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
+                            Button {
+                                selectedTransaction = transaction
+                            } label: {
+                                TransactionRowView(transaction: transaction)
+                            }
+                            .buttonStyle(.plain)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    Task {
+                                        await viewModel.deleteTransaction(transaction.id)
                                     }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
                                 }
+                            }
                         }
                     }
                     .listStyle(.plain)
@@ -69,6 +75,11 @@ struct TransactionsView: View {
             }
             .sheet(isPresented: $showAddSheet) {
                 AddTransactionSheet(viewModel: viewModel)
+            }
+            .sheet(item: $selectedTransaction) { transaction in
+                TransactionDetailView(transaction: transaction) { updatedTransaction in
+                    viewModel.updateTransactionInList(updatedTransaction)
+                }
             }
             .task {
                 if let householdId = authManager.currentHouseholdId {
@@ -143,9 +154,16 @@ struct TransactionRowView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                Text(formattedAmount)
-                    .font(.headline)
-                    .foregroundStyle(amountColor)
+                HStack(spacing: 4) {
+                    if transaction.receiptUrl != nil {
+                        Image(systemName: "paperclip")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Text(formattedAmount)
+                        .font(.headline)
+                        .foregroundStyle(amountColor)
+                }
 
                 if let paidByName = transaction.paidByName {
                     Text("Paid by \(paidByName)")

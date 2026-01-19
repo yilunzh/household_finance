@@ -409,6 +409,79 @@ python seed_test_users.py
 
 **Note:** Playwright E2E tests are excluded by default in pytest.ini due to flakiness. Unit tests are in `test_budget.py`, `test_models.py`, and `test_utils.py`.
 
+## iOS App Testing (Maestro)
+
+The iOS app uses [Maestro](https://maestro.mobile.dev/) for E2E UI testing. Test files are in `ios/LuckyLedger/maestro/`.
+
+### Prerequisites
+
+1. **Maestro installed** via:
+   ```bash
+   curl -Ls "https://get.maestro.mobile.dev" | bash
+   ```
+
+2. **Java Runtime** - Maestro requires Java. On macOS with Homebrew:
+   ```bash
+   brew install openjdk@17
+   ```
+
+3. **iOS Simulator running** with the app installed
+
+### Running Maestro Tests
+
+**IMPORTANT:** Maestro requires Java in PATH. Always set JAVA_HOME before running:
+
+```bash
+# Set Java path (required every time in a new shell)
+export JAVA_HOME="/usr/local/opt/openjdk@17"
+export PATH="$JAVA_HOME/bin:$PATH"
+
+# Navigate to iOS project
+cd ios/LuckyLedger
+
+# Run a specific test
+~/.maestro/bin/maestro test maestro/receipt-flow.yaml
+
+# Run all tests
+~/.maestro/bin/maestro test maestro/
+```
+
+### Available Test Flows
+
+| Test File | Description |
+|-----------|-------------|
+| `login-flow.yaml` | Login with test credentials |
+| `logout.yaml` | Logout flow |
+| `add-transaction.yaml` | Add a new transaction |
+| `reconciliation.yaml` | View reconciliation |
+| `receipt-flow.yaml` | View transaction details and receipts |
+
+### Test Credentials
+
+- Email: `demo_alice@example.com`
+- Password: `password123`
+
+### Common Issues
+
+1. **"Unable to locate a Java Runtime"**
+   - Solution: Set JAVA_HOME before running Maestro (see above)
+
+2. **"Config Section Required" error**
+   - All Maestro flow files must start with `appId: com.luckyledger.app` followed by `---`
+
+3. **Wrong Maestro installed**
+   - Do NOT install via `brew install maestro` (installs wrong app)
+   - Use the curl command above for the mobile testing tool
+
+### Debug Output
+
+Test artifacts (screenshots, logs) are saved to:
+```
+~/.maestro/tests/<timestamp>/
+```
+
+Check `screenshot-❌-*.png` for failure screenshots.
+
 ## Production Deployment (Render)
 
 **CRITICAL**: `FLASK_ENV=production` must be set for persistent disk to work!

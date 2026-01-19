@@ -292,6 +292,75 @@ actor NetworkManager {
     func hasValidSession() async -> Bool {
         await keychain.getRefreshToken() != nil
     }
+
+    // MARK: - Receipt Upload
+
+    /// Upload a receipt image for a transaction
+    func uploadReceipt(transactionId: Int, imageData: Data, filename: String) async throws -> Transaction {
+        let accessToken = try await getValidAccessToken()
+
+        guard let householdId = householdId else {
+            throw APIError.noHouseholdSelected
+        }
+
+        guard let url = URL(string: "\(baseURL)/transactions/\(transactionId)/receipt") else {
+            throw APIError.invalidURL
+        }
+
+        // Create multipart form data
+        let boundary = UUID().uuidString
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("\(householdId)", forHTTPHeaderField: "X-Household-ID")
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        var body = Data()
+
+        // Add file data
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+        body.append(imageData)
+        body.append("\r\n".data(using: .utf8)!)
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+
+        request.httpBody = body
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorMessage = try? decoder.decode(APIErrorResponse.self, from: data).error
+            throw APIError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
+        }
+
+        struct ReceiptResponse: Codable {
+            let transaction: Transaction
+            let receiptUrl: String
+
+            enum CodingKeys: String, CodingKey {
+                case transaction
+                case receiptUrl = "receipt_url"
+            }
+        }
+
+        let receiptResponse = try decoder.decode(ReceiptResponse.self, from: data)
+        return receiptResponse.transaction
+    }
+
+    /// Delete a receipt from a transaction
+    func deleteReceipt(transactionId: Int) async throws -> Transaction {
+        let response: TransactionResponse = try await request(
+            endpoint: "/transactions/\(transactionId)/receipt",
+            method: .delete,
+            requiresAuth: true
+        )
+        return response.transaction
+    }
 }
 
 // MARK: - HTTP Method

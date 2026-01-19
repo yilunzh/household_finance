@@ -15,6 +15,7 @@ struct Transaction: Codable, Identifiable, Sendable {
     let paidByName: String?
     let expenseTypeId: Int?
     let expenseTypeName: String?
+    let receiptUrl: String?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
@@ -32,7 +33,20 @@ struct Transaction: Codable, Identifiable, Sendable {
         case paidByName = "paid_by_name"
         case expenseTypeId = "expense_type_id"
         case expenseTypeName = "expense_type_name"
+        case receiptUrl = "receipt_url"
         case createdAt = "created_at"
+    }
+
+    /// Returns the full URL for the receipt image
+    var fullReceiptUrl: URL? {
+        guard let receiptUrl = receiptUrl else { return nil }
+        // Use 127.0.0.1 instead of localhost for iOS simulator compatibility
+        #if DEBUG
+        let baseURL = "http://127.0.0.1:5001"
+        #else
+        let baseURL = "https://your-production-url.com"  // TODO: Make configurable
+        #endif
+        return URL(string: "\(baseURL)\(receiptUrl)")
     }
 }
 

@@ -8,6 +8,7 @@ enum APIError: Error, LocalizedError {
     case networkError(Error)
     case unauthorized
     case noData
+    case noHouseholdSelected
 
     var errorDescription: String? {
         switch self {
@@ -25,6 +26,8 @@ enum APIError: Error, LocalizedError {
             return "Unauthorized - please log in again"
         case .noData:
             return "No data received"
+        case .noHouseholdSelected:
+            return "No household selected"
         }
     }
 }

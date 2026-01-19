@@ -48,3 +48,4 @@ screenshots/
 .playwright-verified
 .playwright-mcp/
 ios/LuckyLedger/build/
+uploads/

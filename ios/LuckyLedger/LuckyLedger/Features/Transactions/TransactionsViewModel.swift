@@ -214,6 +214,14 @@ final class TransactionsViewModel: Sendable {
     func clearError() {
         error = nil
     }
+
+    /// Update a transaction in the list without fetching from server
+    @MainActor
+    func updateTransactionInList(_ transaction: Transaction) {
+        if let index = transactions.firstIndex(where: { $0.id == transaction.id }) {
+            transactions[index] = transaction
+        }
+    }
 }
 
 // MARK: - Response Types
