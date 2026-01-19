@@ -13,15 +13,16 @@ with app.app_context():
     db.create_all()
     print("Database tables created (if not already existing)")
 
-    # ===== 1. CREATE TEST USERS =====
-    alice = User.query.filter_by(email='test_alice@example.com').first()
-    bob = User.query.filter_by(email='test_bob@example.com').first()
+    # ===== 1. CREATE DEMO USERS =====
+    # Using 'demo_' prefix to avoid conflict with test cleanup (which deletes 'test_%' users)
+    alice = User.query.filter_by(email='demo_alice@example.com').first()
+    bob = User.query.filter_by(email='demo_bob@example.com').first()
 
     if not alice:
-        alice = User(email='test_alice@example.com', name='Test Alice')
+        alice = User(email='demo_alice@example.com', name='Demo Alice')
         db.session.add(alice)
     if not bob:
-        bob = User(email='test_bob@example.com', name='Test Bob')
+        bob = User(email='demo_bob@example.com', name='Demo Bob')
         db.session.add(bob)
 
     alice.set_password('password123')
@@ -31,7 +32,7 @@ with app.app_context():
     # ===== 2. CREATE HOUSEHOLD =====
     existing = HouseholdMember.query.filter_by(user_id=alice.id).first()
     if not existing:
-        household = Household(name='Test Household', created_by_user_id=alice.id)
+        household = Household(name='Demo Household', created_by_user_id=alice.id)
         db.session.add(household)
         db.session.commit()
 
@@ -44,10 +45,10 @@ with app.app_context():
             role='member', display_name='Bob', joined_at=datetime.utcnow()
         ))
         db.session.commit()
-        print(f'Created Test Household (ID: {household.id})')
+        print(f'Created Demo Household (ID: {household.id})')
     else:
         household = existing.household
-        print(f'Using existing Test Household (ID: {household.id})')
+        print(f'Using existing Demo Household (ID: {household.id})')
 
     household_id = household.id
     alice_user_id = alice.id
@@ -269,6 +270,6 @@ with app.app_context():
         db.session.commit()
         print(f'Created {len(transactions)} test transactions')
 
-    print('\nTest data ready:')
-    print('  test_alice@example.com / password123')
-    print('  test_bob@example.com / password123')
+    print('\nDemo data ready:')
+    print('  demo_alice@example.com / password123')
+    print('  demo_bob@example.com / password123')

@@ -1,5 +1,6 @@
 """
-API routes for expense types, auto-category rules, budget rules, and split rules.
+API routes for expense types, auto-category rules, budget rules, split rules,
+and transaction search.
 """
 from decimal import Decimal
 from flask import request, jsonify
@@ -11,7 +12,56 @@ from models import (
 )
 from decorators import household_required
 from household_context import get_current_household_id, get_current_household_members
+from services.transaction_service import TransactionService
 from blueprints.api import api_bp
+
+
+# ============================================================================
+# Transaction Search API Route
+# ============================================================================
+
+@api_bp.route('/api/transactions/search', methods=['GET'])
+@household_required
+def search_transactions():
+    """
+    Search/filter transactions with multiple criteria.
+
+    Query Parameters:
+        search (str): Text to search in merchant and notes
+        date_from (str): Start date in YYYY-MM-DD format
+        date_to (str): End date in YYYY-MM-DD format
+        category (str): Transaction category (SHARED, PERSONAL_ME, etc.)
+        paid_by (int): User ID who paid
+        expense_type_id (int): Expense type ID
+        amount_min (float): Minimum amount in USD
+        amount_max (float): Maximum amount in USD
+
+    Returns:
+        JSON with transactions list and count
+    """
+    household_id = get_current_household_id()
+
+    filters = {
+        'search': request.args.get('search', '').strip(),
+        'date_from': request.args.get('date_from'),
+        'date_to': request.args.get('date_to'),
+        'category': request.args.get('category'),
+        'paid_by': request.args.get('paid_by', type=int),
+        'expense_type_id': request.args.get('expense_type_id', type=int),
+        'amount_min': request.args.get('amount_min', type=float),
+        'amount_max': request.args.get('amount_max', type=float),
+    }
+
+    transactions = TransactionService.search_transactions(
+        household_id=household_id,
+        filters=filters
+    )
+
+    return jsonify({
+        'success': True,
+        'transactions': [txn.to_dict() for txn in transactions],
+        'count': len(transactions)
+    })
 
 
 # ============================================================================
