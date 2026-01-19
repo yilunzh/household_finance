@@ -557,10 +557,7 @@ class RefreshToken(db.Model):
 
     def is_valid(self):
         """Check if refresh token is still valid (not expired or revoked)."""
-        return (
-            self.revoked_at is None and
-            self.expires_at > datetime.utcnow()
-        )
+        return self.revoked_at is None and self.expires_at > datetime.utcnow()
 
     def revoke(self):
         """Revoke this refresh token."""
