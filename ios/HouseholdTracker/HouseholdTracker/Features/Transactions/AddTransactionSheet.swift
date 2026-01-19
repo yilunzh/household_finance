@@ -143,7 +143,7 @@ struct AddTransactionSheet: View {
             merchant: merchant.trimmingCharacters(in: .whitespaces),
             category: category.code,
             date: dateString,
-            paidByUserId: paidBy.userId,
+            paidBy: paidBy.userId,
             expenseTypeId: selectedExpenseType?.id,
             notes: notes.isEmpty ? nil : notes
         )

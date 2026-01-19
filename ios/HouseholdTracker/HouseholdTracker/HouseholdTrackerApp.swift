@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct LuckyLedgerApp: App {
+struct HouseholdTrackerApp: App {
     @State private var authManager = AuthManager()
 
     var body: some Scene {

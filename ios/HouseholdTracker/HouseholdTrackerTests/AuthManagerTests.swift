@@ -1,5 +1,5 @@
 import Testing
-@testable import LuckyLedger
+@testable import HouseholdTracker
 
 @Suite("AuthManager Tests")
 struct AuthManagerTests {

@@ -1,4 +1,4 @@
-appId: com.luckyledger.app
+appId: com.householdtracker.app
 ---
 # Receipt Flow E2E Test
 # Tests viewing transaction details and receipt functionality
@@ -10,7 +10,7 @@ appId: com.luckyledger.app
 - runFlow:
     when:
       visible: "Transactions"
-    file: logout-helper.yaml
+    file: helpers/logout-helper.yaml
 
 # Login first
 - assertVisible: "Lucky Ledger"
@@ -45,7 +45,7 @@ appId: com.luckyledger.app
 - runFlow:
     when:
       visible: "View Receipt"
-    file: receipt-view-helper.yaml
+    file: helpers/receipt-view-helper.yaml
 
 # If no receipt, verify "Add Receipt Photo" option exists
 - runFlow:

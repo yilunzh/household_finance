@@ -1,0 +1,566 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		067B9FE148E60A6945DC5E6D /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEEAB43A77CED49CDB6B53F7 /* KeychainManager.swift */; };
+		1E5B0695D9DDBB8EA95DBD92 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3859398FB33A7F40B8AD952 /* User.swift */; };
+		21BE821F3941416A98A182E7 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDB15C10C0B84A3CB0DB669F /* MainTabView.swift */; };
+		279ED22D4F688353385D0005 /* HouseholdTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 384AA84A854F9CA761F52390 /* HouseholdTrackerApp.swift */; };
+		39C11A2E10984AB3610A5473 /* ReconciliationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7204B3CE8E36D1CD9F0960F2 /* ReconciliationViewModel.swift */; };
+		4B1B91CE3B1750E28E1E58DC /* ImageCompressor.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECDFC84024DCA98E4084F35 /* ImageCompressor.swift */; };
+		54D1259515CA7D6B7944E70C /* HouseholdSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A4DE11B426ECCDE54253DFF /* HouseholdSelectionView.swift */; };
+		64256A141AB85A544F8F69DB /* ReconciliationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE6C5CDAC00A05226988C39 /* ReconciliationView.swift */; };
+		717D1028153B5FA06E82A1B3 /* TransactionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 338E5B16C5824B508696A496 /* TransactionDetailView.swift */; };
+		805F08214B430E307F205A9F /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B03224D51B078298A5689DE /* NetworkManager.swift */; };
+		82B8C6E492757E2D27249245 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11FEFAB2BC32A5A1A1B5722 /* ContentView.swift */; };
+		8CA9187601CC3FDB7A0D20A5 /* AddTransactionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7911169F3AD18B1DACBCE620 /* AddTransactionSheet.swift */; };
+		951B3A758479C617914B7D42 /* TransactionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CF2D4F2E13FD4F060EC53CC /* TransactionsViewModel.swift */; };
+		A61D888E7FA73F58D9735069 /* Transaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 871EAEAAADDF44496D8319DA /* Transaction.swift */; };
+		B43DB766E327B30EB9884D4E /* TransactionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4515885C5997418256956780 /* TransactionsView.swift */; };
+		B6253C5CA81EA1F3CDDCDD97 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5549C93D77CB63755B3EEE71 /* APIError.swift */; };
+		B7E71A8E5F1415744E46D12F /* AuthManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70DA40A431FDF79E9A514102 /* AuthManagerTests.swift */; };
+		BFF65C83C35715ADE7CD94B6 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A2EED4210B3AE751F8C4D59 /* AuthManager.swift */; };
+		CB8501D954CE549CBA289A36 /* Reconciliation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA493A1D3B27A2D55279A0F8 /* Reconciliation.swift */; };
+		CEAB51406A439F507A3C62E7 /* Household.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4750318152BACB7BC18A198E /* Household.swift */; };
+		D4615FF1909347166649CDD9 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 321BC8242297E69EC1B6881F /* LoginView.swift */; };
+		D89F7C299BFB0CDE350AA637 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB476DC0E240B038A15B4918 /* Config.swift */; };
+		DFC8A21EC3D1F1B344042762 /* Endpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2CD1D3156AF73209244A65F /* Endpoints.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		1961C46ECCC59D4F3A43F04D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D4C9629135B78DEF38287C1D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DC18DD1ED83715CE2E829749;
+			remoteInfo = HouseholdTracker;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0A4DE11B426ECCDE54253DFF /* HouseholdSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseholdSelectionView.swift; sourceTree = "<group>"; };
+		2A2EED4210B3AE751F8C4D59 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
+		2C5089125C09B275B1450445 /* HouseholdTrackerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HouseholdTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		321BC8242297E69EC1B6881F /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		338E5B16C5824B508696A496 /* TransactionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionDetailView.swift; sourceTree = "<group>"; };
+		384AA84A854F9CA761F52390 /* HouseholdTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseholdTrackerApp.swift; sourceTree = "<group>"; };
+		3CF2D4F2E13FD4F060EC53CC /* TransactionsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionsViewModel.swift; sourceTree = "<group>"; };
+		4515885C5997418256956780 /* TransactionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionsView.swift; sourceTree = "<group>"; };
+		4750318152BACB7BC18A198E /* Household.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Household.swift; sourceTree = "<group>"; };
+		4B95A6A689A6465FA02DB13B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		5549C93D77CB63755B3EEE71 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
+		5B03224D51B078298A5689DE /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
+		70DA40A431FDF79E9A514102 /* AuthManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManagerTests.swift; sourceTree = "<group>"; };
+		7204B3CE8E36D1CD9F0960F2 /* ReconciliationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReconciliationViewModel.swift; sourceTree = "<group>"; };
+		73DBDEE5716F05A700725AC0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		7911169F3AD18B1DACBCE620 /* AddTransactionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTransactionSheet.swift; sourceTree = "<group>"; };
+		871EAEAAADDF44496D8319DA /* Transaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transaction.swift; sourceTree = "<group>"; };
+		9DD7C4FB1EC63845234267F0 /* HouseholdTracker.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = HouseholdTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9FE6C5CDAC00A05226988C39 /* ReconciliationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReconciliationView.swift; sourceTree = "<group>"; };
+		C11FEFAB2BC32A5A1A1B5722 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		CA493A1D3B27A2D55279A0F8 /* Reconciliation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reconciliation.swift; sourceTree = "<group>"; };
+		DB476DC0E240B038A15B4918 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		DEEAB43A77CED49CDB6B53F7 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
+		E2CD1D3156AF73209244A65F /* Endpoints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Endpoints.swift; sourceTree = "<group>"; };
+		EECDFC84024DCA98E4084F35 /* ImageCompressor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCompressor.swift; sourceTree = "<group>"; };
+		F3859398FB33A7F40B8AD952 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		FDB15C10C0B84A3CB0DB669F /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		04027A3B212C8F4C1D183897 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				EECDFC84024DCA98E4084F35 /* ImageCompressor.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		064242F8ABE3DB5C4DBE6D96 = {
+			isa = PBXGroup;
+			children = (
+				1025E8EC278D2566B40EA5CA /* HouseholdTracker */,
+				2C9EA915826B6C020D17BB77 /* HouseholdTrackerTests */,
+				1D8DA9CBB7B8982C00F24E2B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		1025E8EC278D2566B40EA5CA /* HouseholdTracker */ = {
+			isa = PBXGroup;
+			children = (
+				C11FEFAB2BC32A5A1A1B5722 /* ContentView.swift */,
+				384AA84A854F9CA761F52390 /* HouseholdTrackerApp.swift */,
+				4B95A6A689A6465FA02DB13B /* Info.plist */,
+				FDB15C10C0B84A3CB0DB669F /* MainTabView.swift */,
+				A31BFE61B332D50FC001FC45 /* Core */,
+				57CE52EC21E29129F0A10D42 /* Features */,
+				A0DEE58D5BF3FF94C98D89E7 /* Models */,
+			);
+			path = HouseholdTracker;
+			sourceTree = "<group>";
+		};
+		1BD73192318CEB850CCB1BA0 /* Network */ = {
+			isa = PBXGroup;
+			children = (
+				5549C93D77CB63755B3EEE71 /* APIError.swift */,
+				E2CD1D3156AF73209244A65F /* Endpoints.swift */,
+				5B03224D51B078298A5689DE /* NetworkManager.swift */,
+			);
+			path = Network;
+			sourceTree = "<group>";
+		};
+		1D8DA9CBB7B8982C00F24E2B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9DD7C4FB1EC63845234267F0 /* HouseholdTracker.app */,
+				2C5089125C09B275B1450445 /* HouseholdTrackerTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		2C9EA915826B6C020D17BB77 /* HouseholdTrackerTests */ = {
+			isa = PBXGroup;
+			children = (
+				70DA40A431FDF79E9A514102 /* AuthManagerTests.swift */,
+				73DBDEE5716F05A700725AC0 /* Info.plist */,
+			);
+			path = HouseholdTrackerTests;
+			sourceTree = "<group>";
+		};
+		46F995AAD2024C7B4929B4D0 /* Keychain */ = {
+			isa = PBXGroup;
+			children = (
+				DEEAB43A77CED49CDB6B53F7 /* KeychainManager.swift */,
+			);
+			path = Keychain;
+			sourceTree = "<group>";
+		};
+		531095CC2A2B0C84BC100468 /* Households */ = {
+			isa = PBXGroup;
+			children = (
+				0A4DE11B426ECCDE54253DFF /* HouseholdSelectionView.swift */,
+			);
+			path = Households;
+			sourceTree = "<group>";
+		};
+		57CE52EC21E29129F0A10D42 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				96DC82F42B98A911C52DA9B0 /* Auth */,
+				531095CC2A2B0C84BC100468 /* Households */,
+				6870150CBA9385FF4D2D38A5 /* Reconciliation */,
+				F71FCE927431CBAAE4983BCF /* Transactions */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		6870150CBA9385FF4D2D38A5 /* Reconciliation */ = {
+			isa = PBXGroup;
+			children = (
+				9FE6C5CDAC00A05226988C39 /* ReconciliationView.swift */,
+				7204B3CE8E36D1CD9F0960F2 /* ReconciliationViewModel.swift */,
+			);
+			path = Reconciliation;
+			sourceTree = "<group>";
+		};
+		96DC82F42B98A911C52DA9B0 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				2A2EED4210B3AE751F8C4D59 /* AuthManager.swift */,
+				321BC8242297E69EC1B6881F /* LoginView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		A0DEE58D5BF3FF94C98D89E7 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				DB476DC0E240B038A15B4918 /* Config.swift */,
+				4750318152BACB7BC18A198E /* Household.swift */,
+				CA493A1D3B27A2D55279A0F8 /* Reconciliation.swift */,
+				871EAEAAADDF44496D8319DA /* Transaction.swift */,
+				F3859398FB33A7F40B8AD952 /* User.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A31BFE61B332D50FC001FC45 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				46F995AAD2024C7B4929B4D0 /* Keychain */,
+				1BD73192318CEB850CCB1BA0 /* Network */,
+				04027A3B212C8F4C1D183897 /* Utilities */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		F71FCE927431CBAAE4983BCF /* Transactions */ = {
+			isa = PBXGroup;
+			children = (
+				7911169F3AD18B1DACBCE620 /* AddTransactionSheet.swift */,
+				338E5B16C5824B508696A496 /* TransactionDetailView.swift */,
+				4515885C5997418256956780 /* TransactionsView.swift */,
+				3CF2D4F2E13FD4F060EC53CC /* TransactionsViewModel.swift */,
+			);
+			path = Transactions;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		7D55CBC50688E63CF5C44016 /* HouseholdTrackerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 12ED16E9D384C1C1EEF58FA5 /* Build configuration list for PBXNativeTarget "HouseholdTrackerTests" */;
+			buildPhases = (
+				7A11C963F13FE81C4B5B8B3C /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				87AC4438D320549821DAFAF3 /* PBXTargetDependency */,
+			);
+			name = HouseholdTrackerTests;
+			packageProductDependencies = (
+			);
+			productName = HouseholdTrackerTests;
+			productReference = 2C5089125C09B275B1450445 /* HouseholdTrackerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		DC18DD1ED83715CE2E829749 /* HouseholdTracker */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F6C19D95EF50A1A1BBF522B8 /* Build configuration list for PBXNativeTarget "HouseholdTracker" */;
+			buildPhases = (
+				6AEE507F4D953BAE85BF8592 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = HouseholdTracker;
+			packageProductDependencies = (
+			);
+			productName = HouseholdTracker;
+			productReference = 9DD7C4FB1EC63845234267F0 /* HouseholdTracker.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D4C9629135B78DEF38287C1D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					7D55CBC50688E63CF5C44016 = {
+						DevelopmentTeam = "";
+					};
+					DC18DD1ED83715CE2E829749 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 687EB6D2F390D3579147F4EE /* Build configuration list for PBXProject "HouseholdTracker" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 064242F8ABE3DB5C4DBE6D96;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DC18DD1ED83715CE2E829749 /* HouseholdTracker */,
+				7D55CBC50688E63CF5C44016 /* HouseholdTrackerTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		6AEE507F4D953BAE85BF8592 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B6253C5CA81EA1F3CDDCDD97 /* APIError.swift in Sources */,
+				8CA9187601CC3FDB7A0D20A5 /* AddTransactionSheet.swift in Sources */,
+				BFF65C83C35715ADE7CD94B6 /* AuthManager.swift in Sources */,
+				D89F7C299BFB0CDE350AA637 /* Config.swift in Sources */,
+				82B8C6E492757E2D27249245 /* ContentView.swift in Sources */,
+				DFC8A21EC3D1F1B344042762 /* Endpoints.swift in Sources */,
+				CEAB51406A439F507A3C62E7 /* Household.swift in Sources */,
+				54D1259515CA7D6B7944E70C /* HouseholdSelectionView.swift in Sources */,
+				279ED22D4F688353385D0005 /* HouseholdTrackerApp.swift in Sources */,
+				4B1B91CE3B1750E28E1E58DC /* ImageCompressor.swift in Sources */,
+				067B9FE148E60A6945DC5E6D /* KeychainManager.swift in Sources */,
+				D4615FF1909347166649CDD9 /* LoginView.swift in Sources */,
+				21BE821F3941416A98A182E7 /* MainTabView.swift in Sources */,
+				805F08214B430E307F205A9F /* NetworkManager.swift in Sources */,
+				CB8501D954CE549CBA289A36 /* Reconciliation.swift in Sources */,
+				64256A141AB85A544F8F69DB /* ReconciliationView.swift in Sources */,
+				39C11A2E10984AB3610A5473 /* ReconciliationViewModel.swift in Sources */,
+				A61D888E7FA73F58D9735069 /* Transaction.swift in Sources */,
+				717D1028153B5FA06E82A1B3 /* TransactionDetailView.swift in Sources */,
+				B43DB766E327B30EB9884D4E /* TransactionsView.swift in Sources */,
+				951B3A758479C617914B7D42 /* TransactionsViewModel.swift in Sources */,
+				1E5B0695D9DDBB8EA95DBD92 /* User.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7A11C963F13FE81C4B5B8B3C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B7E71A8E5F1415744E46D12F /* AuthManagerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		87AC4438D320549821DAFAF3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DC18DD1ED83715CE2E829749 /* HouseholdTracker */;
+			targetProxy = 1961C46ECCC59D4F3A43F04D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		545D4A695134C9C3DF8DA43F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = HouseholdTracker/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.householdtracker.app;
+				SDKROOT = iphoneos;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		943F09E1DA3000E9F4F4CFE4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		981C884624282BE19C886479 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = HouseholdTracker/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.householdtracker.app;
+				SDKROOT = iphoneos;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A1753950E897A3A6A4EA5325 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				INFOPLIST_FILE = HouseholdTrackerTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.householdtracker.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HouseholdTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HouseholdTracker";
+			};
+			name = Debug;
+		};
+		CB271335F093BF16B1FBAFE0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				INFOPLIST_FILE = HouseholdTrackerTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.householdtracker.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HouseholdTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HouseholdTracker";
+			};
+			name = Release;
+		};
+		F3317C82AB66382E1DADCC38 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		12ED16E9D384C1C1EEF58FA5 /* Build configuration list for PBXNativeTarget "HouseholdTrackerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1753950E897A3A6A4EA5325 /* Debug */,
+				CB271335F093BF16B1FBAFE0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		687EB6D2F390D3579147F4EE /* Build configuration list for PBXProject "HouseholdTracker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				943F09E1DA3000E9F4F4CFE4 /* Debug */,
+				F3317C82AB66382E1DADCC38 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F6C19D95EF50A1A1BBF522B8 /* Build configuration list for PBXNativeTarget "HouseholdTracker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				981C884624282BE19C886479 /* Debug */,
+				545D4A695134C9C3DF8DA43F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D4C9629135B78DEF38287C1D /* Project object */;
+}

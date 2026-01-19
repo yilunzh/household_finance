@@ -1,4 +1,4 @@
-# Lucky Ledger iOS App
+# Household Tracker iOS App
 
 Native iOS companion app for the household expense tracker.
 
@@ -19,21 +19,21 @@ brew install xcodegen
 ### 2. Generate Xcode project
 
 ```bash
-cd ios/LuckyLedger
+cd ios/HouseholdTracker
 xcodegen generate
 ```
 
-This creates `LuckyLedger.xcodeproj` from `project.yml`.
+This creates `HouseholdTracker.xcodeproj` from `project.yml`.
 
 ### 3. Open in Xcode
 
 ```bash
-open LuckyLedger.xcodeproj
+open HouseholdTracker.xcodeproj
 ```
 
 ### 4. Configure Signing
 
-1. In Xcode, select the LuckyLedger target
+1. In Xcode, select the HouseholdTracker target
 2. Go to Signing & Capabilities
 3. Select your development team
 4. Xcode will automatically create provisioning profiles
@@ -53,8 +53,8 @@ The app connects to `http://localhost:5001/api/v1` in debug builds. For producti
 ### Project Structure
 
 ```
-LuckyLedger/
-├── LuckyLedgerApp.swift      # App entry point
+HouseholdTracker/
+├── HouseholdTrackerApp.swift  # App entry point
 ├── ContentView.swift          # Root view with auth routing
 ├── MainTabView.swift          # Main navigation tabs
 ├── Features/
@@ -83,7 +83,7 @@ LuckyLedger/
 Run from Xcode (Cmd+U) or command line:
 
 ```bash
-xcodebuild test -scheme LuckyLedger -destination 'platform=iOS Simulator,name=iPhone 15'
+xcodebuild test -scheme HouseholdTracker -destination 'platform=iOS Simulator,name=iPhone 15'
 ```
 
 ### E2E Tests (Maestro)

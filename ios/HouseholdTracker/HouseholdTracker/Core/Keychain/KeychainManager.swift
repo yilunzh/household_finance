@@ -4,7 +4,7 @@ import Security
 actor KeychainManager {
     static let shared = KeychainManager()
 
-    private let service = "com.luckyledger.app"
+    private let service = "com.householdtracker.app"
 
     private enum Keys {
         static let accessToken = "accessToken"

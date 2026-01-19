@@ -5,11 +5,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 A Flask-based web application for tracking and reconciling household expenses between household members. Supports:
-- **Multi-user authentication** with Flask-Login
+- **Multi-user authentication** with Flask-Login (web) and JWT (mobile API)
 - **Multi-household support** - users can belong to multiple households
 - **Email invitations** for adding household members
 - **Multi-currency transactions** (USD/CAD) with automatic conversion
 - **Monthly reconciliation** calculations with settlement locking
+- **Budget tracking** with custom expense types and split rules
+- **Receipt photo uploads** for transactions
+- **Transaction search/filter** with collapsible sidebar
+- **REST API v1** for iOS mobile app with JWT authentication
+- **User profile management** with email change and account deletion
 
 **Primary Currency**: USD (CAD transactions are converted to USD for reconciliation)
 
@@ -205,43 +210,79 @@ For routes, models, business logic, test structure:
 | Email text | ESCALATE - propose options |
 | CSV format | ESCALATE - propose options |
 
-### Unit Test Files
-- `tests/test_models.py` - Database models and schema
-- `tests/test_utils.py` - Business logic (reconciliation, exchange rates)
-- `tests/test_budget.py` - Budget tracking features
+### Test Files
+
+```
+tests/
+├── test_auth.py           # Authentication flows
+├── test_budget.py         # Budget tracking features
+├── test_data_isolation.py # Multi-tenancy data isolation
+├── test_export.py         # CSV/data export
+├── test_household.py      # Household management
+├── test_invitations.py    # Invitation system
+├── test_models.py         # Database models and schema
+├── test_profile.py        # User profile management
+├── test_reconciliation.py # Monthly reconciliation
+├── test_search.py         # Transaction search/filter
+├── test_transactions.py   # Transaction CRUD
+└── test_utils.py          # Business logic utilities
+```
 
 ### Environment Variables
 
 Copy `.env.example` to `.env` and configure:
 - `SECRET_KEY`: Flask session secret (required for production)
+- `JWT_SECRET_KEY`: JWT signing key (defaults to SECRET_KEY if not set)
 - `FLASK_ENV`: Set to `production` for production deployment
+- `DATABASE_URL`: Database connection string (default: SQLite)
 - `SITE_URL`: Your production URL (for invitation emails)
 - `MAIL_*`: SMTP configuration for sending invitations
+- `PORT`: Server port (Render sets this automatically)
 
 ## Architecture
 
 ### Core Components
 
-**app.py** - Main Flask application
-- Authentication routes (login, register, logout)
-- Transaction CRUD with household isolation
-- Reconciliation and settlement endpoints
-- Invitation system routes
-- Household management routes
-- Security middleware (HTTPS enforcement, rate limiting, security headers)
+**app.py** - Main Flask application entry point
+- Registers all blueprints
+- Configures security middleware (HTTPS enforcement, rate limiting, security headers)
+- Sets up error handlers and before/after request hooks
 
-**models.py** - Database schema (SQLAlchemy ORM)
-- `User`: Authentication with password hashing
+**config.py** - Flask configuration classes
+- `DevelopmentConfig`, `ProductionConfig`, `TestingConfig`
+- Database URLs, rate limiting, session settings
+
+**extensions.py** - Centralized Flask extension initialization
+- SQLAlchemy, Flask-Login, Flask-Mail, Flask-Limiter, CSRF protection
+
+**models.py** - Database schema (SQLAlchemy ORM) - 15 models:
+- `User`: Authentication with password hashing (UserMixin)
 - `Household`: Multi-tenancy container
-- `HouseholdMember`: User-household association with roles
-- `Invitation`: Email invitation tokens
-- `Transaction`: Expense records with household isolation
+- `HouseholdMember`: User-household association with roles (owner/member)
+- `Invitation`: Email invitation tokens with expiry
+- `Transaction`: Expense records with `receipt_url`, `expense_type_id`
 - `Settlement`: Monthly settlement snapshots
+- `ExpenseType`: Custom expense categories per household
+- `AutoCategoryRule`: Auto-categorization rules by merchant keywords
+- `BudgetRule`: Budget allocation (giver→receiver for expense types)
+- `BudgetRuleExpenseType`: Many-to-many for budget rules
+- `BudgetSnapshot`: Monthly budget tracking/status
+- `SplitRule`: Custom split percentages for SHARED expenses
+- `SplitRuleExpenseType`: Many-to-many for split rules
+- `RefreshToken`: Server-side JWT token tracking for revocation
+- `DeviceToken`: Push notification device tokens for mobile
 
 **auth.py** - Flask-Login configuration and user loader
 
-**decorators.py** - Custom decorators
+**decorators.py** - Web route decorators
 - `@household_required`: Ensures user has a household context
+
+**api_decorators.py** - REST API decorators (JWT-based)
+- `@jwt_required`: Validates JWT access tokens, sets `g.current_user`
+- `@api_household_required`: API-level household access control
+- `@api_household_owner_required`: API-level ownership check
+- `generate_access_token()`, `generate_refresh_token()`
+- `validate_refresh_token()`, `revoke_refresh_token()`, `revoke_all_user_tokens()`
 
 **household_context.py** - Session-based household management
 - `get_current_household_id()`, `get_current_household()`
@@ -249,9 +290,42 @@ Copy `.env.example` to `.env` and configure:
 
 **email_service.py** - Flask-Mail integration for invitations
 
-**utils.py** - Business logic
-- `get_exchange_rate()`: CAD→USD rates from frankfurter.app
-- `calculate_reconciliation()`: Dynamic member-based settlement calculation
+**utils.py** - Legacy utilities (prefer services/ for new code)
+
+### Blueprints (Route Organization)
+
+Routes are organized into domain-specific blueprints in `blueprints/`:
+
+```
+blueprints/
+├── __init__.py          # Blueprint registration
+├── auth/                # Login, register, logout, password reset
+├── transactions/        # Transaction CRUD, search/filter
+├── reconciliation/      # Monthly summaries, settlements
+├── household/           # Household management, member settings
+├── invitations/         # Send/accept/cancel invitations
+├── profile/             # User profile, email change, account deletion
+├── budget/              # Budget rules, snapshots, expense types
+├── api/                 # Legacy API (deprecated)
+└── api_v1/              # REST API for mobile app (JWT auth)
+    ├── auth.py          # Register, login, token refresh, logout
+    ├── transactions.py  # CRUD + receipt upload/download
+    ├── households.py    # List, create, members, leave
+    ├── reconciliation.py# Monthly summaries
+    └── config.py        # App configuration endpoint
+```
+
+### Services Layer
+
+Business logic is centralized in `services/`:
+
+```
+services/
+├── currency_service.py      # Exchange rate utilities (frankfurter.app)
+├── household_service.py     # Household management operations
+├── reconciliation_service.py# Reconciliation calculations
+└── transaction_service.py   # Transaction operations, search/filter
+```
 
 ### Templates
 
@@ -259,18 +333,30 @@ Copy `.env.example` to `.env` and configure:
 templates/
 ├── auth/
 │   ├── login.html
-│   └── register.html
+│   ├── register.html
+│   ├── forgot_password.html  # Password reset request
+│   ├── reset_password.html   # Password reset form
+│   ├── reset_sent.html       # Reset email sent confirmation
+│   └── reset_invalid.html    # Invalid/expired reset token
 ├── household/
-│   ├── setup.html          # Create household wizard
-│   ├── select.html         # Household switcher
-│   ├── settings.html       # Manage household
-│   ├── invite.html         # Send invitations
-│   ├── invite_sent.html    # Invitation success
-│   ├── accept_invite.html  # Accept invitation
-│   └── invite_invalid.html # Invalid/expired token
-├── base.html               # Layout with nav and household switcher
-├── index.html              # Transaction list and form
-└── reconciliation.html     # Monthly summary
+│   ├── setup.html            # Create household wizard
+│   ├── select.html           # Household switcher
+│   ├── settings.html         # Manage household
+│   ├── invite.html           # Send invitations
+│   ├── invite_sent.html      # Invitation success
+│   ├── accept_invite.html    # Accept invitation
+│   └── invite_invalid.html   # Invalid/expired token
+├── profile/
+│   ├── index.html            # User profile page
+│   ├── email_change_sent.html# Email change confirmation sent
+│   ├── email_confirmed.html  # Email change confirmed
+│   └── email_invalid.html    # Invalid email change token
+├── budget/
+│   └── index.html            # Budget tracking page
+├── _icons.html               # Shared icon library
+├── base.html                 # Layout with nav and household switcher
+├── index.html                # Transaction list with search/filter sidebar
+└── reconciliation.html       # Monthly summary
 ```
 
 ### Database
@@ -311,6 +397,54 @@ templates/
 - `POST /household/switch/<id>` - Switch household
 - `GET/POST /household/settings` - Manage household
 - `POST /household/leave` - Leave household
+
+### Profile Management
+- `GET /profile` - User profile page with stats
+- `POST /profile/update-name` - Update display name
+- `POST /profile/request-email-change` - Request email change (sends confirmation)
+- `GET /profile/confirm-email/<token>` - Confirm email change
+- `POST /profile/cancel-email-change` - Cancel pending email change
+- `POST /profile/change-password` - Change password
+- `POST /profile/delete-account` - Delete account and all data
+- `GET /api/profile/stats` - Profile statistics API
+
+### Budget Management
+- `GET /budget` - Budget page (current month)
+- `GET /budget/<month>` - Budget page (specific month)
+
+### REST API v1 (Mobile App)
+
+All API v1 routes are prefixed with `/api/v1/` and use JWT authentication.
+
+**Authentication:**
+- `POST /api/v1/auth/register` - Register new user
+- `POST /api/v1/auth/login` - Login, returns access + refresh tokens
+- `POST /api/v1/auth/refresh` - Refresh access token
+- `POST /api/v1/auth/logout` - Logout (revoke refresh token)
+- `GET /api/v1/auth/me` - Get current user info
+
+**Transactions (require `@jwt_required`):**
+- `GET /api/v1/transactions` - List transactions (with search/filter params)
+- `POST /api/v1/transactions` - Create transaction
+- `GET /api/v1/transactions/<id>` - Get transaction details
+- `PUT /api/v1/transactions/<id>` - Update transaction
+- `DELETE /api/v1/transactions/<id>` - Delete transaction
+- `POST /api/v1/transactions/<id>/receipt` - Upload receipt photo
+- `DELETE /api/v1/transactions/<id>/receipt` - Delete receipt
+- `GET /api/v1/receipts/<filename>` - Download receipt image
+
+**Households:**
+- `GET /api/v1/households` - List user's households
+- `POST /api/v1/households` - Create household
+- `GET /api/v1/households/<id>` - Get household details
+- `GET /api/v1/households/<id>/members` - List household members
+- `POST /api/v1/households/<id>/leave` - Leave household
+
+**Reconciliation:**
+- `GET /api/v1/reconciliation/<month>` - Get monthly reconciliation
+
+**Config:**
+- `GET /api/v1/config` - Get app configuration (categories, currencies)
 
 ## Security Features
 
@@ -407,11 +541,11 @@ pytest tests/test_models.py
 python seed_test_users.py
 ```
 
-**Note:** Playwright E2E tests are excluded by default in pytest.ini due to flakiness. Unit tests are in `test_budget.py`, `test_models.py`, and `test_utils.py`.
+**Note:** Playwright E2E tests are excluded by default in pytest.ini due to flakiness. See the Test Files section above for the full list of test files.
 
 ## iOS App Testing (Maestro)
 
-The iOS app uses [Maestro](https://maestro.mobile.dev/) for E2E UI testing. Test files are in `ios/LuckyLedger/maestro/`.
+The iOS app uses [Maestro](https://maestro.mobile.dev/) for E2E UI testing. Test files are in `ios/HouseholdTracker/maestro/`.
 
 ### Prerequisites
 
@@ -437,7 +571,7 @@ export JAVA_HOME="/usr/local/opt/openjdk@17"
 export PATH="$JAVA_HOME/bin:$PATH"
 
 # Navigate to iOS project
-cd ios/LuckyLedger
+cd ios/HouseholdTracker
 
 # Run a specific test
 ~/.maestro/bin/maestro test maestro/receipt-flow.yaml
@@ -467,7 +601,7 @@ cd ios/LuckyLedger
    - Solution: Set JAVA_HOME before running Maestro (see above)
 
 2. **"Config Section Required" error**
-   - All Maestro flow files must start with `appId: com.luckyledger.app` followed by `---`
+   - All Maestro flow files must start with `appId: com.householdtracker.app` followed by `---`
 
 3. **Wrong Maestro installed**
    - Do NOT install via `brew install maestro` (installs wrong app)
@@ -502,8 +636,10 @@ Without it, the app uses `instance/database.db` (ephemeral) instead of `/data/da
 - **frankfurter.app**: Free currency exchange API (no auth)
 - **Tailwind CSS**: Loaded from CDN
 - **Alpine.js**: Loaded from CDN (for dropdowns)
-- **SQLite**: File-based database
+- **SQLite**: File-based database (PostgreSQL supported via DATABASE_URL)
 - **Flask-Mail**: SMTP email sending (optional)
+- **PyJWT**: JWT token generation/validation for REST API
+- **Flask-Migrate**: Database migrations (Alembic)
 
 ## Documentation
 
@@ -523,18 +659,24 @@ docs/
 ├── hooks/                     # Custom hooks
 │   ├── pre-commit-check.py    # Blocking: tests + lint + branch policy
 │   ├── post-edit-verify.py    # Advisory: test reminders after edits
-│   ├── completion-checklist.py # Blocking: ensures tests run
+│   ├── checkpoint-reminder.py # Advisory: reminds to checkpoint
+│   ├── checkpoint-validator.py# Advisory: validates checkpoint sections
+│   ├── completion-checklist.py# Blocking: ensures tests run
+│   ├── session-handoff.py     # Blocking: detects incomplete work
 │   ├── spec-update-check.py   # SPEC.md update trigger
 │   └── sync-structure.py      # Project tree generator
 └── agents/                    # Custom subagents
     └── test-first.md          # TDD specialist for new features
 
-tests/                         # Python test scripts
-├── test_auth.py               # Authentication unit tests
-├── test_auth_playwright.py    # Playwright browser tests
-├── test_schema.py             # Database schema tests
-├── test_phase3_isolation.py   # Data isolation tests
-├── test_phase4_dynamic_ui.py  # Dynamic UI tests
-├── test_phase4_sync.py        # Sync tests
-└── test_phase5_invitations.py # Invitation flow tests
+ios/HouseholdTracker/          # iOS mobile app
+├── HouseholdTracker/          # Swift source code
+├── maestro/                   # Maestro E2E test flows
+│   ├── login-flow.yaml
+│   ├── logout.yaml
+│   ├── add-transaction.yaml
+│   ├── reconciliation.yaml
+│   └── receipt-flow.yaml
+└── HouseholdTracker.xcodeproj/# Xcode project (generated)
 ```
+
+See the Architecture section for the full project structure including blueprints, services, and test files.

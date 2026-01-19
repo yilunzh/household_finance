@@ -1,6 +1,6 @@
-appId: com.luckyledger.app
+appId: com.householdtracker.app
 ---
-# Reconciliation View E2E Test
+# Login Flow E2E Test
 - launchApp:
     clearState: true
 
@@ -8,25 +8,25 @@ appId: com.luckyledger.app
 - runFlow:
     when:
       visible: "Transactions"
-    file: logout-helper.yaml
+    file: helpers/logout-helper.yaml
 
-# Login
+# Now we should be at login screen
 - assertVisible: "Lucky Ledger"
+
+# Enter credentials
 - tapOn: "Email"
 - inputText: "demo_alice@example.com"
+
 - tapOn: "Password"
 - inputText: "password123"
+
+# Tap login button
 - tapOn: "Log In"
 
-# Wait for main screen
+# Wait for login to complete and verify we see the main app
 - extendedWaitUntil:
     visible: "Transactions"
     timeout: 10000
 
-# Navigate to Reconciliation tab
-- tapOn: "Summary"
-
-# Verify reconciliation view is loaded
-- extendedWaitUntil:
-    visible: "Total Spent"
-    timeout: 10000
+# Verify we're on the transactions screen
+- assertVisible: "Transactions"

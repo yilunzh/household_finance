@@ -71,6 +71,7 @@ struct TransactionsView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityLabel("Add Transaction")
                 }
             }
             .sheet(isPresented: $showAddSheet) {

@@ -15,10 +15,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DC19DC96F56391634C7FC1CB"
-               BuildableName = "LuckyLedger.app"
-               BlueprintName = "LuckyLedger"
-               ReferencedContainer = "container:LuckyLedger.xcodeproj">
+               BlueprintIdentifier = "DC18DD1ED83715CE2E829749"
+               BuildableName = "HouseholdTracker.app"
+               BlueprintName = "HouseholdTracker"
+               ReferencedContainer = "container:HouseholdTracker.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -29,10 +29,10 @@
             buildForAnalyzing = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "C2A800DAAB509740511F9424"
-               BuildableName = "LuckyLedgerTests.xctest"
-               BlueprintName = "LuckyLedgerTests"
-               ReferencedContainer = "container:LuckyLedger.xcodeproj">
+               BlueprintIdentifier = "7D55CBC50688E63CF5C44016"
+               BuildableName = "HouseholdTrackerTests.xctest"
+               BlueprintName = "HouseholdTrackerTests"
+               ReferencedContainer = "container:HouseholdTracker.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -46,10 +46,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "DC19DC96F56391634C7FC1CB"
-            BuildableName = "LuckyLedger.app"
-            BlueprintName = "LuckyLedger"
-            ReferencedContainer = "container:LuckyLedger.xcodeproj">
+            BlueprintIdentifier = "DC18DD1ED83715CE2E829749"
+            BuildableName = "HouseholdTracker.app"
+            BlueprintName = "HouseholdTracker"
+            ReferencedContainer = "container:HouseholdTracker.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <Testables>
@@ -58,10 +58,10 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "C2A800DAAB509740511F9424"
-               BuildableName = "LuckyLedgerTests.xctest"
-               BlueprintName = "LuckyLedgerTests"
-               ReferencedContainer = "container:LuckyLedger.xcodeproj">
+               BlueprintIdentifier = "7D55CBC50688E63CF5C44016"
+               BuildableName = "HouseholdTrackerTests.xctest"
+               BlueprintName = "HouseholdTrackerTests"
+               ReferencedContainer = "container:HouseholdTracker.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -82,10 +82,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "DC19DC96F56391634C7FC1CB"
-            BuildableName = "LuckyLedger.app"
-            BlueprintName = "LuckyLedger"
-            ReferencedContainer = "container:LuckyLedger.xcodeproj">
+            BlueprintIdentifier = "DC18DD1ED83715CE2E829749"
+            BuildableName = "HouseholdTracker.app"
+            BlueprintName = "HouseholdTracker"
+            ReferencedContainer = "container:HouseholdTracker.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
@@ -101,10 +101,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "DC19DC96F56391634C7FC1CB"
-            BuildableName = "LuckyLedger.app"
-            BlueprintName = "LuckyLedger"
-            ReferencedContainer = "container:LuckyLedger.xcodeproj">
+            BlueprintIdentifier = "DC18DD1ED83715CE2E829749"
+            BuildableName = "HouseholdTracker.app"
+            BlueprintName = "HouseholdTracker"
+            ReferencedContainer = "container:HouseholdTracker.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>

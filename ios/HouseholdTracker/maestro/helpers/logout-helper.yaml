@@ -1,4 +1,4 @@
-appId: com.luckyledger.app
+appId: com.householdtracker.app
 ---
 # Helper flow to log out if already logged in
 - tapOn: "Settings"

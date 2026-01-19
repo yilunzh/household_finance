@@ -1,4 +1,4 @@
-appId: com.luckyledger.app
+appId: com.householdtracker.app
 ---
 # Add Transaction E2E Test
 - launchApp:
@@ -8,7 +8,7 @@ appId: com.luckyledger.app
 - runFlow:
     when:
       visible: "Transactions"
-    file: logout-helper.yaml
+    file: helpers/logout-helper.yaml
 
 # Login first
 - assertVisible: "Lucky Ledger"
@@ -24,24 +24,33 @@ appId: com.luckyledger.app
     timeout: 10000
 
 # Tap add button (+ icon in top right)
-- tapOn:
-    text: "+"
+- tapOn: "Add Transaction"
 
 # Fill in transaction details - look for the sheet
 - extendedWaitUntil:
     visible: "Add Transaction"
     timeout: 5000
 
-- tapOn: "Description"
+- tapOn: "Merchant"
 - inputText: "Test Groceries"
 
-- tapOn: "Amount"
+# Amount field has placeholder "0.00"
+- tapOn: "0.00"
 - inputText: "50.00"
 
-# Submit the transaction
-- tapOn: "Add"
+# Select Paid By (required field) - scroll down first to ensure picker is visible
+- scrollUntilVisible:
+    element: "Paid By"
+    direction: DOWN
+- tapOn: "Paid By"
+- tapOn: "Alice"
+# Tap elsewhere to dismiss picker
+- tapOn: "Add Transaction"
 
-# Verify we're back on transactions list
+# Submit the transaction
+- tapOn: "Save"
+
+# Wait for the sheet to dismiss and return to transactions list
 - extendedWaitUntil:
     visible: "Transactions"
-    timeout: 5000
+    timeout: 10000

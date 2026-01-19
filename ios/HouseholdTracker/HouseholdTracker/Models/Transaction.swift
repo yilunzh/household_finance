@@ -75,7 +75,7 @@ struct CreateTransactionRequest: Codable, Sendable {
     let merchant: String
     let category: String
     let date: String
-    let paidByUserId: Int
+    let paidBy: Int
     let expenseTypeId: Int?
     let notes: String?
 
@@ -85,7 +85,7 @@ struct CreateTransactionRequest: Codable, Sendable {
         case merchant
         case category
         case date
-        case paidByUserId = "paid_by_user_id"
+        case paidBy = "paid_by"
         case expenseTypeId = "expense_type_id"
         case notes
     }
