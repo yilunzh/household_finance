@@ -156,10 +156,20 @@ Before saying "done":
 2. If user-facing: present options for review
 3. Mark todo items completed
 
-**For UI/template changes, also:**
-1. Seed or create test data if needed to exercise the feature
-2. Use Playwright MCP tools to navigate to the affected page and verify the change works
-3. Take a screenshot to confirm the visual result
+**For route/template/blueprint changes (ENFORCED BY HOOK):**
+
+The pre-commit hook blocks commits to UI-affecting files without Playwright verification:
+1. Ensure app is running on port 5001
+2. Use `browser_navigate` to visit affected pages
+3. Use `browser_snapshot` to verify pages load correctly
+4. Run `touch .playwright-verified` to mark verification complete
+5. Commit proceeds
+
+Files that trigger this check:
+- `app.py` (routes)
+- `blueprints/**/*.py` (blueprint routes)
+- `templates/**/*.html` (templates)
+- Any Python file with `@app.route`, `@bp.route`, or `Blueprint(`
 
 ### User-Facing Changes (Escalate)
 
@@ -186,11 +196,12 @@ For routes, models, business logic, test structure:
 
 | Change Type | Action |
 |------------|--------|
-| New route | Autonomous - add @household_required, filter by household_id |
+| New route | Autonomous + **Playwright verify** before commit |
+| Route refactoring | Autonomous + **Playwright verify** before commit |
+| Template change | ESCALATE + **Playwright verify** before commit |
 | Model change | Autonomous - update test_models.py first |
 | Business logic | Autonomous - update test_utils.py first |
 | Error message | ESCALATE - propose options |
-| Template change | ESCALATE - propose options |
 | Email text | ESCALATE - propose options |
 | CSV format | ESCALATE - propose options |
 
@@ -338,7 +349,7 @@ The Stop hook gathers context (git changes, conversation, plan) and prompts for 
 
 ### Hooks
 Custom hooks are in `.claude/hooks/`:
-- `pre-commit-check.py` - **Blocking**: Runs tests + lint before commits; blocks >2 files on main
+- `pre-commit-check.py` - **Blocking**: Runs tests + lint; blocks direct commits to main; requires Playwright verification for route/template changes
 - `post-edit-verify.py` - **Advisory**: Reminds to run tests after editing Python files
 - `checkpoint-reminder.py` - **Advisory**: Reminds to checkpoint every 3-5 edits
 - `checkpoint-validator.py` - **Advisory**: Validates checkpoint has required sections
