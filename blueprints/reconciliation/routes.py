@@ -4,15 +4,15 @@ Reconciliation routes: settlement, reconciliation view, export.
 import csv
 from io import StringIO
 from datetime import datetime
-from decimal import Decimal
 from flask import render_template, request, jsonify, Response
 
 from extensions import db
-from models import Transaction, Settlement, BudgetRule, BudgetSnapshot, SplitRule
+from models import Transaction, Settlement, BudgetRule, SplitRule
 from decorators import household_required
 from household_context import get_current_household_id, get_current_household_members
 from utils import calculate_reconciliation, build_split_rules_lookup
-from budget_utils import calculate_budget_status, create_or_update_budget_snapshot
+from budget_utils import calculate_budget_status
+from services.reconciliation_service import ReconciliationService
 from blueprints.reconciliation import reconciliation_bp
 
 
@@ -26,75 +26,14 @@ def mark_month_settled():
         data = request.json
         month_year = data['month_year']
 
-        # Validation: Check if already settled (HOUSEHOLD-SCOPED)
-        if Settlement.is_month_settled(household_id, month_year):
-            return jsonify({'success': False, 'error': 'This month has already been settled.'}), 400
-
-        # Validation: Must have transactions (HOUSEHOLD-SCOPED)
-        transactions = Transaction.query.filter_by(
-            household_id=household_id,
-            month_year=month_year
-        ).all()
-
-        if not transactions:
-            return jsonify({'success': False, 'error': 'Cannot settle a month with no transactions.'}), 400
-
-        # Get split rules for custom SHARED splits
-        split_rules_lookup = build_split_rules_lookup(household_id)
-
-        # Calculate reconciliation with household members and split rules
-        summary = calculate_reconciliation(transactions, household_members, None, split_rules_lookup)
-
-        # Extract balances (NEW: use dynamic user balances)
-        # For now, assume 2-person household (will be enhanced in Phase 4)
-        user_balances = summary.get('user_balances', {})
-
-        if len(user_balances) != 2:
-            return jsonify({
-                'success': False,
-                'error': 'Settlement currently only supports 2-person households.'
-            }), 400
-
-        # Get the two users and their balances
-        user_ids = list(user_balances.keys())
-        user1_id = user_ids[0]
-        user2_id = user_ids[1]
-        user1_balance = Decimal(str(user_balances[user1_id]))
-        user2_balance = Decimal(str(user_balances[user2_id]))
-
-        # Determine direction of debt (NEW SCHEMA)
-        if user1_balance > Decimal('0.01'):  # User2 owes User1
-            from_user_id, to_user_id, settlement_amount = user2_id, user1_id, user1_balance
-        elif user2_balance > Decimal('0.01'):  # User1 owes User2
-            from_user_id, to_user_id, settlement_amount = user1_id, user2_id, user2_balance
-        else:  # All settled up
-            from_user_id, to_user_id, settlement_amount = user1_id, user2_id, Decimal('0.00')
-
-        # Create settlement record (NEW SCHEMA)
-        settlement = Settlement(
-            household_id=household_id,
-            month_year=month_year,
-            settled_date=datetime.now().date(),
-            settlement_amount=settlement_amount,
-            from_user_id=from_user_id,
-            to_user_id=to_user_id,
-            settlement_message=summary['settlement']
+        settlement = ReconciliationService.create_settlement(
+            household_id, household_members, month_year
         )
 
-        db.session.add(settlement)
-
-        # Create budget snapshots for all active budget rules
-        budget_rules = BudgetRule.query.filter_by(
-            household_id=household_id,
-            is_active=True
-        ).all()
-
-        for budget_rule in budget_rules:
-            create_or_update_budget_snapshot(budget_rule, month_year, finalize=True)
-
-        db.session.commit()
-
         return jsonify({'success': True, 'settlement': settlement.to_dict()})
+
+    except ReconciliationService.SettlementError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
 
     except Exception as e:
         db.session.rollback()
@@ -108,40 +47,18 @@ def unsettle_month(month_year):
     try:
         household_id = get_current_household_id()
 
-        # Get settlement for this household (HOUSEHOLD-SCOPED)
-        settlement = Settlement.query.filter_by(
-            household_id=household_id,
-            month_year=month_year
-        ).first()
-
-        if not settlement:
-            return jsonify({
-                'success': False,
-                'error': 'This month is not settled.'
-            }), 404
-
-        db.session.delete(settlement)
-
-        # Unfinalize budget snapshots for this month
-        budget_rules = BudgetRule.query.filter_by(
-            household_id=household_id,
-            is_active=True
-        ).all()
-
-        for budget_rule in budget_rules:
-            snapshot = BudgetSnapshot.query.filter_by(
-                budget_rule_id=budget_rule.id,
-                month_year=month_year
-            ).first()
-            if snapshot:
-                snapshot.is_finalized = False
-
-        db.session.commit()
+        ReconciliationService.remove_settlement(household_id, month_year)
 
         return jsonify({
             'success': True,
             'message': f'Month {month_year} has been unsettled and is now unlocked.'
         })
+
+    except ReconciliationService.SettlementError as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 404
 
     except Exception as e:
         db.session.rollback()

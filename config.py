@@ -26,7 +26,8 @@ class Config:
 
     # Rate limiting (Flask-Limiter config keys)
     RATELIMIT_DEFAULT = "200 per day; 50 per hour"
-    RATELIMIT_STORAGE_URL = "memory://"
+    # Use Redis for persistent rate limiting if REDIS_URL is set, otherwise memory
+    RATELIMIT_STORAGE_URL = os.environ.get('REDIS_URL', 'memory://')
 
     # Mail configuration (optional - for invitations)
     MAIL_SERVER = os.environ.get('MAIL_SERVER')
