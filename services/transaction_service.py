@@ -265,3 +265,85 @@ class TransactionService:
 
         db.session.delete(transaction)
         db.session.commit()
+
+    @staticmethod
+    def search_transactions(household_id, filters):
+        """
+        Search transactions with multiple filter criteria.
+
+        Args:
+            household_id (int): The household ID
+            filters (dict): Filter criteria containing:
+                - search (str): Text to search in merchant and notes
+                - date_from (str): Start date in YYYY-MM-DD format
+                - date_to (str): End date in YYYY-MM-DD format
+                - category (str): Transaction category
+                - paid_by (int): User ID who paid
+                - expense_type_id (int): Expense type ID
+                - amount_min (float): Minimum amount in USD
+                - amount_max (float): Maximum amount in USD
+
+        Returns:
+            list[Transaction]: List of matching transactions
+        """
+        from sqlalchemy import or_
+
+        query = Transaction.query.filter_by(household_id=household_id)
+
+        # Text search (phrase match in merchant OR notes)
+        search_term = filters.get('search', '').strip()
+        if search_term:
+            search_pattern = f"%{search_term}%"
+            query = query.filter(
+                or_(
+                    Transaction.merchant.ilike(search_pattern),
+                    Transaction.notes.ilike(search_pattern)
+                )
+            )
+
+        # Date range
+        date_from = filters.get('date_from')
+        if date_from:
+            try:
+                from_date = datetime.strptime(date_from, '%Y-%m-%d').date()
+                query = query.filter(Transaction.date >= from_date)
+            except ValueError:
+                pass  # Invalid date format, skip filter
+
+        date_to = filters.get('date_to')
+        if date_to:
+            try:
+                to_date = datetime.strptime(date_to, '%Y-%m-%d').date()
+                query = query.filter(Transaction.date <= to_date)
+            except ValueError:
+                pass  # Invalid date format, skip filter
+
+        # Category filter
+        category = filters.get('category')
+        if category:
+            query = query.filter(Transaction.category == category)
+
+        # Paid by filter
+        paid_by = filters.get('paid_by')
+        if paid_by:
+            query = query.filter(Transaction.paid_by_user_id == paid_by)
+
+        # Expense type filter
+        expense_type_id = filters.get('expense_type_id')
+        if expense_type_id:
+            query = query.filter(Transaction.expense_type_id == expense_type_id)
+
+        # Amount range (using USD amount)
+        amount_min = filters.get('amount_min')
+        if amount_min is not None:
+            query = query.filter(Transaction.amount_in_usd >= amount_min)
+
+        amount_max = filters.get('amount_max')
+        if amount_max is not None:
+            query = query.filter(Transaction.amount_in_usd <= amount_max)
+
+        # Order by date desc, then created_at desc
+        return query.order_by(
+            Transaction.date.desc(),
+            Transaction.created_at.desc()
+        ).all()

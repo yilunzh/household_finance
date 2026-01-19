@@ -353,12 +353,35 @@ def app():
 @pytest.fixture
 def db(app):
     """Create test database."""
-    from models import db as _db
+    from models import db as _db, User, Household, HouseholdMember, Transaction
     with app.app_context():
         _db.create_all()
+
+        # Clean up test data before tests
+        test_emails = ['test@example.com', 'test@test.com', 'owner@test.com',
+                       'former@test.com', 'solo@test.com', 'profile@test.com']
+        for email in test_emails:
+            user = User.query.filter_by(email=email).first()
+            if user:
+                # Delete associated households where user is sole member
+                for membership in user.household_memberships:
+                    if len(membership.household.members) == 1:
+                        _db.session.delete(membership.household)
+                _db.session.delete(user)
+        _db.session.commit()
+
         yield _db
+
+        # Clean up test data after tests
+        for email in test_emails:
+            user = User.query.filter_by(email=email).first()
+            if user:
+                for membership in user.household_memberships:
+                    if len(membership.household.members) == 1:
+                        _db.session.delete(membership.household)
+                _db.session.delete(user)
+        _db.session.commit()
         _db.session.remove()
-        _db.drop_all()
 
 
 @pytest.fixture

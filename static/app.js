@@ -273,6 +273,278 @@ function showMessage(message, type) {
     }, 5000);
 }
 
+// ===== FILTER/SEARCH FUNCTIONS =====
+
+// Apply filters and fetch filtered transactions
+async function applyFilters() {
+    // Get the filter Alpine.js wrapper (the one with sidebarOpen property)
+    const wrappers = document.querySelectorAll('[x-data]');
+    let data = null;
+
+    for (const wrapper of wrappers) {
+        if (wrapper._x_dataStack && wrapper._x_dataStack[0]) {
+            const d = wrapper._x_dataStack[0];
+            if (d.sidebarOpen !== undefined && d.filters) {
+                data = d;
+                break;
+            }
+        }
+    }
+
+    if (!data || !data.filters) return;
+
+    const filters = data.filters;
+
+    // Check if any filter is active
+    const hasActiveFilters = Object.values(filters).some(v => v !== '' && v !== null);
+    data.filtersActive = hasActiveFilters;
+    data.isSearchMode = hasActiveFilters;
+
+    if (!hasActiveFilters) {
+        // No filters active, reload to show normal month view
+        window.location.reload();
+        return;
+    }
+
+    // Build query string
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(filters)) {
+        if (value !== '' && value !== null) {
+            params.append(key, value);
+        }
+    }
+
+    try {
+        const response = await fetch(`/api/transactions/search?${params}`, {
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Search request failed');
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+            data.transactionCount = result.count;
+            updateTransactionList(result.transactions);
+        } else {
+            console.error('Search error:', result.error);
+        }
+    } catch (error) {
+        console.error('Filter error:', error);
+    }
+}
+
+// Clear all filters and return to month view
+function clearFilters() {
+    // Get the filter Alpine.js wrapper (the one with sidebarOpen property)
+    const wrappers = document.querySelectorAll('[x-data]');
+    let data = null;
+
+    for (const wrapper of wrappers) {
+        if (wrapper._x_dataStack && wrapper._x_dataStack[0]) {
+            const d = wrapper._x_dataStack[0];
+            if (d.sidebarOpen !== undefined && d.filters) {
+                data = d;
+                break;
+            }
+        }
+    }
+
+    if (data) {
+        data.filters = {
+            search: '',
+            date_from: '',
+            date_to: '',
+            category: '',
+            paid_by: '',
+            expense_type_id: '',
+            amount_min: '',
+            amount_max: ''
+        };
+        data.filtersActive = false;
+        data.isSearchMode = false;
+        data.sidebarOpen = false;
+    }
+    window.location.reload();
+}
+
+// Update transaction list with filtered results
+function updateTransactionList(transactions) {
+    const transactionCard = document.querySelector('.bg-white.rounded-2xl.shadow-sm.border.border-warm-200.p-4');
+    const emptyState = document.getElementById('filter-empty-state');
+    const countEl = document.getElementById('transaction-count');
+
+    if (!transactionCard) return;
+
+    if (transactions.length === 0) {
+        // Hide transaction card, show empty state
+        transactionCard.classList.add('hidden');
+        if (emptyState) emptyState.classList.remove('hidden');
+        return;
+    }
+
+    // Show transaction card, hide empty state
+    transactionCard.classList.remove('hidden');
+    if (emptyState) emptyState.classList.add('hidden');
+
+    // Update count
+    if (countEl) {
+        countEl.textContent = transactions.length;
+    }
+
+    // Update mobile cards
+    const mobileContainer = transactionCard.querySelector('.md\\:hidden.space-y-3');
+    if (mobileContainer) {
+        mobileContainer.innerHTML = transactions.map(txn => renderMobileCard(txn)).join('');
+    }
+
+    // Update desktop table
+    const tableBody = document.getElementById('transactions-body');
+    if (tableBody) {
+        tableBody.innerHTML = transactions.map(txn => renderTableRow(txn)).join('');
+    }
+}
+
+// Render a mobile card for a transaction
+function renderMobileCard(txn) {
+    const categoryDisplay = getCategoryDisplay(txn);
+    const expenseTypeHtml = txn.expense_type_name
+        ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-sage-100 text-sage-700 border border-sage-200">${escapeHtml(txn.expense_type_name)}</span>`
+        : '';
+    const notesHtml = txn.notes
+        ? `<div class="mt-2 text-xs text-warm-400 italic">${escapeHtml(txn.notes)}</div>`
+        : '';
+
+    return `
+        <div class="bg-cream-50 rounded-xl p-4 border border-warm-100"
+             data-id="${txn.id}"
+             data-date="${txn.date}"
+             data-merchant="${escapeHtml(txn.merchant)}"
+             data-amount="${txn.amount}"
+             data-currency="${txn.currency}"
+             data-paid-by="${txn.paid_by_user_id}"
+             data-category="${txn.category}"
+             data-expense-type="${txn.expense_type_id || ''}"
+             data-notes="${escapeHtml(txn.notes || '')}">
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <div class="font-semibold text-warm-800">${escapeHtml(txn.merchant)}</div>
+                    <div class="text-xs text-warm-400">${txn.date} · ${escapeHtml(txn.paid_by_name || 'Unknown')}</div>
+                </div>
+                <div class="text-right">
+                    <div class="font-bold text-warm-800">$${parseFloat(txn.amount).toFixed(2)}</div>
+                    <div class="text-xs text-warm-400">${txn.currency}</div>
+                </div>
+            </div>
+            <div class="flex justify-between items-center">
+                <div class="flex flex-wrap gap-1">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-terracotta-100 text-terracotta-700 border border-terracotta-200">
+                        ${categoryDisplay}
+                    </span>
+                    ${expenseTypeHtml}
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="openEditModal(${txn.id})"
+                            class="text-terracotta-600 hover:text-terracotta-700 text-sm font-medium">
+                        Edit
+                    </button>
+                    <button onclick="deleteTransaction(${txn.id})"
+                            class="text-rose-500 hover:text-rose-600 text-sm font-medium">
+                        Delete
+                    </button>
+                </div>
+            </div>
+            ${notesHtml}
+        </div>
+    `;
+}
+
+// Render a table row for a transaction
+function renderTableRow(txn) {
+    const categoryDisplay = getCategoryDisplay(txn);
+    const expenseTypeHtml = txn.expense_type_name
+        ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-sage-100 text-sage-700 border border-sage-200">${escapeHtml(txn.expense_type_name)}</span>`
+        : '';
+    const notesHtml = txn.notes
+        ? `<div class="text-xs text-warm-400 mt-0.5">${escapeHtml(txn.notes)}</div>`
+        : '';
+    const usdConversionHtml = txn.currency === 'CAD'
+        ? `<div class="text-xs text-warm-400">$${parseFloat(txn.amount_in_usd).toFixed(2)} USD</div>`
+        : '';
+
+    return `
+        <tr class="border-b border-warm-100 hover:bg-cream-100 transition-colors duration-150"
+            data-id="${txn.id}"
+            data-date="${txn.date}"
+            data-merchant="${escapeHtml(txn.merchant)}"
+            data-amount="${txn.amount}"
+            data-currency="${txn.currency}"
+            data-paid-by="${txn.paid_by_user_id}"
+            data-category="${txn.category}"
+            data-expense-type="${txn.expense_type_id || ''}"
+            data-notes="${escapeHtml(txn.notes || '')}">
+            <td class="py-3.5 px-4 text-sm text-warm-700">${txn.date}</td>
+            <td class="py-3.5 px-4">
+                <div class="font-medium text-warm-800">${escapeHtml(txn.merchant)}</div>
+                ${notesHtml}
+            </td>
+            <td class="py-3.5 px-4 text-right">
+                <div class="font-semibold text-warm-800">$${parseFloat(txn.amount).toFixed(2)} ${txn.currency}</div>
+                ${usdConversionHtml}
+            </td>
+            <td class="py-3.5 px-4 text-sm text-warm-700">${escapeHtml(txn.paid_by_name || 'Unknown')}</td>
+            <td class="py-3.5 px-4">
+                <div class="flex flex-wrap gap-1">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-terracotta-100 text-terracotta-700 border border-terracotta-200">
+                        ${categoryDisplay}
+                    </span>
+                    ${expenseTypeHtml}
+                </div>
+            </td>
+            <td class="py-3.5 px-4 text-right">
+                <button onclick="openEditModal(${txn.id})"
+                        class="text-terracotta-600 hover:text-terracotta-700 font-medium mr-3 transition-colors">
+                    Edit
+                </button>
+                <button onclick="deleteTransaction(${txn.id})"
+                        class="text-rose-500 hover:text-rose-600 font-medium transition-colors">
+                    Delete
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+// Get display string for category
+function getCategoryDisplay(txn) {
+    if (txn.category === 'SHARED') {
+        // For now, default to Shared 50/50 - could be enhanced with split_display_info
+        return 'Shared 50/50';
+    }
+
+    // Map category codes to display names
+    const categoryNames = {
+        'I_PAY_FOR_WIFE': 'For spouse',
+        'WIFE_PAYS_FOR_ME': 'For me',
+        'PERSONAL_ME': 'Personal',
+        'PERSONAL_WIFE': 'Personal'
+    };
+
+    return categoryNames[txn.category] || txn.category;
+}
+
+// HTML escape helper
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Lucky Ledger loaded');
