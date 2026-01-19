@@ -48,7 +48,7 @@ def create_household():
         session['current_household_id'] = household.id
 
         flash(f'Household "{name}" created successfully!', 'success')
-        return redirect(url_for('index'))
+        return redirect(url_for('transactions.index'))
 
     return render_template('household/setup.html')
 
@@ -83,7 +83,7 @@ def switch_household(household_id):
     session['current_household_id'] = household_id
 
     flash(f'Switched to {membership.household.name}', 'success')
-    return redirect(url_for('index'))
+    return redirect(url_for('transactions.index'))
 
 
 @household_bp.route('/household/settings', methods=['GET'])
@@ -206,7 +206,7 @@ def leave_household():
 
     if not member:
         flash('You are not a member of this household.', 'danger')
-        return redirect(url_for('index'))
+        return redirect(url_for('transactions.index'))
 
     # Count remaining members
     member_count = HouseholdMember.query.filter_by(household_id=household_id).count()

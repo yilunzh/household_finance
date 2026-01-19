@@ -53,7 +53,7 @@ def household_owner_required(f):
         # Check if user is owner
         if not is_household_owner():
             flash('You must be a household owner to access this page.', 'danger')
-            return redirect(url_for('index'))
+            return redirect(url_for('transactions.index'))
 
         return f(*args, **kwargs)
     return decorated_function

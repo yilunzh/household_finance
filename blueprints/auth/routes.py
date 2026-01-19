@@ -22,7 +22,7 @@ def register():
     """User registration page."""
     # If user is already logged in, redirect to index
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('transactions.index'))
 
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
@@ -67,7 +67,7 @@ def register():
             print("[DEBUG] User logged in successfully!")
 
             flash(f'Welcome, {user.name}! Your account has been created.', 'success')
-            return redirect(url_for('index'))
+            return redirect(url_for('transactions.index'))
 
         except Exception as e:
             db.session.rollback()
@@ -86,7 +86,7 @@ def login():
     """User login page."""
     # If user is already logged in, redirect to index
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('transactions.index'))
 
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
@@ -127,7 +127,7 @@ def login():
             return redirect(next_page)
 
         flash(f'Welcome back, {user.name}!', 'success')
-        return redirect(url_for('index'))
+        return redirect(url_for('transactions.index'))
 
     return render_template('auth/login.html')
 
@@ -146,7 +146,7 @@ def logout():
 def forgot_password():
     """Request password reset."""
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('transactions.index'))
 
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
@@ -180,7 +180,7 @@ def forgot_password():
 def reset_password(token):
     """Reset password with token."""
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('transactions.index'))
 
     # Find user by token
     user = User.query.filter_by(password_reset_token=token).first()
