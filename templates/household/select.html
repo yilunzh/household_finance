@@ -28,7 +28,7 @@
 
         <div class="space-y-3">
             {% for membership in households %}
-            <form method="POST" action="{{ url_for('switch_household', household_id=membership.household.id) }}" class="block">
+            <form method="POST" action="{{ url_for('household.switch_household', household_id=membership.household.id) }}" class="block">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button
                     type="submit"
@@ -60,7 +60,7 @@
 
         <div class="mt-6 pt-6 border-t border-warm-100">
             <a
-                href="{{ url_for('create_household') }}"
+                href="{{ url_for('household.create_household') }}"
                 class="flex items-center justify-center gap-2 w-full p-4 border-2 border-dashed border-warm-300 hover:border-terracotta-400 rounded-2xl text-warm-500 hover:text-terracotta-600 transition-all duration-200"
             >
                 {{ icon('cat-sparkle', size='lg') }}
