@@ -46,3 +46,4 @@ screenshots/
 .claude/session-context.md
 .claude/handoff.md
 .playwright-verified
+.playwright-mcp/

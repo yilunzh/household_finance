@@ -534,3 +534,58 @@ class SplitRuleExpenseType(db.Model):
 
     def __repr__(self):
         return f'<SplitRuleExpenseType: Rule {self.split_rule_id} -> Type {self.expense_type_id}>'
+
+
+class RefreshToken(db.Model):
+    """JWT refresh token for mobile API authentication.
+
+    Stored server-side to enable token revocation.
+    """
+
+    __tablename__ = 'refresh_tokens'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    token_jti = db.Column(db.String(64), unique=True, nullable=False, index=True)  # JWT ID for revocation
+    device_name = db.Column(db.String(100), nullable=True)  # e.g., "iPhone 15 Pro"
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    revoked_at = db.Column(db.DateTime, nullable=True)
+
+    # Relationships
+    user = db.relationship('User', backref='refresh_tokens')
+
+    def is_valid(self):
+        """Check if refresh token is still valid (not expired or revoked)."""
+        return (
+            self.revoked_at is None and
+            self.expires_at > datetime.utcnow()
+        )
+
+    def revoke(self):
+        """Revoke this refresh token."""
+        self.revoked_at = datetime.utcnow()
+
+    def __repr__(self):
+        return f'<RefreshToken {self.id}: User {self.user_id}>'
+
+
+class DeviceToken(db.Model):
+    """Push notification device token for mobile apps."""
+
+    __tablename__ = 'device_tokens'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    token = db.Column(db.String(255), nullable=False)
+    platform = db.Column(db.String(10), nullable=False)  # 'ios' or 'android'
+    device_name = db.Column(db.String(100), nullable=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships
+    user = db.relationship('User', backref='device_tokens')
+
+    def __repr__(self):
+        return f'<DeviceToken {self.id}: {self.platform} for User {self.user_id}>'

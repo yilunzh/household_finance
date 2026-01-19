@@ -17,6 +17,7 @@ from blueprints.invitations import invitations_bp
 from blueprints.reconciliation import reconciliation_bp
 from blueprints.budget import budget_bp
 from blueprints.api import api_bp
+from blueprints.api_v1 import api_v1_bp
 
 # Import auth to register the user_loader callback
 import auth  # noqa: F401
@@ -49,6 +50,10 @@ app.register_blueprint(invitations_bp)
 app.register_blueprint(reconciliation_bp)
 app.register_blueprint(budget_bp)
 app.register_blueprint(api_bp)
+app.register_blueprint(api_v1_bp)
+
+# Exempt API v1 routes from CSRF (they use JWT authentication)
+csrf.exempt(api_v1_bp)
 
 
 # ============================================================================
