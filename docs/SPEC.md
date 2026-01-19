@@ -1,6 +1,6 @@
 # Zhang Estate Expense Tracker - Technical Specification
 
-**Version**: 2.5 (Custom Split Percentages & UX Improvements)
+**Version**: 2.6 (Codebase Refactoring - Blueprint Architecture)
 **Date**: January 2026
 **Status**: Implemented and Deployed to Production
 
@@ -68,14 +68,32 @@ Web-based expense tracking tool with automatic reconciliation calculations, focu
 └────────┬────────┘
          │ HTTP
          ▼
-┌─────────────────┐
-│  Flask Web App  │
-│   (app.py)      │
-├─────────────────┤
-│  - Routes       │
-│  - Templates    │
-│  - Static Files │
-└────────┬────────┘
+┌─────────────────────────────────────────────────────┐
+│                  Flask Web App                       │
+├─────────────────────────────────────────────────────┤
+│  app.py (Application Factory)                        │
+│    ├── config.py (Configuration)                     │
+│    ├── extensions.py (Flask Extensions)              │
+│    └── blueprints/ (Domain Routes)                   │
+│          ├── auth/          → /login, /register      │
+│          ├── transactions/  → /, /transaction        │
+│          ├── reconciliation/→ /reconciliation        │
+│          ├── household/     → /household/*           │
+│          ├── invitations/   → /invite/*              │
+│          ├── budget/        → /budget                │
+│          ├── profile/       → /profile               │
+│          └── api/           → /api/*                 │
+├─────────────────────────────────────────────────────┤
+│  services/ (Business Logic Layer)                    │
+│    ├── currency_service.py                           │
+│    ├── household_service.py                          │
+│    ├── reconciliation_service.py                     │
+│    └── transaction_service.py                        │
+├─────────────────────────────────────────────────────┤
+│  models.py (SQLAlchemy ORM)                          │
+│  templates/ (Jinja2 HTML)                            │
+│  static/ (JS/CSS)                                    │
+└────────┬────────────────────────────────────────────┘
          │
     ┌────┴────┐
     ▼         ▼
@@ -732,7 +750,9 @@ def calculate_budget_status(budget_rule, month_year):
 
 ```
 household_tracker/
-├── app.py                    # Main Flask application (~1300 lines)
+├── app.py                    # Application factory and startup (~200 lines)
+├── config.py                 # Flask configuration (dev/prod)
+├── extensions.py             # Flask extensions (db, csrf, limiter, mail)
 ├── models.py                 # SQLAlchemy models (~450 lines)
 ├── auth.py                   # Flask-Login configuration
 ├── decorators.py             # @household_required decorator
@@ -744,10 +764,48 @@ household_tracker/
 ├── requirements.txt          # Python dependencies
 ├── requirements-dev.txt      # Dev dependencies (playwright)
 ├── Procfile                  # Production server config for Render
-├── SPEC.md                   # This file (technical specification)
 ├── CLAUDE.md                 # Claude Code guidance for this project
 ├── .env.example              # Environment variable template
 ├── .gitignore                # Git ignore rules
+│
+├── blueprints/               # Domain-specific route modules
+│   ├── __init__.py           # Blueprint registration
+│   ├── auth/                 # Authentication routes
+│   │   ├── __init__.py
+│   │   └── routes.py         # login, register, logout, password reset
+│   ├── transactions/         # Transaction CRUD
+│   │   ├── __init__.py
+│   │   └── routes.py         # index, create, update, delete, CSV export
+│   ├── reconciliation/       # Monthly reconciliation
+│   │   ├── __init__.py
+│   │   └── routes.py         # view, settle, unsettle
+│   ├── household/            # Household management
+│   │   ├── __init__.py
+│   │   └── routes.py         # create, settings, switch, leave
+│   ├── invitations/          # Invitation system
+│   │   ├── __init__.py
+│   │   └── routes.py         # send, accept, cancel
+│   ├── budget/               # Budget tracking
+│   │   ├── __init__.py
+│   │   └── routes.py         # view budget status
+│   ├── profile/              # User profile management
+│   │   ├── __init__.py
+│   │   └── routes.py         # view, update profile, change email
+│   └── api/                  # JSON API endpoints
+│       ├── __init__.py
+│       └── routes.py         # expense types, budget rules, auto-categorize
+│
+├── services/                 # Business logic layer
+│   ├── __init__.py
+│   ├── currency_service.py   # Exchange rate fetching and caching
+│   ├── household_service.py  # Household operations
+│   ├── reconciliation_service.py  # Settlement calculations
+│   └── transaction_service.py     # Transaction CRUD operations
+│
+├── migrations/               # Alembic database migrations
+│   ├── alembic.ini
+│   ├── env.py
+│   └── script.py.mako
 │
 ├── static/
 │   └── app.js               # Frontend JavaScript (~300 lines)
@@ -770,9 +828,20 @@ household_tracker/
 │   │   └── invite_invalid.html # Invalid token
 │   ├── budget/
 │   │   └── index.html       # Budget tracking page
+│   ├── profile/
+│   │   ├── index.html           # Profile settings
+│   │   ├── email_change_sent.html
+│   │   ├── email_confirmed.html
+│   │   └── email_invalid.html
 │   ├── base.html            # Base template with nav
 │   ├── index.html           # Main transaction page (+ expense type dropdown)
 │   └── reconciliation.html  # Monthly summary
+│
+├── tests/                   # Test suite
+│   ├── conftest.py          # Pytest fixtures
+│   ├── test_models.py       # Model unit tests
+│   ├── test_utils.py        # Utility function tests
+│   └── test_budget.py       # Budget feature tests
 │
 ├── instance/
 │   └── database.db          # SQLite database (development)
@@ -780,11 +849,20 @@ household_tracker/
 ├── data/                    # Production database directory (Render)
 │   └── database.db          # SQLite database (production)
 │
+├── docs/
+│   ├── SPEC.md              # This file (technical specification)
+│   └── DEPLOYMENT.md        # Production deployment guide
+│
 └── .claude/                 # Claude Code configuration
     ├── settings.json        # MCP servers and hooks config
-    └── hooks/
-        ├── spec-update-check.py  # Stop hook for SPEC.md updates
-        └── sync-structure.py     # Project tree generator utility
+    ├── hooks/
+    │   ├── pre-commit-check.py   # Blocking: tests + lint + branch policy
+    │   ├── post-edit-verify.py   # Advisory: test reminders
+    │   ├── completion-checklist.py
+    │   ├── spec-update-check.py  # SPEC.md update trigger
+    │   └── sync-structure.py     # Project tree generator
+    └── agents/
+        └── test-first.md    # TDD specialist subagent
 ```
 
 ---
@@ -976,6 +1054,28 @@ python seed_test_users.py
 - ✅ Split rules: default household split + per-expense-type overrides
 - ✅ Split rule management UI in Settings page
 - ✅ Transaction list displays actual split percentages (e.g., "Shared 60/40")
+
+**✅ v2.6 - Codebase Refactoring (Completed)**
+- ✅ Extract Flask configuration into `config.py` (development/production configs)
+- ✅ Extract Flask extensions into `extensions.py` (db, csrf, limiter, mail)
+- ✅ Implement Blueprint architecture - split monolithic `app.py` into domain modules:
+  - `blueprints/auth/` - Login, register, logout, password reset
+  - `blueprints/transactions/` - Transaction CRUD, CSV export
+  - `blueprints/reconciliation/` - Monthly reconciliation, settlements
+  - `blueprints/household/` - Household management, switching
+  - `blueprints/invitations/` - Invitation send/accept/cancel
+  - `blueprints/budget/` - Budget tracking
+  - `blueprints/profile/` - User profile management
+  - `blueprints/api/` - JSON API endpoints for expense types, rules
+- ✅ Create services layer for business logic:
+  - `services/currency_service.py` - Exchange rate fetching/caching
+  - `services/household_service.py` - Household operations
+  - `services/reconciliation_service.py` - Settlement calculations
+  - `services/transaction_service.py` - Transaction CRUD
+- ✅ Add Alembic migrations support (`migrations/`)
+- ✅ Update all `url_for()` calls to use blueprint namespaces
+- ✅ Update all templates with correct route references
+- ✅ Enhanced seed script with sample transactions, categories, and rules
 
 ### 10.3 Testing Checklist
 
@@ -1292,9 +1392,10 @@ def format_settlement(me_balance, wife_balance):
 | 2.3 | Jan 2026 | Budget tracking: expense types, budget rules, auto-split, auto-categorization |
 | 2.4 | Jan 2026 | Password reset flow, UI spacing improvements, split category label clarity |
 | 2.5 | Jan 2026 | Custom split percentages, split rules UI, UX improvements (sorting, form alignment) |
+| 2.6 | Jan 2026 | Codebase refactoring: Blueprint architecture, services layer, config extraction |
 
 ---
 
-**Document Version**: 2.5
+**Document Version**: 2.6
 **Last Updated**: January 18, 2026
 **GitHub Repository**: https://github.com/yilunzh/household_finance
