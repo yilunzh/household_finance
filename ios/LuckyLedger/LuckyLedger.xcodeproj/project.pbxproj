@@ -1,0 +1,550 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		08E4271826373ECCEE257BF3 /* Household.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6913A655331AF5FA6BDBED8A /* Household.swift */; };
+		2CAEC1084DDA190087F765DA /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 283193AB80FD302903B95E06 /* MainTabView.swift */; };
+		4C0367679F8A49565862AC18 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D2C68127F2A09779A35326 /* APIError.swift */; };
+		4FC563EC9ACECE8044A23675 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D8847620F0EFC0B72D32FF /* NetworkManager.swift */; };
+		509563C86645B407B1FB73A9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41907587849A65FBC985FFF9 /* ContentView.swift */; };
+		56AA001AD0DDD8C9B0C56961 /* TransactionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E44F120BE0337E5BA116E43 /* TransactionsView.swift */; };
+		58A82B224F5450F801BDE5B8 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F453D6157E614D0DFDE5043 /* Config.swift */; };
+		60E169E6C5B8C4D458233419 /* Transaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB67EAD11300DD00D272DF57 /* Transaction.swift */; };
+		6D0E1103BB427712F9826149 /* Endpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B1EB28176F495E23A8B4AB3 /* Endpoints.swift */; };
+		8111C9CF470903F8CE257E67 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8388339373405116A189DC0 /* LoginView.swift */; };
+		9D6B2D48B1C6F24310CD1EF0 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F8AD0AA239026DE5DEB604A /* AuthManager.swift */; };
+		A1E374010A256AA97F0E2BAF /* ReconciliationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84189DDFBE2A6882E4AB9E6 /* ReconciliationViewModel.swift */; };
+		A70E7ED12944779A545DA715 /* Reconciliation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 698EDF91B0AAFD281C414B9A /* Reconciliation.swift */; };
+		AECF3D1F0F27E87847C1CA8B /* AddTransactionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7941B4D6567138FA4805E44F /* AddTransactionSheet.swift */; };
+		B13CC1A22269FC3224AF13BB /* HouseholdSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9CF3474B558B5B971384FE0 /* HouseholdSelectionView.swift */; };
+		C239A16DD562CBF73DEAF4A1 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 609E9FCC480090E61C2FBBD6 /* User.swift */; };
+		C96AC172A3C7174D395D2314 /* LuckyLedgerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B145E9BE9B0C6372B6421A9D /* LuckyLedgerApp.swift */; };
+		CA34F09079AD10F8B8BBF553 /* AuthManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22ABFDEC63BE6E4F235442DE /* AuthManagerTests.swift */; };
+		ECBDD2CFB9EDB6BB80910604 /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B9E41CD769FEEFCDEF164C9 /* KeychainManager.swift */; };
+		EE9B5462DC5C8DACF5847BE3 /* ReconciliationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81CC5ECC94693D55C99EA11A /* ReconciliationView.swift */; };
+		F1A6FF05ED3B9049FC9CC74A /* TransactionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D53B747421C96BB9988BE43A /* TransactionsViewModel.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D8847FB6FE73C6D11CB7254B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5F170F5B3F538976897E2F32 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DC19DC96F56391634C7FC1CB;
+			remoteInfo = LuckyLedger;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		00D8847620F0EFC0B72D32FF /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
+		0B9E41CD769FEEFCDEF164C9 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
+		22ABFDEC63BE6E4F235442DE /* AuthManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManagerTests.swift; sourceTree = "<group>"; };
+		283193AB80FD302903B95E06 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		2F8AD0AA239026DE5DEB604A /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
+		3B1EB28176F495E23A8B4AB3 /* Endpoints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Endpoints.swift; sourceTree = "<group>"; };
+		41907587849A65FBC985FFF9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		4F453D6157E614D0DFDE5043 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		52D2C68127F2A09779A35326 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
+		5979C7C4AC72A1A325C146FF /* LuckyLedger.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LuckyLedger.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5E44F120BE0337E5BA116E43 /* TransactionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionsView.swift; sourceTree = "<group>"; };
+		609E9FCC480090E61C2FBBD6 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		6913A655331AF5FA6BDBED8A /* Household.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Household.swift; sourceTree = "<group>"; };
+		698EDF91B0AAFD281C414B9A /* Reconciliation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reconciliation.swift; sourceTree = "<group>"; };
+		7941B4D6567138FA4805E44F /* AddTransactionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTransactionSheet.swift; sourceTree = "<group>"; };
+		7D89A60BD9F625C54EFBAF15 /* LuckyLedgerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LuckyLedgerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		806500C4F07340474A795EAA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		81CC5ECC94693D55C99EA11A /* ReconciliationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReconciliationView.swift; sourceTree = "<group>"; };
+		874214703F1BE4A69CE6FBA0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		A8388339373405116A189DC0 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		B145E9BE9B0C6372B6421A9D /* LuckyLedgerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LuckyLedgerApp.swift; sourceTree = "<group>"; };
+		C84189DDFBE2A6882E4AB9E6 /* ReconciliationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReconciliationViewModel.swift; sourceTree = "<group>"; };
+		D53B747421C96BB9988BE43A /* TransactionsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionsViewModel.swift; sourceTree = "<group>"; };
+		DB67EAD11300DD00D272DF57 /* Transaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transaction.swift; sourceTree = "<group>"; };
+		F9CF3474B558B5B971384FE0 /* HouseholdSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseholdSelectionView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		04C1E8577A05EA86B3B8B656 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				0FA30195D7EB6E5DDD41F802 /* Keychain */,
+				B73A9E40F56B9B7743A247B0 /* Network */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		06143E5893F10D0ABC40CDE6 /* Reconciliation */ = {
+			isa = PBXGroup;
+			children = (
+				81CC5ECC94693D55C99EA11A /* ReconciliationView.swift */,
+				C84189DDFBE2A6882E4AB9E6 /* ReconciliationViewModel.swift */,
+			);
+			path = Reconciliation;
+			sourceTree = "<group>";
+		};
+		0FA30195D7EB6E5DDD41F802 /* Keychain */ = {
+			isa = PBXGroup;
+			children = (
+				0B9E41CD769FEEFCDEF164C9 /* KeychainManager.swift */,
+			);
+			path = Keychain;
+			sourceTree = "<group>";
+		};
+		39442DF2002ACD43CC459DD4 /* Transactions */ = {
+			isa = PBXGroup;
+			children = (
+				7941B4D6567138FA4805E44F /* AddTransactionSheet.swift */,
+				5E44F120BE0337E5BA116E43 /* TransactionsView.swift */,
+				D53B747421C96BB9988BE43A /* TransactionsViewModel.swift */,
+			);
+			path = Transactions;
+			sourceTree = "<group>";
+		};
+		3C1CD9D77FBD7A403CB6F955 /* LuckyLedger */ = {
+			isa = PBXGroup;
+			children = (
+				41907587849A65FBC985FFF9 /* ContentView.swift */,
+				806500C4F07340474A795EAA /* Info.plist */,
+				B145E9BE9B0C6372B6421A9D /* LuckyLedgerApp.swift */,
+				283193AB80FD302903B95E06 /* MainTabView.swift */,
+				04C1E8577A05EA86B3B8B656 /* Core */,
+				6E3D5AAD4BDBFF05E512F3CE /* Features */,
+				A7B8AA3CFB3458EAD7ED020A /* Models */,
+			);
+			path = LuckyLedger;
+			sourceTree = "<group>";
+		};
+		5D5ED6891DD0CF0E2DAD98BA /* Households */ = {
+			isa = PBXGroup;
+			children = (
+				F9CF3474B558B5B971384FE0 /* HouseholdSelectionView.swift */,
+			);
+			path = Households;
+			sourceTree = "<group>";
+		};
+		6E3D5AAD4BDBFF05E512F3CE /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				D7C7824EBBA14EE356535883 /* Auth */,
+				5D5ED6891DD0CF0E2DAD98BA /* Households */,
+				06143E5893F10D0ABC40CDE6 /* Reconciliation */,
+				39442DF2002ACD43CC459DD4 /* Transactions */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		A7B8AA3CFB3458EAD7ED020A /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				4F453D6157E614D0DFDE5043 /* Config.swift */,
+				6913A655331AF5FA6BDBED8A /* Household.swift */,
+				698EDF91B0AAFD281C414B9A /* Reconciliation.swift */,
+				DB67EAD11300DD00D272DF57 /* Transaction.swift */,
+				609E9FCC480090E61C2FBBD6 /* User.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		B73A9E40F56B9B7743A247B0 /* Network */ = {
+			isa = PBXGroup;
+			children = (
+				52D2C68127F2A09779A35326 /* APIError.swift */,
+				3B1EB28176F495E23A8B4AB3 /* Endpoints.swift */,
+				00D8847620F0EFC0B72D32FF /* NetworkManager.swift */,
+			);
+			path = Network;
+			sourceTree = "<group>";
+		};
+		CA6FD50EADA107036970B28B /* LuckyLedgerTests */ = {
+			isa = PBXGroup;
+			children = (
+				22ABFDEC63BE6E4F235442DE /* AuthManagerTests.swift */,
+				874214703F1BE4A69CE6FBA0 /* Info.plist */,
+			);
+			path = LuckyLedgerTests;
+			sourceTree = "<group>";
+		};
+		D7C7824EBBA14EE356535883 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				2F8AD0AA239026DE5DEB604A /* AuthManager.swift */,
+				A8388339373405116A189DC0 /* LoginView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		D8656BBB62BF0F028EB79752 = {
+			isa = PBXGroup;
+			children = (
+				3C1CD9D77FBD7A403CB6F955 /* LuckyLedger */,
+				CA6FD50EADA107036970B28B /* LuckyLedgerTests */,
+				FE622B2DD7BADB1C05B11AD6 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		FE622B2DD7BADB1C05B11AD6 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5979C7C4AC72A1A325C146FF /* LuckyLedger.app */,
+				7D89A60BD9F625C54EFBAF15 /* LuckyLedgerTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		C2A800DAAB509740511F9424 /* LuckyLedgerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5C4353269488234205F594A4 /* Build configuration list for PBXNativeTarget "LuckyLedgerTests" */;
+			buildPhases = (
+				5E6937A38289B441AFBBA64F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				98F5247232F48CC8851BDCEC /* PBXTargetDependency */,
+			);
+			name = LuckyLedgerTests;
+			packageProductDependencies = (
+			);
+			productName = LuckyLedgerTests;
+			productReference = 7D89A60BD9F625C54EFBAF15 /* LuckyLedgerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		DC19DC96F56391634C7FC1CB /* LuckyLedger */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C6D1FD822383FF102CC971DA /* Build configuration list for PBXNativeTarget "LuckyLedger" */;
+			buildPhases = (
+				DCCC4C596EC3E4DD534ECC71 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LuckyLedger;
+			packageProductDependencies = (
+			);
+			productName = LuckyLedger;
+			productReference = 5979C7C4AC72A1A325C146FF /* LuckyLedger.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5F170F5B3F538976897E2F32 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					C2A800DAAB509740511F9424 = {
+						DevelopmentTeam = "";
+					};
+					DC19DC96F56391634C7FC1CB = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 0AD67B4964D3E01285A24BDE /* Build configuration list for PBXProject "LuckyLedger" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = D8656BBB62BF0F028EB79752;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DC19DC96F56391634C7FC1CB /* LuckyLedger */,
+				C2A800DAAB509740511F9424 /* LuckyLedgerTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5E6937A38289B441AFBBA64F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CA34F09079AD10F8B8BBF553 /* AuthManagerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DCCC4C596EC3E4DD534ECC71 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4C0367679F8A49565862AC18 /* APIError.swift in Sources */,
+				AECF3D1F0F27E87847C1CA8B /* AddTransactionSheet.swift in Sources */,
+				9D6B2D48B1C6F24310CD1EF0 /* AuthManager.swift in Sources */,
+				58A82B224F5450F801BDE5B8 /* Config.swift in Sources */,
+				509563C86645B407B1FB73A9 /* ContentView.swift in Sources */,
+				6D0E1103BB427712F9826149 /* Endpoints.swift in Sources */,
+				08E4271826373ECCEE257BF3 /* Household.swift in Sources */,
+				B13CC1A22269FC3224AF13BB /* HouseholdSelectionView.swift in Sources */,
+				ECBDD2CFB9EDB6BB80910604 /* KeychainManager.swift in Sources */,
+				8111C9CF470903F8CE257E67 /* LoginView.swift in Sources */,
+				C96AC172A3C7174D395D2314 /* LuckyLedgerApp.swift in Sources */,
+				2CAEC1084DDA190087F765DA /* MainTabView.swift in Sources */,
+				4FC563EC9ACECE8044A23675 /* NetworkManager.swift in Sources */,
+				A70E7ED12944779A545DA715 /* Reconciliation.swift in Sources */,
+				EE9B5462DC5C8DACF5847BE3 /* ReconciliationView.swift in Sources */,
+				A1E374010A256AA97F0E2BAF /* ReconciliationViewModel.swift in Sources */,
+				60E169E6C5B8C4D458233419 /* Transaction.swift in Sources */,
+				56AA001AD0DDD8C9B0C56961 /* TransactionsView.swift in Sources */,
+				F1A6FF05ED3B9049FC9CC74A /* TransactionsViewModel.swift in Sources */,
+				C239A16DD562CBF73DEAF4A1 /* User.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		98F5247232F48CC8851BDCEC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DC19DC96F56391634C7FC1CB /* LuckyLedger */;
+			targetProxy = D8847FB6FE73C6D11CB7254B /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1948DD4BA06CFD9E219A25D5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		69E8FC428B5BD6180D4F44A5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = LuckyLedger/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.luckyledger.app;
+				SDKROOT = iphoneos;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		8E1C1642AFEAB1055B73A898 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = LuckyLedger/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.luckyledger.app;
+				SDKROOT = iphoneos;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		B88B52E546E7760CF52BA2B6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				INFOPLIST_FILE = LuckyLedgerTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.luckyledger.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LuckyLedger.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/LuckyLedger";
+			};
+			name = Debug;
+		};
+		ED753DAD7D784AD52F3FECCC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				INFOPLIST_FILE = LuckyLedgerTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.luckyledger.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LuckyLedger.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/LuckyLedger";
+			};
+			name = Release;
+		};
+		F15D99570BE73C45A25EEA68 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0AD67B4964D3E01285A24BDE /* Build configuration list for PBXProject "LuckyLedger" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F15D99570BE73C45A25EEA68 /* Debug */,
+				1948DD4BA06CFD9E219A25D5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5C4353269488234205F594A4 /* Build configuration list for PBXNativeTarget "LuckyLedgerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B88B52E546E7760CF52BA2B6 /* Debug */,
+				ED753DAD7D784AD52F3FECCC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C6D1FD822383FF102CC971DA /* Build configuration list for PBXNativeTarget "LuckyLedger" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				69E8FC428B5BD6180D4F44A5 /* Debug */,
+				8E1C1642AFEAB1055B73A898 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 5F170F5B3F538976897E2F32 /* Project object */;
+}
