@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* AcceptInvitationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* AcceptInvitationView.swift */; };
+		B2C3D4E5F6A7B8C9D0E1F2A3 /* InviteMemberView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F6A7B8C9D0E1F2A3B4C5D6 /* InviteMemberView.swift */; };
+		C3D4E5F6A7B8C9D0E1F2A3B4 /* PendingInvitationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A7B8C9D0E1F2A3B4C5D6E7 /* PendingInvitationsView.swift */; };
 		067B9FE148E60A6945DC5E6D /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEEAB43A77CED49CDB6B53F7 /* KeychainManager.swift */; };
 		1E5B0695D9DDBB8EA95DBD92 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3859398FB33A7F40B8AD952 /* User.swift */; };
 		21BE821F3941416A98A182E7 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDB15C10C0B84A3CB0DB669F /* MainTabView.swift */; };
@@ -44,6 +47,9 @@
 
 /* Begin PBXFileReference section */
 		0A4DE11B426ECCDE54253DFF /* HouseholdSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseholdSelectionView.swift; sourceTree = "<group>"; };
+		D4E5F6A7B8C9D0E1F2A3B4C5 /* AcceptInvitationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AcceptInvitationView.swift; sourceTree = "<group>"; };
+		E5F6A7B8C9D0E1F2A3B4C5D6 /* InviteMemberView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteMemberView.swift; sourceTree = "<group>"; };
+		F6A7B8C9D0E1F2A3B4C5D6E7 /* PendingInvitationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingInvitationsView.swift; sourceTree = "<group>"; };
 		2A2EED4210B3AE751F8C4D59 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		2C5089125C09B275B1450445 /* HouseholdTrackerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HouseholdTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		321BC8242297E69EC1B6881F /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
@@ -143,7 +149,10 @@
 		531095CC2A2B0C84BC100468 /* Households */ = {
 			isa = PBXGroup;
 			children = (
+				D4E5F6A7B8C9D0E1F2A3B4C5 /* AcceptInvitationView.swift */,
 				0A4DE11B426ECCDE54253DFF /* HouseholdSelectionView.swift */,
+				E5F6A7B8C9D0E1F2A3B4C5D6 /* InviteMemberView.swift */,
+				F6A7B8C9D0E1F2A3B4C5D6E7 /* PendingInvitationsView.swift */,
 			);
 			path = Households;
 			sourceTree = "<group>";
@@ -291,6 +300,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* AcceptInvitationView.swift in Sources */,
 				B6253C5CA81EA1F3CDDCDD97 /* APIError.swift in Sources */,
 				8CA9187601CC3FDB7A0D20A5 /* AddTransactionSheet.swift in Sources */,
 				BFF65C83C35715ADE7CD94B6 /* AuthManager.swift in Sources */,
@@ -301,10 +311,12 @@
 				54D1259515CA7D6B7944E70C /* HouseholdSelectionView.swift in Sources */,
 				279ED22D4F688353385D0005 /* HouseholdTrackerApp.swift in Sources */,
 				4B1B91CE3B1750E28E1E58DC /* ImageCompressor.swift in Sources */,
+				B2C3D4E5F6A7B8C9D0E1F2A3 /* InviteMemberView.swift in Sources */,
 				067B9FE148E60A6945DC5E6D /* KeychainManager.swift in Sources */,
 				D4615FF1909347166649CDD9 /* LoginView.swift in Sources */,
 				21BE821F3941416A98A182E7 /* MainTabView.swift in Sources */,
 				805F08214B430E307F205A9F /* NetworkManager.swift in Sources */,
+				C3D4E5F6A7B8C9D0E1F2A3B4 /* PendingInvitationsView.swift in Sources */,
 				CB8501D954CE549CBA289A36 /* Reconciliation.swift in Sources */,
 				64256A141AB85A544F8F69DB /* ReconciliationView.swift in Sources */,
 				39C11A2E10984AB3610A5473 /* ReconciliationViewModel.swift in Sources */,
