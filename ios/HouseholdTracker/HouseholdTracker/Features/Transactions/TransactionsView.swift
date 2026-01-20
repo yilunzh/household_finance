@@ -4,17 +4,54 @@ struct TransactionsView: View {
     @Environment(AuthManager.self) private var authManager
     @State private var viewModel = TransactionsViewModel()
     @State private var showAddSheet = false
+    @State private var showFilterSheet = false
     @State private var selectedTransaction: Transaction?
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Month Selector
-                MonthSelectorView(
-                    month: viewModel.formattedMonth,
-                    onPrevious: { viewModel.previousMonth() },
-                    onNext: { viewModel.nextMonth() }
-                )
+                // Search Bar (when search is active)
+                if viewModel.isSearchActive {
+                    SearchBarView(
+                        searchText: $viewModel.searchText,
+                        onSearch: {
+                            Task {
+                                await viewModel.fetchTransactions()
+                            }
+                        },
+                        onCancel: {
+                            viewModel.clearSearchAndFilters()
+                            Task {
+                                await viewModel.fetchTransactions()
+                            }
+                        }
+                    )
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                    .background(Color(.systemBackground))
+                }
+
+                // Month Selector (hidden when searching)
+                if !viewModel.isSearchActive {
+                    MonthSelectorView(
+                        month: viewModel.formattedMonth,
+                        onPrevious: { viewModel.previousMonth() },
+                        onNext: { viewModel.nextMonth() }
+                    )
+                }
+
+                // Active Filters Summary
+                if viewModel.hasActiveFilters {
+                    ActiveFiltersView(
+                        filterCount: viewModel.activeFilterCount,
+                        onClear: {
+                            viewModel.clearSearchAndFilters()
+                            Task {
+                                await viewModel.fetchTransactions()
+                            }
+                        }
+                    )
+                }
 
                 // Transactions List
                 if viewModel.isLoading && viewModel.transactions.isEmpty {
@@ -24,15 +61,15 @@ struct TransactionsView: View {
                 } else if viewModel.transactions.isEmpty {
                     Spacer()
                     VStack(spacing: 12) {
-                        Image(systemName: "tray")
+                        Image(systemName: viewModel.hasActiveFilters ? "magnifyingglass" : "tray")
                             .font(.system(size: 48))
                             .foregroundStyle(.secondary)
 
-                        Text("No transactions")
+                        Text(viewModel.hasActiveFilters ? "No matching transactions" : "No transactions")
                             .font(.headline)
                             .foregroundStyle(.secondary)
 
-                        Text("Tap + to add your first expense")
+                        Text(viewModel.hasActiveFilters ? "Try adjusting your filters" : "Tap + to add your first expense")
                             .font(.subheadline)
                             .foregroundStyle(.tertiary)
                     }
@@ -65,6 +102,31 @@ struct TransactionsView: View {
             }
             .navigationTitle("Transactions")
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        if viewModel.isSearchActive {
+                            showFilterSheet = true
+                        } else {
+                            viewModel.isSearchActive = true
+                        }
+                    } label: {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: viewModel.isSearchActive ? "line.3.horizontal.decrease.circle" : "magnifyingglass")
+                            if viewModel.activeFilterCount > 0 {
+                                Text("\(viewModel.activeFilterCount)")
+                                    .font(.caption2)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.white)
+                                    .padding(4)
+                                    .background(Color.accentColor)
+                                    .clipShape(Circle())
+                                    .offset(x: 8, y: -8)
+                            }
+                        }
+                    }
+                    .accessibilityLabel(viewModel.isSearchActive ? "Filters" : "Search")
+                }
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         showAddSheet = true
@@ -77,10 +139,17 @@ struct TransactionsView: View {
             .sheet(isPresented: $showAddSheet) {
                 AddTransactionSheet(viewModel: viewModel)
             }
+            .sheet(isPresented: $showFilterSheet) {
+                TransactionFilterSheet(viewModel: viewModel)
+            }
             .sheet(item: $selectedTransaction) { transaction in
-                TransactionDetailView(transaction: transaction) { updatedTransaction in
-                    viewModel.updateTransactionInList(updatedTransaction)
-                }
+                TransactionDetailView(
+                    transaction: transaction,
+                    viewModel: viewModel,
+                    onUpdate: { updatedTransaction in
+                        viewModel.updateTransactionInList(updatedTransaction)
+                    }
+                )
             }
             .task {
                 if let householdId = authManager.currentHouseholdId {
@@ -98,6 +167,75 @@ struct TransactionsView: View {
                 Text(viewModel.error ?? "")
             }
         }
+    }
+}
+
+// MARK: - Search Bar View
+
+struct SearchBarView: View {
+    @Binding var searchText: String
+    let onSearch: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        HStack {
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+
+                TextField("Search transactions...", text: $searchText)
+                    .textFieldStyle(.plain)
+                    .submitLabel(.search)
+                    .onSubmit {
+                        onSearch()
+                    }
+
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                        onSearch()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .padding(8)
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+
+            Button("Cancel") {
+                onCancel()
+            }
+        }
+    }
+}
+
+// MARK: - Active Filters View
+
+struct ActiveFiltersView: View {
+    let filterCount: Int
+    let onClear: () -> Void
+
+    var body: some View {
+        HStack {
+            Image(systemName: "line.3.horizontal.decrease.circle.fill")
+                .foregroundStyle(Color.accentColor)
+
+            Text("\(filterCount) filter\(filterCount == 1 ? "" : "s") active")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            Button("Clear") {
+                onClear()
+            }
+            .font(.subheadline)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(Color(.systemGray6))
     }
 }
 

@@ -13,6 +13,11 @@ final class TransactionsViewModel: Sendable {
 
     private(set) var selectedMonth: String
 
+    // Search and filter state
+    var searchText: String = ""
+    var filters: TransactionFilters = TransactionFilters()
+    var isSearchActive: Bool = false
+
     private let network = NetworkManager.shared
 
     init() {
@@ -20,6 +25,16 @@ final class TransactionsViewModel: Sendable {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM"
         selectedMonth = formatter.string(from: Date())
+    }
+
+    /// Check if any filters are active
+    var hasActiveFilters: Bool {
+        return !searchText.isEmpty || filters.hasActiveFilters
+    }
+
+    /// Number of active filters (for badge display)
+    var activeFilterCount: Int {
+        return filters.activeFilterCount + (searchText.isEmpty ? 0 : 1)
     }
 
     // MARK: - Fetch Data
@@ -31,8 +46,58 @@ final class TransactionsViewModel: Sendable {
         defer { isLoading = false }
 
         do {
+            // Build query parameters
+            var queryParams: [String] = []
+
+            // Use month filter if search is not active
+            if !isSearchActive {
+                queryParams.append("month=\(selectedMonth)")
+            }
+
+            // Add search text
+            if !searchText.isEmpty {
+                let encoded = searchText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? searchText
+                queryParams.append("search=\(encoded)")
+            }
+
+            // Add date range filters
+            if let dateFrom = filters.dateFrom {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd"
+                queryParams.append("date_from=\(formatter.string(from: dateFrom))")
+            }
+            if let dateTo = filters.dateTo {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd"
+                queryParams.append("date_to=\(formatter.string(from: dateTo))")
+            }
+
+            // Add category filter
+            if let category = filters.category {
+                queryParams.append("category=\(category.code)")
+            }
+
+            // Add expense type filter
+            if let expenseType = filters.expenseType {
+                queryParams.append("expense_type_id=\(expenseType.id)")
+            }
+
+            // Add paid by filter
+            if let paidBy = filters.paidBy {
+                queryParams.append("paid_by=\(paidBy.userId)")
+            }
+
+            // Add amount range filters
+            if let amountMin = filters.amountMin {
+                queryParams.append("amount_min=\(amountMin)")
+            }
+            if let amountMax = filters.amountMax {
+                queryParams.append("amount_max=\(amountMax)")
+            }
+
+            let queryString = queryParams.isEmpty ? "" : "?\(queryParams.joined(separator: "&"))"
             let response: TransactionListResponse = try await network.request(
-                endpoint: "\(Endpoints.transactions)?month=\(selectedMonth)",
+                endpoint: "\(Endpoints.transactions)\(queryString)",
                 requiresAuth: true,
                 requiresHousehold: true
             )
@@ -42,6 +107,14 @@ final class TransactionsViewModel: Sendable {
         } catch {
             self.error = error.localizedDescription
         }
+    }
+
+    /// Clear all search and filter state
+    @MainActor
+    func clearSearchAndFilters() {
+        searchText = ""
+        filters = TransactionFilters()
+        isSearchActive = false
     }
 
     @MainActor
@@ -228,4 +301,41 @@ final class TransactionsViewModel: Sendable {
 
 private struct HouseholdMembersResponse: Codable {
     let members: [HouseholdMember]
+}
+
+// MARK: - Transaction Filters
+
+struct TransactionFilters {
+    var dateFrom: Date?
+    var dateTo: Date?
+    var category: TransactionCategory?
+    var expenseType: ExpenseType?
+    var paidBy: HouseholdMember?
+    var amountMin: Double?
+    var amountMax: Double?
+
+    var hasActiveFilters: Bool {
+        return dateFrom != nil || dateTo != nil || category != nil ||
+               expenseType != nil || paidBy != nil || amountMin != nil || amountMax != nil
+    }
+
+    var activeFilterCount: Int {
+        var count = 0
+        if dateFrom != nil || dateTo != nil { count += 1 }  // Date range counts as 1
+        if category != nil { count += 1 }
+        if expenseType != nil { count += 1 }
+        if paidBy != nil { count += 1 }
+        if amountMin != nil || amountMax != nil { count += 1 }  // Amount range counts as 1
+        return count
+    }
+
+    mutating func clear() {
+        dateFrom = nil
+        dateTo = nil
+        category = nil
+        expenseType = nil
+        paidBy = nil
+        amountMin = nil
+        amountMax = nil
+    }
 }

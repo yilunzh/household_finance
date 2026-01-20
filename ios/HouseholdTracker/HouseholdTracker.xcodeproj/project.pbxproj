@@ -33,6 +33,7 @@
 		D4615FF1909347166649CDD9 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 321BC8242297E69EC1B6881F /* LoginView.swift */; };
 		D89F7C299BFB0CDE350AA637 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB476DC0E240B038A15B4918 /* Config.swift */; };
 		DFC8A21EC3D1F1B344042762 /* Endpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2CD1D3156AF73209244A65F /* Endpoints.swift */; };
+		F1A2B3C4D5E6F7A8B9C0D1E2 /* TransactionFilterSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F3 /* TransactionFilterSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -76,6 +77,7 @@
 		EECDFC84024DCA98E4084F35 /* ImageCompressor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCompressor.swift; sourceTree = "<group>"; };
 		F3859398FB33A7F40B8AD952 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		FDB15C10C0B84A3CB0DB669F /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F3 /* TransactionFilterSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionFilterSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -213,6 +215,7 @@
 			children = (
 				7911169F3AD18B1DACBCE620 /* AddTransactionSheet.swift */,
 				338E5B16C5824B508696A496 /* TransactionDetailView.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F3 /* TransactionFilterSheet.swift */,
 				4515885C5997418256956780 /* TransactionsView.swift */,
 				3CF2D4F2E13FD4F060EC53CC /* TransactionsViewModel.swift */,
 			);
@@ -322,6 +325,7 @@
 				39C11A2E10984AB3610A5473 /* ReconciliationViewModel.swift in Sources */,
 				A61D888E7FA73F58D9735069 /* Transaction.swift in Sources */,
 				717D1028153B5FA06E82A1B3 /* TransactionDetailView.swift in Sources */,
+				F1A2B3C4D5E6F7A8B9C0D1E2 /* TransactionFilterSheet.swift in Sources */,
 				B43DB766E327B30EB9884D4E /* TransactionsView.swift in Sources */,
 				951B3A758479C617914B7D42 /* TransactionsViewModel.swift in Sources */,
 				1E5B0695D9DDBB8EA95DBD92 /* User.swift in Sources */,
