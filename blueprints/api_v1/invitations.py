@@ -18,6 +18,7 @@ from models import Household, HouseholdMember, User, Invitation
 from api_decorators import jwt_required
 from email_service import send_invitation_email, is_mail_configured
 from blueprints.api_v1 import api_v1_bp
+from blueprints.api_v1.auth import is_valid_email
 
 
 def _invitation_to_dict(invitation, include_token=False):
@@ -85,7 +86,7 @@ def api_send_invitation(household_id):
     if not email:
         return jsonify({'error': 'Email is required'}), 400
 
-    if '@' not in email:
+    if not is_valid_email(email):
         return jsonify({'error': 'Invalid email address'}), 400
 
     household = Household.query.get(household_id)
