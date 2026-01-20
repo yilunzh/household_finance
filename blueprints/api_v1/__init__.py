@@ -14,3 +14,4 @@ from blueprints.api_v1 import households  # noqa: F401, E402
 from blueprints.api_v1 import reconciliation  # noqa: F401, E402
 from blueprints.api_v1 import config  # noqa: F401, E402
 from blueprints.api_v1 import invitations  # noqa: F401, E402
+from blueprints.api_v1 import budget  # noqa: F401, E402

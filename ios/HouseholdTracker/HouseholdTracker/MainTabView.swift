@@ -15,6 +15,11 @@ struct MainTabView: View {
                     Label("Summary", systemImage: "chart.pie")
                 }
 
+            BudgetView()
+                .tabItem {
+                    Label("Rules", systemImage: "dollarsign.circle")
+                }
+
             SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gear")

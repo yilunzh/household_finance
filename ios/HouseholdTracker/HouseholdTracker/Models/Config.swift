@@ -27,12 +27,13 @@ struct CategoryListResponse: Codable, Sendable {
     let categories: [TransactionCategory]
 }
 
-struct SplitRule: Codable, Identifiable, Sendable {
+struct SplitRule: Codable, Identifiable, Sendable, Hashable {
     let id: Int
     let member1Percent: Int
     let member2Percent: Int
     let isDefault: Bool
     let expenseTypeIds: [Int]?
+    let expenseTypeNames: [String]?
     let description: String?
 
     enum CodingKeys: String, CodingKey {
@@ -41,7 +42,34 @@ struct SplitRule: Codable, Identifiable, Sendable {
         case member2Percent = "member2_percent"
         case isDefault = "is_default"
         case expenseTypeIds = "expense_type_ids"
+        case expenseTypeNames = "expense_type_names"
         case description
+    }
+}
+
+struct BudgetRule: Codable, Identifiable, Sendable, Hashable {
+    let id: Int
+    let householdId: Int
+    let giverUserId: Int
+    let giverName: String
+    let receiverUserId: Int
+    let receiverName: String
+    let monthlyAmount: Double
+    let expenseTypeIds: [Int]
+    let expenseTypeNames: [String]
+    let isActive: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case householdId = "household_id"
+        case giverUserId = "giver_user_id"
+        case giverName = "giver_name"
+        case receiverUserId = "receiver_user_id"
+        case receiverName = "receiver_name"
+        case monthlyAmount = "monthly_amount"
+        case expenseTypeIds = "expense_type_ids"
+        case expenseTypeNames = "expense_type_names"
+        case isActive = "is_active"
     }
 }
 
@@ -52,5 +80,29 @@ struct SplitRuleListResponse: Codable, Sendable {
     enum CodingKeys: String, CodingKey {
         case splitRules = "split_rules"
         case members
+    }
+}
+
+struct SplitRuleResponse: Codable, Sendable {
+    let splitRule: SplitRule
+
+    enum CodingKeys: String, CodingKey {
+        case splitRule = "split_rule"
+    }
+}
+
+struct BudgetRuleListResponse: Codable, Sendable {
+    let budgetRules: [BudgetRule]
+
+    enum CodingKeys: String, CodingKey {
+        case budgetRules = "budget_rules"
+    }
+}
+
+struct BudgetRuleResponse: Codable, Sendable {
+    let budgetRule: BudgetRule
+
+    enum CodingKeys: String, CodingKey {
+        case budgetRule = "budget_rule"
     }
 }
