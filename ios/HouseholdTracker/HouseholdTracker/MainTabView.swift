@@ -29,6 +29,8 @@ struct SettingsView: View {
     @State private var showingChangePassword = false
     @State private var showingChangeEmail = false
     @State private var showingDeleteAccount = false
+    @State private var showingInviteMember = false
+    @State private var showingPendingInvitations = false
 
     var body: some View {
         NavigationStack {
@@ -51,6 +53,23 @@ struct SettingsView: View {
                         }
                     } header: {
                         Text("Current Household")
+                    }
+
+                    // Invitations Section
+                    Section {
+                        Button {
+                            showingInviteMember = true
+                        } label: {
+                            Label("Invite Member", systemImage: "person.badge.plus")
+                        }
+
+                        Button {
+                            showingPendingInvitations = true
+                        } label: {
+                            Label("Pending Invitations", systemImage: "envelope.badge")
+                        }
+                    } header: {
+                        Text("Members")
                     }
                 }
 
@@ -134,6 +153,12 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showingDeleteAccount) {
                 DeleteAccountSheet()
+            }
+            .sheet(isPresented: $showingInviteMember) {
+                InviteMemberView()
+            }
+            .sheet(isPresented: $showingPendingInvitations) {
+                PendingInvitationsView()
             }
         }
     }

@@ -333,6 +333,131 @@ final class AuthManager: Sendable {
             return false
         }
     }
+
+    // MARK: - Invitation Management
+
+    @MainActor
+    func sendInvitation(householdId: Int, email: String) async -> SendInvitationResult? {
+        isLoading = true
+        error = nil
+        defer { isLoading = false }
+
+        do {
+            let body = ["email": email]
+            let response: SendInvitationResponse = try await network.request(
+                endpoint: Endpoints.householdInvitations(householdId),
+                method: .post,
+                body: body,
+                requiresAuth: true
+            )
+            return SendInvitationResult(
+                invitation: response.invitation,
+                inviteUrl: response.inviteUrl,
+                deepLinkUrl: response.deepLinkUrl,
+                emailSent: response.emailSent
+            )
+        } catch let apiError as APIError {
+            error = apiError.errorDescription
+            return nil
+        } catch {
+            self.error = error.localizedDescription
+            return nil
+        }
+    }
+
+    @MainActor
+    func fetchPendingInvitations(householdId: Int) async -> [Invitation] {
+        do {
+            let response: InvitationsListResponse = try await network.request(
+                endpoint: Endpoints.householdInvitations(householdId),
+                requiresAuth: true
+            )
+            return response.invitations
+        } catch {
+            return []
+        }
+    }
+
+    @MainActor
+    func cancelInvitation(invitationId: Int) async -> Bool {
+        isLoading = true
+        error = nil
+        defer { isLoading = false }
+
+        do {
+            let _: SuccessResponse = try await network.request(
+                endpoint: Endpoints.cancelInvitation(invitationId),
+                method: .delete,
+                requiresAuth: true
+            )
+            return true
+        } catch let apiError as APIError {
+            error = apiError.errorDescription
+            return false
+        } catch {
+            self.error = error.localizedDescription
+            return false
+        }
+    }
+
+    @MainActor
+    func getInvitationDetails(token: String) async -> InvitationDetails? {
+        do {
+            let response: InvitationDetailsResponse = try await network.request(
+                endpoint: Endpoints.invitation(token),
+                requiresAuth: false
+            )
+            return InvitationDetails(
+                invitation: response.invitation,
+                household: response.household,
+                inviter: response.inviter
+            )
+        } catch {
+            return nil
+        }
+    }
+
+    @MainActor
+    func acceptInvitation(token: String, displayName: String? = nil) async -> Bool {
+        isLoading = true
+        error = nil
+        defer { isLoading = false }
+
+        do {
+            var body: [String: String] = [:]
+            if let name = displayName, !name.isEmpty {
+                body["display_name"] = name
+            }
+
+            let response: AcceptInvitationResponse = try await network.request(
+                endpoint: Endpoints.acceptInvitation(token),
+                method: .post,
+                body: body.isEmpty ? nil : body,
+                requiresAuth: true
+            )
+
+            // Add the new household to the list
+            let newHousehold = UserHousehold(
+                id: response.household.id,
+                name: response.household.name,
+                role: response.household.role,
+                displayName: response.household.displayName,
+                joinedAt: response.household.createdAt
+            )
+            households.append(newHousehold)
+
+            // Switch to the new household
+            selectHousehold(newHousehold.id)
+
+            return true
+        } catch let apiError as APIError {
+            error = apiError.errorDescription
+            return false
+        } catch {
+            self.error = error.localizedDescription
+            return false
+        }
+    }
 }
 
 // MARK: - Response Types
@@ -382,5 +507,91 @@ private struct HouseholdApiItem: Codable {
 
 // Response from POST /households
 private struct CreateHouseholdResponse: Codable {
+    let household: HouseholdApiItem
+}
+
+// MARK: - Invitation Response Types
+
+struct Invitation: Codable, Identifiable {
+    let id: Int
+    let email: String
+    let status: String
+    let expiresAt: String
+    let createdAt: String
+    let invitedBy: InvitationUser?
+    let household: InvitationHousehold?
+
+    enum CodingKeys: String, CodingKey {
+        case id, email, status
+        case expiresAt = "expires_at"
+        case createdAt = "created_at"
+        case invitedBy = "invited_by"
+        case household
+    }
+}
+
+struct InvitationUser: Codable {
+    let id: Int
+    let name: String
+    let email: String?
+}
+
+struct InvitationHousehold: Codable {
+    let id: Int
+    let name: String
+}
+
+struct SendInvitationResult {
+    let invitation: Invitation
+    let inviteUrl: String
+    let deepLinkUrl: String
+    let emailSent: Bool
+}
+
+private struct SendInvitationResponse: Codable {
+    let invitation: Invitation
+    let inviteUrl: String
+    let deepLinkUrl: String
+    let emailSent: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case invitation
+        case inviteUrl = "invite_url"
+        case deepLinkUrl = "deep_link_url"
+        case emailSent = "email_sent"
+    }
+}
+
+private struct InvitationsListResponse: Codable {
+    let invitations: [Invitation]
+}
+
+struct InvitationDetails {
+    let invitation: InvitationBasic
+    let household: InvitationHousehold?
+    let inviter: InvitationUser?
+}
+
+struct InvitationBasic: Codable {
+    let id: Int
+    let email: String
+    let expiresAt: String
+    let createdAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, email
+        case expiresAt = "expires_at"
+        case createdAt = "created_at"
+    }
+}
+
+private struct InvitationDetailsResponse: Codable {
+    let invitation: InvitationBasic
+    let household: InvitationHousehold?
+    let inviter: InvitationUser?
+}
+
+private struct AcceptInvitationResponse: Codable {
+    let success: Bool
     let household: HouseholdApiItem
 }

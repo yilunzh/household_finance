@@ -326,7 +326,7 @@ Use this section to track progress as phases are completed:
 | Phase | Backend | iOS | Tests | PR |
 |-------|---------|-----|-------|-----|
 | 1. Profile | ✅ | ✅ | ✅ | - |
-| 2. Invitations | ⬜ | ⬜ | ⬜ | - |
+| 2. Invitations | ✅ | ✅ | ✅ | - |
 | 3. Household Mgmt | ⬜ | ⬜ | ⬜ | - |
 | 4. Transaction Search | N/A | ⬜ | ⬜ | - |
 | 5. Budget/Split Rules | ⬜ | ⬜ | ⬜ | - |
@@ -347,3 +347,23 @@ Legend: ⬜ Not started | 🟡 In progress | ✅ Complete
 - Added 4 settings sheets (EditName, ChangePassword, ChangeEmail, DeleteAccount)
 - Added ForgotPasswordSheet to LoginView
 - Updated SettingsView with Security section
+
+### Phase 2 Details (Completed)
+**Backend changes:**
+- Created `blueprints/api_v1/invitations.py` with 5 new API endpoints
+- POST /api/v1/households/<id>/invitations - Send invitation
+- GET /api/v1/households/<id>/invitations - List pending invitations
+- DELETE /api/v1/invitations/<id> - Cancel invitation
+- GET /api/v1/invitations/<token> - Get invitation details (public)
+- POST /api/v1/invitations/<token>/accept - Accept invitation
+- All 20 tests passing in `test_api_v1_invitations.py`
+
+**iOS changes:**
+- Added invitation endpoints to `Endpoints.swift`
+- Added 5 invitation methods to `AuthManager.swift`
+- Created `InviteMemberView.swift` with share sheet integration
+- Created `PendingInvitationsView.swift` for listing/canceling invitations
+- Created `AcceptInvitationView.swift` for deep link handling
+- Updated `MainTabView.swift` with Members section in Settings
+- Registered `householdtracker://` URL scheme in Info.plist
+- Added deep link handling in `HouseholdTrackerApp.swift`

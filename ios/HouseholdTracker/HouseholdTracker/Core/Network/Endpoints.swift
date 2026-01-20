@@ -22,6 +22,12 @@ enum Endpoints {
     static func householdMembers(_ id: Int) -> String { "/households/\(id)/members" }
     static func leaveHousehold(_ id: Int) -> String { "/households/\(id)/leave" }
 
+    // Invitations
+    static func householdInvitations(_ householdId: Int) -> String { "/households/\(householdId)/invitations" }
+    static func cancelInvitation(_ id: Int) -> String { "/invitations/\(id)" }
+    static func invitation(_ token: String) -> String { "/invitations/\(token)" }
+    static func acceptInvitation(_ token: String) -> String { "/invitations/\(token)/accept" }
+
     // Transactions
     static let transactions = "/transactions"
     static func transaction(_ id: Int) -> String { "/transactions/\(id)" }
