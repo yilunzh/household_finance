@@ -72,6 +72,20 @@ actor NetworkManager {
         )
     }
 
+    func downloadData(
+        endpoint: String,
+        requiresAuth: Bool = true,
+        requiresHousehold: Bool = true
+    ) async throws -> Data {
+        return try await performRequest(
+            endpoint: endpoint,
+            method: .get,
+            body: nil,
+            requiresAuth: requiresAuth,
+            requiresHousehold: requiresHousehold
+        )
+    }
+
     // MARK: - Private Implementation
 
     private func performRequest(
