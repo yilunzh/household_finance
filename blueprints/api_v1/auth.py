@@ -15,12 +15,43 @@ Endpoints:
 - DELETE /api/v1/user - Delete account
 """
 import logging
+import re
 import secrets
 from datetime import datetime, timedelta
 
 from flask import request, jsonify, g
 
-from extensions import db
+from extensions import db, limiter
+
+
+# Email validation regex pattern
+EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+
+
+def is_valid_email(email):
+    """Validate email format using regex."""
+    return EMAIL_REGEX.match(email) is not None
+
+
+def validate_password_strength(password):
+    """Validate password meets strength requirements.
+
+    Returns:
+        tuple: (is_valid: bool, error_message: str or None)
+    """
+    if len(password) < 8:
+        return False, 'Password must be at least 8 characters'
+    if len(password) > 128:
+        return False, 'Password is too long (max 128 characters)'
+    if not any(c.isupper() for c in password):
+        return False, 'Password must contain at least one uppercase letter'
+    if not any(c.islower() for c in password):
+        return False, 'Password must contain at least one lowercase letter'
+    if not any(c.isdigit() for c in password):
+        return False, 'Password must contain at least one number'
+    return True, None
+
+
 from models import User, HouseholdMember, Household, Transaction
 from api_decorators import (
     generate_access_token,
@@ -105,8 +136,15 @@ def api_register():
         return jsonify({'error': 'Password is required'}), 400
     if not name:
         return jsonify({'error': 'Name is required'}), 400
-    if len(password) < 8:
-        return jsonify({'error': 'Password must be at least 8 characters'}), 400
+
+    # Validate email format
+    if not is_valid_email(email):
+        return jsonify({'error': 'Please enter a valid email address'}), 400
+
+    # Validate password strength
+    is_valid, error_msg = validate_password_strength(password)
+    if not is_valid:
+        return jsonify({'error': error_msg}), 400
 
     # Check if email already exists
     existing_user = User.query.filter_by(email=email).first()
@@ -369,9 +407,10 @@ def api_change_password():
     if not user.check_password(current_password):
         return jsonify({'error': 'Current password is incorrect'}), 401
 
-    # Validate new password
-    if len(new_password) < 8:
-        return jsonify({'error': 'New password must be at least 8 characters'}), 400
+    # Validate new password strength
+    is_valid, error_msg = validate_password_strength(new_password)
+    if not is_valid:
+        return jsonify({'error': error_msg}), 400
 
     # Update password
     user.set_password(new_password)
@@ -414,7 +453,7 @@ def api_request_email_change():
         return jsonify({'error': 'Password is incorrect'}), 401
 
     # Validate email format
-    if '@' not in new_email:
+    if not is_valid_email(new_email):
         return jsonify({'error': 'Please enter a valid email address'}), 400
 
     # Check if email is same as current
@@ -542,6 +581,7 @@ def api_delete_account():
 
 
 @api_v1_bp.route('/auth/forgot-password', methods=['POST'])
+@limiter.limit('5 per hour')
 def api_forgot_password():
     """Request password reset - sends email with link to web reset page.
 

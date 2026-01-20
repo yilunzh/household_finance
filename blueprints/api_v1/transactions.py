@@ -15,7 +15,7 @@ import uuid
 from flask import request, jsonify, g, current_app, send_from_directory
 from werkzeug.utils import secure_filename
 
-from models import Transaction
+from models import Transaction, HouseholdMember
 from extensions import db
 from api_decorators import jwt_required, api_household_required
 from services.transaction_service import TransactionService
@@ -351,14 +351,38 @@ def api_delete_receipt(transaction_id):
 
 
 @api_v1_bp.route('/receipts/<filename>', methods=['GET'])
+@jwt_required
 def api_get_receipt(filename):
     """Serve a receipt image.
 
-    Note: No auth required for serving images - filenames are unguessable UUIDs.
-    In production, consider using a CDN or cloud storage with signed URLs.
+    Requires JWT authentication and verifies user is a member of the
+    household that owns the receipt.
     """
     # Security: ensure filename is safe
     filename = secure_filename(filename)
+
+    # Extract household_id from filename (format: householdid_transactionid_uuid.ext)
+    # Example: 5_123_a1b2c3d4.jpg
+    name_without_ext = filename.rsplit('.', 1)[0] if '.' in filename else filename
+    parts = name_without_ext.split('_')
+
+    if len(parts) < 3:
+        return jsonify({'error': 'Invalid receipt format'}), 400
+
+    try:
+        household_id = int(parts[0])
+    except ValueError:
+        return jsonify({'error': 'Invalid receipt format'}), 400
+
+    # Verify user is member of household
+    member = HouseholdMember.query.filter_by(
+        household_id=household_id,
+        user_id=g.current_user_id
+    ).first()
+
+    if not member:
+        return jsonify({'error': 'Not authorized to access this receipt'}), 403
+
     upload_folder = get_upload_folder()
 
     # Check if file exists

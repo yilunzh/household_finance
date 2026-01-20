@@ -132,7 +132,7 @@ class TestChangePassword:
             headers=auth_headers,
             json={
                 'current_password': test_user['password'],
-                'new_password': 'newpassword123'
+                'new_password': 'NewPassword123'
             }
         )
         assert response.status_code == 200
@@ -141,7 +141,7 @@ class TestChangePassword:
         # Verify new password works
         login_response = api_client.post('/api/v1/auth/login', json={
             'email': test_user['email'],
-            'password': 'newpassword123'
+            'password': 'NewPassword123'
         })
         assert login_response.status_code == 200
 
@@ -151,7 +151,7 @@ class TestChangePassword:
             headers=auth_headers,
             json={
                 'current_password': 'wrongpassword',
-                'new_password': 'newpassword123'
+                'new_password': 'NewPassword123'
             }
         )
         assert response.status_code == 401
@@ -168,6 +168,30 @@ class TestChangePassword:
         )
         assert response.status_code == 400
         assert '8 characters' in response.get_json()['error']
+
+    def test_change_password_missing_uppercase(self, api_client, auth_headers, test_user):
+        """Test password change without uppercase letter fails."""
+        response = api_client.put('/api/v1/user/password',
+            headers=auth_headers,
+            json={
+                'current_password': test_user['password'],
+                'new_password': 'newpassword123'
+            }
+        )
+        assert response.status_code == 400
+        assert 'uppercase' in response.get_json()['error'].lower()
+
+    def test_change_password_missing_number(self, api_client, auth_headers, test_user):
+        """Test password change without number fails."""
+        response = api_client.put('/api/v1/user/password',
+            headers=auth_headers,
+            json={
+                'current_password': test_user['password'],
+                'new_password': 'NewPassword'
+            }
+        )
+        assert response.status_code == 400
+        assert 'number' in response.get_json()['error'].lower()
 
 
 class TestEmailChange:
