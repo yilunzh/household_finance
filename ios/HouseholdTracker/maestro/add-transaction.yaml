@@ -1,0 +1,56 @@
+appId: com.householdtracker.app
+---
+# Add Transaction E2E Test
+- launchApp:
+    clearState: true
+
+# Check if already logged in (might have keychain tokens)
+- runFlow:
+    when:
+      visible: "Transactions"
+    file: helpers/logout-helper.yaml
+
+# Login first
+- assertVisible: "Lucky Ledger"
+- tapOn: "Email"
+- inputText: "demo_alice@example.com"
+- tapOn: "Password"
+- inputText: "password123"
+- tapOn: "Log In"
+
+# Wait for main screen
+- extendedWaitUntil:
+    visible: "Transactions"
+    timeout: 10000
+
+# Tap add button (+ icon in top right)
+- tapOn: "Add Transaction"
+
+# Fill in transaction details - look for the sheet
+- extendedWaitUntil:
+    visible: "Add Transaction"
+    timeout: 5000
+
+- tapOn: "Merchant"
+- inputText: "Test Groceries"
+
+# Amount field has placeholder "0.00"
+- tapOn: "0.00"
+- inputText: "50.00"
+
+# Select Paid By (required field) - scroll down first to ensure picker is visible
+- scrollUntilVisible:
+    element: "Paid By"
+    direction: DOWN
+- tapOn: "Paid By"
+- tapOn: "Alice"
+# Tap elsewhere to dismiss picker
+- tapOn: "Add Transaction"
+
+# Submit the transaction
+- tapOn: "Save"
+
+# Wait for the sheet to dismiss and return to transactions list
+- extendedWaitUntil:
+    visible: "Transactions"
+    timeout: 10000

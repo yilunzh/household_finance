@@ -1,8 +1,0 @@
-appId: com.luckyledger.app
----
-# Helper flow to log out if already logged in
-- tapOn: "Settings"
-- tapOn: "Log Out"
-- extendedWaitUntil:
-    visible: "Lucky Ledger"
-    timeout: 5000

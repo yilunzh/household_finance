@@ -1,0 +1,32 @@
+appId: com.householdtracker.app
+---
+# Login Flow E2E Test
+- launchApp:
+    clearState: true
+
+# Check if already logged in (might have keychain tokens)
+- runFlow:
+    when:
+      visible: "Transactions"
+    file: helpers/logout-helper.yaml
+
+# Now we should be at login screen
+- assertVisible: "Lucky Ledger"
+
+# Enter credentials
+- tapOn: "Email"
+- inputText: "demo_alice@example.com"
+
+- tapOn: "Password"
+- inputText: "password123"
+
+# Tap login button
+- tapOn: "Log In"
+
+# Wait for login to complete and verify we see the main app
+- extendedWaitUntil:
+    visible: "Transactions"
+    timeout: 10000
+
+# Verify we're on the transactions screen
+- assertVisible: "Transactions"

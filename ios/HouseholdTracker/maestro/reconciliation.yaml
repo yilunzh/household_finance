@@ -1,0 +1,32 @@
+appId: com.householdtracker.app
+---
+# Reconciliation View E2E Test
+- launchApp:
+    clearState: true
+
+# Check if already logged in (might have keychain tokens)
+- runFlow:
+    when:
+      visible: "Transactions"
+    file: helpers/logout-helper.yaml
+
+# Login
+- assertVisible: "Lucky Ledger"
+- tapOn: "Email"
+- inputText: "demo_alice@example.com"
+- tapOn: "Password"
+- inputText: "password123"
+- tapOn: "Log In"
+
+# Wait for main screen
+- extendedWaitUntil:
+    visible: "Transactions"
+    timeout: 10000
+
+# Navigate to Reconciliation tab
+- tapOn: "Summary"
+
+# Verify reconciliation view is loaded
+- extendedWaitUntil:
+    visible: "Total Spent"
+    timeout: 10000
