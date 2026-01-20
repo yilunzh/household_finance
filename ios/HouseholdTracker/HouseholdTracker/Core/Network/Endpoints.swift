@@ -6,7 +6,15 @@ enum Endpoints {
     static let register = "/auth/register"
     static let refresh = "/auth/refresh"
     static let logout = "/auth/logout"
+    static let forgotPassword = "/auth/forgot-password"
     static let userMe = "/user/me"
+
+    // Profile Management
+    static let userProfile = "/user/profile"
+    static let userPassword = "/user/password"
+    static let userEmailRequest = "/user/email/request"
+    static let userEmailCancel = "/user/email/cancel"
+    static let userDelete = "/user"
 
     // Households
     static let households = "/households"

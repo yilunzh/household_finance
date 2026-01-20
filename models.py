@@ -547,7 +547,7 @@ class RefreshToken(db.Model):
     __tablename__ = 'refresh_tokens'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     token_jti = db.Column(db.String(64), unique=True, nullable=False, index=True)  # JWT ID for revocation
     device_name = db.Column(db.String(100), nullable=True)  # e.g., "iPhone 15 Pro"
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -555,7 +555,7 @@ class RefreshToken(db.Model):
     revoked_at = db.Column(db.DateTime, nullable=True)
 
     # Relationships
-    user = db.relationship('User', backref='refresh_tokens')
+    user = db.relationship('User', backref=db.backref('refresh_tokens', cascade='all, delete-orphan'))
 
     def is_valid(self):
         """Check if refresh token is still valid (not expired or revoked)."""
@@ -575,7 +575,7 @@ class DeviceToken(db.Model):
     __tablename__ = 'device_tokens'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     token = db.Column(db.String(255), nullable=False)
     platform = db.Column(db.String(10), nullable=False)  # 'ios' or 'android'
     device_name = db.Column(db.String(100), nullable=True)
@@ -584,7 +584,7 @@ class DeviceToken(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
-    user = db.relationship('User', backref='device_tokens')
+    user = db.relationship('User', backref=db.backref('device_tokens', cascade='all, delete-orphan'))
 
     def __repr__(self):
         return f'<DeviceToken {self.id}: {self.platform} for User {self.user_id}>'
