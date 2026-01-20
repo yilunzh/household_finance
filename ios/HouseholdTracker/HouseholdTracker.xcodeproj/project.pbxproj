@@ -34,6 +34,8 @@
 		D89F7C299BFB0CDE350AA637 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB476DC0E240B038A15B4918 /* Config.swift */; };
 		DFC8A21EC3D1F1B344042762 /* Endpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2CD1D3156AF73209244A65F /* Endpoints.swift */; };
 		F1A2B3C4D5E6F7A8B9C0D1E2 /* TransactionFilterSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F3 /* TransactionFilterSheet.swift */; };
+		H8B9C0D1E2F3A4B5C6D7E8F9 /* HouseholdSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G7A8B9C0D1E2F3A4B5C6D7E8 /* HouseholdSettingsView.swift */; };
+		J0D1E2F3A4B5C6D7E8F9A0B1 /* MemberListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I9C0D1E2F3A4B5C6D7E8F9A0 /* MemberListView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -78,6 +80,8 @@
 		F3859398FB33A7F40B8AD952 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		FDB15C10C0B84A3CB0DB669F /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F3 /* TransactionFilterSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionFilterSheet.swift; sourceTree = "<group>"; };
+		G7A8B9C0D1E2F3A4B5C6D7E8 /* HouseholdSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseholdSettingsView.swift; sourceTree = "<group>"; };
+		I9C0D1E2F3A4B5C6D7E8F9A0 /* MemberListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberListView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -153,7 +157,9 @@
 			children = (
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* AcceptInvitationView.swift */,
 				0A4DE11B426ECCDE54253DFF /* HouseholdSelectionView.swift */,
+				G7A8B9C0D1E2F3A4B5C6D7E8 /* HouseholdSettingsView.swift */,
 				E5F6A7B8C9D0E1F2A3B4C5D6 /* InviteMemberView.swift */,
+				I9C0D1E2F3A4B5C6D7E8F9A0 /* MemberListView.swift */,
 				F6A7B8C9D0E1F2A3B4C5D6E7 /* PendingInvitationsView.swift */,
 			);
 			path = Households;
@@ -312,12 +318,14 @@
 				DFC8A21EC3D1F1B344042762 /* Endpoints.swift in Sources */,
 				CEAB51406A439F507A3C62E7 /* Household.swift in Sources */,
 				54D1259515CA7D6B7944E70C /* HouseholdSelectionView.swift in Sources */,
+				H8B9C0D1E2F3A4B5C6D7E8F9 /* HouseholdSettingsView.swift in Sources */,
 				279ED22D4F688353385D0005 /* HouseholdTrackerApp.swift in Sources */,
 				4B1B91CE3B1750E28E1E58DC /* ImageCompressor.swift in Sources */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* InviteMemberView.swift in Sources */,
 				067B9FE148E60A6945DC5E6D /* KeychainManager.swift in Sources */,
 				D4615FF1909347166649CDD9 /* LoginView.swift in Sources */,
 				21BE821F3941416A98A182E7 /* MainTabView.swift in Sources */,
+				J0D1E2F3A4B5C6D7E8F9A0B1 /* MemberListView.swift in Sources */,
 				805F08214B430E307F205A9F /* NetworkManager.swift in Sources */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* PendingInvitationsView.swift in Sources */,
 				CB8501D954CE549CBA289A36 /* Reconciliation.swift in Sources */,

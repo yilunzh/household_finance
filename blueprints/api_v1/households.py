@@ -5,7 +5,11 @@ Endpoints:
 - GET /api/v1/households - List user's households
 - POST /api/v1/households - Create new household
 - GET /api/v1/households/<id> - Get household details
+- PUT /api/v1/households/<id> - Update household (rename)
 - GET /api/v1/households/<id>/members - Get household members
+- PUT /api/v1/households/<id>/members/<user_id> - Update member
+- DELETE /api/v1/households/<id>/members/<user_id> - Remove member
+- POST /api/v1/households/<id>/leave - Leave household
 """
 from flask import request, jsonify, g
 
@@ -253,3 +257,172 @@ def api_leave_household(household_id):
     except Exception:
         db.session.rollback()
         return jsonify({'error': 'Failed to leave household'}), 500
+
+
+@api_v1_bp.route('/households/<int:household_id>', methods=['PUT'])
+@jwt_required
+def api_update_household(household_id):
+    """Update household details (rename).
+
+    Only owners can rename the household.
+
+    Request body:
+        {
+            "name": "New Household Name"
+        }
+
+    Returns:
+        {"household": {...}}
+    """
+    # Verify ownership
+    member = HouseholdMember.query.filter_by(
+        household_id=household_id,
+        user_id=g.current_user_id
+    ).first()
+
+    if not member:
+        return jsonify({'error': 'Not a member of this household'}), 403
+
+    if member.role != 'owner':
+        return jsonify({'error': 'Only owners can rename the household'}), 403
+
+    household = Household.query.get(household_id)
+    if not household:
+        return jsonify({'error': 'Household not found'}), 404
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Request body required'}), 400
+
+    name = data.get('name', '').strip()
+    if not name:
+        return jsonify({'error': 'Household name is required'}), 400
+
+    if len(name) > 100:
+        return jsonify({'error': 'Household name is too long (max 100 characters)'}), 400
+
+    try:
+        household.name = name
+        db.session.commit()
+
+        return jsonify({
+            'household': _household_to_dict(household, g.current_user_id)
+        })
+
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to update household'}), 500
+
+
+@api_v1_bp.route('/households/<int:household_id>/members/<int:user_id>', methods=['PUT'])
+@jwt_required
+def api_update_member(household_id, user_id):
+    """Update a household member's display name.
+
+    Users can update their own display name.
+    Owners can update any member's display name.
+
+    Request body:
+        {
+            "display_name": "New Display Name"
+        }
+
+    Returns:
+        {"member": {...}}
+    """
+    # Verify current user is a member
+    current_member = HouseholdMember.query.filter_by(
+        household_id=household_id,
+        user_id=g.current_user_id
+    ).first()
+
+    if not current_member:
+        return jsonify({'error': 'Not a member of this household'}), 403
+
+    # Get target member
+    target_member = HouseholdMember.query.filter_by(
+        household_id=household_id,
+        user_id=user_id
+    ).first()
+
+    if not target_member:
+        return jsonify({'error': 'Member not found'}), 404
+
+    # Check permissions: can update own name, or owner can update anyone
+    if g.current_user_id != user_id and current_member.role != 'owner':
+        return jsonify({'error': 'Only owners can update other members'}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Request body required'}), 400
+
+    display_name = data.get('display_name', '').strip()
+    if not display_name:
+        return jsonify({'error': 'Display name is required'}), 400
+
+    if len(display_name) > 100:
+        return jsonify({'error': 'Display name is too long (max 100 characters)'}), 400
+
+    try:
+        target_member.display_name = display_name
+        db.session.commit()
+
+        return jsonify({
+            'member': _member_to_dict(target_member)
+        })
+
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to update member'}), 500
+
+
+@api_v1_bp.route('/households/<int:household_id>/members/<int:user_id>', methods=['DELETE'])
+@jwt_required
+def api_remove_member(household_id, user_id):
+    """Remove a member from the household.
+
+    Only owners can remove members.
+    Owners cannot remove themselves (use leave endpoint instead).
+    Cannot remove the last member.
+
+    Returns:
+        {"success": true}
+    """
+    # Verify current user is owner
+    current_member = HouseholdMember.query.filter_by(
+        household_id=household_id,
+        user_id=g.current_user_id
+    ).first()
+
+    if not current_member:
+        return jsonify({'error': 'Not a member of this household'}), 403
+
+    if current_member.role != 'owner':
+        return jsonify({'error': 'Only owners can remove members'}), 403
+
+    # Cannot remove yourself via this endpoint
+    if g.current_user_id == user_id:
+        return jsonify({'error': 'Use the leave endpoint to remove yourself'}), 400
+
+    # Get target member
+    target_member = HouseholdMember.query.filter_by(
+        household_id=household_id,
+        user_id=user_id
+    ).first()
+
+    if not target_member:
+        return jsonify({'error': 'Member not found'}), 404
+
+    # Cannot remove another owner (would need ownership transfer first)
+    if target_member.role == 'owner':
+        return jsonify({'error': 'Cannot remove another owner'}), 400
+
+    try:
+        db.session.delete(target_member)
+        db.session.commit()
+
+        return jsonify({'success': True})
+
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to remove member'}), 500

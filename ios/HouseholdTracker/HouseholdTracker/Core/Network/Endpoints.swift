@@ -20,6 +20,7 @@ enum Endpoints {
     static let households = "/households"
     static func household(_ id: Int) -> String { "/households/\(id)" }
     static func householdMembers(_ id: Int) -> String { "/households/\(id)/members" }
+    static func householdMember(_ householdId: Int, userId: Int) -> String { "/households/\(householdId)/members/\(userId)" }
     static func leaveHousehold(_ id: Int) -> String { "/households/\(id)/leave" }
 
     // Invitations
