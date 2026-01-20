@@ -82,6 +82,17 @@ struct SettingsView: View {
                     } header: {
                         Text("Invitations")
                     }
+
+                    // Configuration Section
+                    Section {
+                        NavigationLink {
+                            ExpenseTypesView()
+                        } label: {
+                            Label("Expense Types", systemImage: "tag")
+                        }
+                    } header: {
+                        Text("Configuration")
+                    }
                 }
 
                 // Account Section

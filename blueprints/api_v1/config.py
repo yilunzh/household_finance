@@ -3,11 +3,15 @@ Configuration API routes for mobile app.
 
 Endpoints:
 - GET /api/v1/expense-types - List expense types
+- POST /api/v1/expense-types - Create expense type
+- PUT /api/v1/expense-types/<id> - Update expense type
+- DELETE /api/v1/expense-types/<id> - Delete expense type (soft delete)
 - GET /api/v1/split-rules - List split rules
 - GET /api/v1/categories - List transaction categories
 """
-from flask import jsonify, g
+from flask import jsonify, g, request
 
+from extensions import db
 from models import ExpenseType, SplitRule, HouseholdMember
 from api_decorators import jwt_required, api_household_required
 from blueprints.api_v1 import api_v1_bp
@@ -47,6 +51,141 @@ def api_get_expense_types():
     return jsonify({
         'expense_types': [et.to_dict() for et in expense_types]
     })
+
+
+@api_v1_bp.route('/expense-types', methods=['POST'])
+@jwt_required
+@api_household_required
+def api_create_expense_type():
+    """Create a new expense type.
+
+    Request body:
+        {
+            "name": "Grocery",
+            "icon": "cart",      // optional
+            "color": "emerald"   // optional
+        }
+
+    Returns:
+        {"expense_type": {...}}
+    """
+    household_id = g.household_id
+    data = request.get_json() or {}
+
+    name = data.get('name', '').strip()
+    if not name:
+        return jsonify({'error': 'Name is required'}), 400
+
+    if len(name) > 50:
+        return jsonify({'error': 'Name must be 50 characters or less'}), 400
+
+    # Check for duplicate name in household
+    existing = ExpenseType.query.filter_by(
+        household_id=household_id,
+        name=name,
+        is_active=True
+    ).first()
+
+    if existing:
+        return jsonify({'error': 'An expense type with this name already exists'}), 400
+
+    expense_type = ExpenseType(
+        household_id=household_id,
+        name=name,
+        icon=data.get('icon'),
+        color=data.get('color')
+    )
+
+    db.session.add(expense_type)
+    db.session.commit()
+
+    return jsonify({'expense_type': expense_type.to_dict()}), 201
+
+
+@api_v1_bp.route('/expense-types/<int:expense_type_id>', methods=['PUT'])
+@jwt_required
+@api_household_required
+def api_update_expense_type(expense_type_id):
+    """Update an expense type.
+
+    Request body (all optional):
+        {
+            "name": "Groceries",
+            "icon": "shopping-cart",
+            "color": "green"
+        }
+
+    Returns:
+        {"expense_type": {...}}
+    """
+    household_id = g.household_id
+
+    expense_type = ExpenseType.query.filter_by(
+        id=expense_type_id,
+        household_id=household_id,
+        is_active=True
+    ).first()
+
+    if not expense_type:
+        return jsonify({'error': 'Expense type not found'}), 404
+
+    data = request.get_json() or {}
+
+    if 'name' in data:
+        name = data['name'].strip()
+        if not name:
+            return jsonify({'error': 'Name cannot be empty'}), 400
+        if len(name) > 50:
+            return jsonify({'error': 'Name must be 50 characters or less'}), 400
+
+        # Check for duplicate name (excluding current expense type)
+        existing = ExpenseType.query.filter(
+            ExpenseType.household_id == household_id,
+            ExpenseType.name == name,
+            ExpenseType.is_active == True,
+            ExpenseType.id != expense_type_id
+        ).first()
+
+        if existing:
+            return jsonify({'error': 'An expense type with this name already exists'}), 400
+
+        expense_type.name = name
+
+    if 'icon' in data:
+        expense_type.icon = data['icon']
+
+    if 'color' in data:
+        expense_type.color = data['color']
+
+    db.session.commit()
+
+    return jsonify({'expense_type': expense_type.to_dict()})
+
+
+@api_v1_bp.route('/expense-types/<int:expense_type_id>', methods=['DELETE'])
+@jwt_required
+@api_household_required
+def api_delete_expense_type(expense_type_id):
+    """Soft-delete an expense type.
+
+    Returns:
+        {"success": true}
+    """
+    household_id = g.household_id
+
+    expense_type = ExpenseType.query.filter_by(
+        id=expense_type_id,
+        household_id=household_id,
+        is_active=True
+    ).first()
+
+    if not expense_type:
+        return jsonify({'error': 'Expense type not found'}), 404
+
+    expense_type.is_active = False
+    db.session.commit()
+
+    return jsonify({'success': True})
 
 
 @api_v1_bp.route('/split-rules', methods=['GET'])

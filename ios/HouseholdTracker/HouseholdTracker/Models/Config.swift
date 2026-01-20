@@ -15,6 +15,14 @@ struct ExpenseTypeListResponse: Codable, Sendable {
     }
 }
 
+struct ExpenseTypeResponse: Codable, Sendable {
+    let expenseType: ExpenseType
+
+    enum CodingKeys: String, CodingKey {
+        case expenseType = "expense_type"
+    }
+}
+
 struct TransactionCategory: Codable, Identifiable, Sendable, Hashable {
     let code: String
     let name: String
