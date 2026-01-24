@@ -93,6 +93,17 @@ struct SettingsView: View {
                     } header: {
                         Text("Configuration")
                     }
+
+                    // Data Management Section
+                    Section {
+                        NavigationLink {
+                            ExportView()
+                        } label: {
+                            Label("Export Data", systemImage: "square.and.arrow.up")
+                        }
+                    } header: {
+                        Text("Data")
+                    }
                 }
 
                 // Account Section

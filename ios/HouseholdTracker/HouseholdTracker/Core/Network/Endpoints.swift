@@ -48,4 +48,8 @@ enum Endpoints {
     static let budgetRules = "/budget-rules"
     static func budgetRule(_ id: Int) -> String { "/budget-rules/\(id)" }
     static func splitRule(_ id: Int) -> String { "/split-rules/\(id)" }
+
+    // Export
+    static let exportTransactions = "/export/transactions"
+    static func exportMonthlyTransactions(_ month: String) -> String { "/export/transactions/\(month)" }
 }
