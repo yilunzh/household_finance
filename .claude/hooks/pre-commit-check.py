@@ -98,8 +98,25 @@ def run_command(cmd, name):
     }
 
 
+def check_model_migration_reminder(staged_files):
+    """Warn if models.py is staged but app.py isn't - may need migration."""
+    staged_names = [Path(f).name for f in staged_files]
+
+    if "models.py" in staged_names and "app.py" not in staged_names:
+        return {
+            "warn": True,
+            "message": (
+                "models.py changed without app.py. "
+                "If you added/renamed columns, add migration to init_db() in app.py. "
+                "Example: ALTER TABLE tablename ADD COLUMN colname TYPE"
+            ),
+        }
+    return {"warn": False}
+
+
 def main():
     checks = []
+    warnings = []
 
     # Check branch policy: block ALL commits to main
     branch = get_current_branch()
@@ -144,6 +161,11 @@ Steps:
             )
         )
 
+        # Check for model changes without migration
+        migration_check = check_model_migration_reminder(staged_files)
+        if migration_check["warn"]:
+            warnings.append(migration_check["message"])
+
     # Always run unit tests
     checks.append(
         run_command(["pytest", "tests/", "-v", "--tb=short", "-q"], "Unit Tests")
@@ -156,7 +178,12 @@ Steps:
             "decision": "block",
             "reason": "Pre-commit checks failed:\n\n" + "\n---\n".join(reasons),
         }
-    return {"decision": "allow"}
+
+    # Return with warnings if any (still allows commit)
+    result = {"decision": "allow"}
+    if warnings:
+        result["warnings"] = warnings
+    return result
 
 
 if __name__ == "__main__":
