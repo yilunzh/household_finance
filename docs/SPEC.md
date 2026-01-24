@@ -1,6 +1,6 @@
 # Zhang Estate Expense Tracker - Technical Specification
 
-**Version**: 2.6 (Codebase Refactoring - Blueprint Architecture)
+**Version**: 3.0 (iOS Mobile App & REST API)
 **Date**: January 2026
 **Status**: Implemented and Deployed to Production
 
@@ -17,12 +17,13 @@ Manual expense reconciliation between two people sharing household expenses is t
 Web-based expense tracking tool with automatic reconciliation calculations, focusing on ease and speed of transaction entry.
 
 ### 1.3 Scope
-**In Scope (v2.0):**
+**In Scope (v3.0):**
 - Multi-user authentication (registration, login, logout)
 - Multi-household support - users can belong to multiple households
 - Email-based invitations for partner onboarding
 - Quick transaction entry form
 - Transaction list view with modal-based editing
+- Transaction search and filter with collapsible sidebar
 - Automatic currency conversion (CAD → USD, USD is primary currency)
 - Monthly reconciliation calculations
 - Settlement locking (mark months as settled)
@@ -30,14 +31,18 @@ Web-based expense tracking tool with automatic reconciliation calculations, focu
 - Dynamic member display names per household
 - Production security (HTTPS enforcement, rate limiting, security headers)
 - Production deployment on Render.com with persistent database storage
+- **iOS Mobile App** with SwiftUI and full feature parity
+- **REST API v1** with JWT authentication for mobile app
+- **Receipt photo uploads** for transactions
+- **Budget tracking** with expense types and split rules
+- **User profile management** with email change and account deletion
 
 **Out of Scope (Future):**
 - PDF parsing of bank statements
 - Banking API integration
 - Two-factor authentication
-- Mobile app
+- Android mobile app
 - Advanced charts/analytics
-- Smart categorization rules
 
 ---
 
@@ -62,12 +67,14 @@ Web-based expense tracking tool with automatic reconciliation calculations, focu
 ### 2.2 System Architecture
 
 ```
-┌─────────────────┐
-│   Web Browser   │
-│  (User Access)  │
-└────────┬────────┘
-         │ HTTP
-         ▼
+┌─────────────────┐     ┌─────────────────┐
+│   Web Browser   │     │   iOS App       │
+│  (User Access)  │     │  (SwiftUI)      │
+└────────┬────────┘     └────────┬────────┘
+         │ HTTP (Session)         │ HTTP (JWT)
+         │                        │
+         └──────────┬─────────────┘
+                    ▼
 ┌─────────────────────────────────────────────────────┐
 │                  Flask Web App                       │
 ├─────────────────────────────────────────────────────┤
@@ -82,7 +89,8 @@ Web-based expense tracking tool with automatic reconciliation calculations, focu
 │          ├── invitations/   → /invite/*              │
 │          ├── budget/        → /budget                │
 │          ├── profile/       → /profile               │
-│          └── api/           → /api/*                 │
+│          ├── api/           → /api/* (legacy)        │
+│          └── api_v1/        → /api/v1/* (REST API)   │
 ├─────────────────────────────────────────────────────┤
 │  services/ (Business Logic Layer)                    │
 │    ├── currency_service.py                           │
@@ -91,8 +99,10 @@ Web-based expense tracking tool with automatic reconciliation calculations, focu
 │    └── transaction_service.py                        │
 ├─────────────────────────────────────────────────────┤
 │  models.py (SQLAlchemy ORM)                          │
+│  api_decorators.py (JWT Authentication)              │
 │  templates/ (Jinja2 HTML)                            │
 │  static/ (JS/CSS)                                    │
+│  uploads/ (Receipt photos)                           │
 └────────┬────────────────────────────────────────────┘
          │
     ┌────┴────┐
@@ -249,8 +259,33 @@ CREATE TABLE budget_snapshots (
     UNIQUE(budget_rule_id, month_year)
 );
 
--- Add expense_type_id to transactions (nullable for backward compatibility)
+-- Add expense_type_id and receipt_url to transactions
 ALTER TABLE transactions ADD COLUMN expense_type_id INTEGER REFERENCES expense_types(id);
+ALTER TABLE transactions ADD COLUMN receipt_url VARCHAR(255);  -- Path to uploaded receipt image
+
+-- Refresh tokens table (JWT token tracking for revocation)
+CREATE TABLE refresh_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,  -- SHA-256 hash of token
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    revoked_at TIMESTAMP
+);
+CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id);
+CREATE INDEX idx_refresh_tokens_hash ON refresh_tokens(token_hash);
+
+-- Device tokens table (push notification tokens for mobile)
+CREATE TABLE device_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR(255) NOT NULL,
+    platform VARCHAR(20) NOT NULL,  -- 'ios' or 'android'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, token)
+);
+CREATE INDEX idx_device_tokens_user ON device_tokens(user_id);
 
 -- Split rules (custom split percentages for shared expenses)
 CREATE TABLE split_rules (
@@ -378,7 +413,107 @@ User ──< HouseholdMember >── Household
 | PUT | `/budget-rule/<id>` | Update budget rule | @household_required |
 | DELETE | `/budget-rule/<id>` | Delete budget rule | @household_required |
 
-### 4.7 Transaction JSON Schema
+### 4.7 REST API v1 (Mobile App)
+
+All API v1 routes are prefixed with `/api/v1/` and use JWT authentication.
+
+#### 4.7.1 Authentication
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/v1/auth/register` | Register new user | No |
+| POST | `/api/v1/auth/login` | Login, returns access + refresh tokens | No |
+| POST | `/api/v1/auth/refresh` | Refresh access token | Refresh token |
+| POST | `/api/v1/auth/logout` | Logout (revoke refresh token) | Yes |
+| GET | `/api/v1/auth/me` | Get current user info | Yes |
+
+**JWT Token Flow:**
+- Access tokens expire in 15 minutes
+- Refresh tokens expire in 30 days
+- Refresh tokens are stored server-side with SHA-256 hash for revocation
+- Logout revokes the refresh token
+
+#### 4.7.2 Transactions
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/v1/transactions` | List transactions (with search/filter params) | @jwt_required |
+| POST | `/api/v1/transactions` | Create transaction | @jwt_required |
+| GET | `/api/v1/transactions/<id>` | Get transaction details | @jwt_required |
+| PUT | `/api/v1/transactions/<id>` | Update transaction | @jwt_required |
+| DELETE | `/api/v1/transactions/<id>` | Delete transaction | @jwt_required |
+| POST | `/api/v1/transactions/<id>/receipt` | Upload receipt photo | @jwt_required |
+| DELETE | `/api/v1/transactions/<id>/receipt` | Delete receipt | @jwt_required |
+| GET | `/api/v1/receipts/<filename>` | Download receipt image | @jwt_required |
+
+**Query Parameters for GET /transactions:**
+- `month`: Filter by month (YYYY-MM format)
+- `search`: Search in merchant or notes
+- `category`: Filter by category code
+- `expense_type_id`: Filter by expense type
+- `paid_by_user_id`: Filter by who paid
+
+#### 4.7.3 Households
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/v1/households` | List user's households | @jwt_required |
+| POST | `/api/v1/households` | Create household | @jwt_required |
+| GET | `/api/v1/households/<id>` | Get household details | @jwt_required |
+| GET | `/api/v1/households/<id>/members` | List household members | @jwt_required |
+| PUT | `/api/v1/households/<id>/members/<user_id>` | Update member display name | @jwt_required (owner) |
+| POST | `/api/v1/households/<id>/leave` | Leave household | @jwt_required |
+
+#### 4.7.4 Invitations
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/v1/households/<id>/invitations` | List pending invitations | @jwt_required (owner) |
+| POST | `/api/v1/households/<id>/invitations` | Send invitation | @jwt_required (owner) |
+| DELETE | `/api/v1/invitations/<id>` | Cancel invitation | @jwt_required (owner) |
+| POST | `/api/v1/invitations/accept` | Accept invitation by token | @jwt_required |
+
+#### 4.7.5 Reconciliation
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/v1/reconciliation/<month>` | Get monthly reconciliation | @jwt_required |
+
+#### 4.7.6 Configuration
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/v1/expense-types` | List expense types | @jwt_required |
+| POST | `/api/v1/expense-types` | Create expense type | @jwt_required |
+| PUT | `/api/v1/expense-types/<id>` | Update expense type | @jwt_required |
+| DELETE | `/api/v1/expense-types/<id>` | Delete expense type | @jwt_required |
+| GET | `/api/v1/split-rules` | List split rules | @jwt_required |
+| POST | `/api/v1/split-rules` | Create split rule | @jwt_required |
+| PUT | `/api/v1/split-rules/<id>` | Update split rule | @jwt_required |
+| DELETE | `/api/v1/split-rules/<id>` | Delete split rule | @jwt_required |
+| GET | `/api/v1/budget-rules` | List budget rules | @jwt_required |
+| POST | `/api/v1/budget-rules` | Create budget rule | @jwt_required |
+| PUT | `/api/v1/budget-rules/<id>` | Update budget rule | @jwt_required |
+| DELETE | `/api/v1/budget-rules/<id>` | Delete budget rule | @jwt_required |
+| GET | `/api/v1/categories` | List transaction categories | @jwt_required |
+
+#### 4.7.7 Export
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/v1/export/transactions` | Export all transactions as CSV | @jwt_required |
+| GET | `/api/v1/export/transactions/<month>` | Export monthly transactions as CSV | @jwt_required |
+
+#### 4.7.8 Profile
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/v1/profile` | Get user profile | @jwt_required |
+| PUT | `/api/v1/profile` | Update profile (name) | @jwt_required |
+| POST | `/api/v1/profile/change-password` | Change password | @jwt_required |
+| DELETE | `/api/v1/profile` | Delete account | @jwt_required |
+
+### 4.8 Transaction JSON Schema
 
 ```json
 {
@@ -388,7 +523,9 @@ User ──< HouseholdMember >── Household
   "currency": "CAD",
   "paid_by": 1,  // user_id of the member who paid
   "category": "SHARED",
-  "notes": "Weekly groceries"
+  "expense_type_id": 1,  // optional
+  "notes": "Weekly groceries",
+  "receipt_url": "/api/v1/receipts/abc123.jpg"  // optional, set via upload
 }
 ```
 
@@ -755,7 +892,8 @@ household_tracker/
 ├── extensions.py             # Flask extensions (db, csrf, limiter, mail)
 ├── models.py                 # SQLAlchemy models (~450 lines)
 ├── auth.py                   # Flask-Login configuration
-├── decorators.py             # @household_required decorator
+├── decorators.py             # @household_required decorator (web)
+├── api_decorators.py         # @jwt_required, @api_household_required (API)
 ├── household_context.py      # Household session helpers
 ├── email_service.py          # Flask-Mail integration
 ├── utils.py                  # Helper functions (~180 lines)
@@ -791,9 +929,20 @@ household_tracker/
 │   ├── profile/              # User profile management
 │   │   ├── __init__.py
 │   │   └── routes.py         # view, update profile, change email
-│   └── api/                  # JSON API endpoints
+│   ├── api/                  # JSON API endpoints (legacy)
+│   │   ├── __init__.py
+│   │   └── routes.py         # expense types, budget rules, auto-categorize
+│   └── api_v1/               # REST API for mobile app (JWT auth)
 │       ├── __init__.py
-│       └── routes.py         # expense types, budget rules, auto-categorize
+│       ├── auth.py           # register, login, refresh, logout
+│       ├── transactions.py   # CRUD + receipt upload/download
+│       ├── households.py     # list, create, members, leave
+│       ├── invitations.py    # send, accept, cancel invitations
+│       ├── reconciliation.py # monthly summaries
+│       ├── config.py         # expense types, split rules, categories
+│       ├── budget.py         # budget rules, split rules CRUD
+│       ├── export.py         # CSV export endpoints
+│       └── profile.py        # user profile management
 │
 ├── services/                 # Business logic layer
 │   ├── __init__.py
@@ -849,6 +998,12 @@ household_tracker/
 ├── data/                    # Production database directory (Render)
 │   └── database.db          # SQLite database (production)
 │
+├── uploads/                 # Receipt photo uploads (created at runtime)
+│   └── receipts/            # Receipt images (UUID filenames)
+│
+├── ios/                     # iOS mobile app
+│   └── HouseholdTracker/    # Xcode project (see Section 8.3 for details)
+│
 ├── docs/
 │   ├── SPEC.md              # This file (technical specification)
 │   └── DEPLOYMENT.md        # Production deployment guide
@@ -867,9 +1022,147 @@ household_tracker/
 
 ---
 
-## 8. Dependencies
+## 8. iOS Mobile App
 
-### 8.1 requirements.txt
+### 8.1 Overview
+
+Native iOS app built with SwiftUI, providing full feature parity with the web application. Uses JWT authentication to communicate with the REST API v1.
+
+### 8.2 Tech Stack
+
+| Component | Technology | Version |
+|-----------|------------|---------|
+| Language | Swift | 5.9+ |
+| UI Framework | SwiftUI | iOS 17+ |
+| Networking | URLSession | Native |
+| State Management | @Observable, @Environment | SwiftUI |
+| Build System | Xcode | 15+ |
+| Testing | Maestro | E2E UI tests |
+
+### 8.3 Project Structure
+
+```
+ios/HouseholdTracker/
+├── HouseholdTracker/
+│   ├── HouseholdTrackerApp.swift    # App entry point
+│   ├── ContentView.swift             # Root navigation
+│   ├── Models/
+│   │   ├── Transaction.swift         # Transaction model
+│   │   ├── Household.swift           # Household model
+│   │   ├── User.swift                # User model
+│   │   ├── ExpenseType.swift         # Expense type model
+│   │   ├── SplitRule.swift           # Split rule model
+│   │   ├── BudgetRule.swift          # Budget rule model
+│   │   └── Reconciliation.swift      # Reconciliation model
+│   ├── Services/
+│   │   ├── APIService.swift          # HTTP client with JWT auth
+│   │   ├── AuthService.swift         # Login, register, token refresh
+│   │   └── KeychainService.swift     # Secure token storage
+│   ├── Views/
+│   │   ├── Auth/
+│   │   │   ├── LoginView.swift
+│   │   │   └── RegisterView.swift
+│   │   ├── Transactions/
+│   │   │   ├── TransactionListView.swift
+│   │   │   ├── TransactionDetailView.swift
+│   │   │   ├── AddTransactionView.swift
+│   │   │   ├── EditTransactionView.swift
+│   │   │   └── TransactionSearchView.swift
+│   │   ├── Households/
+│   │   │   ├── HouseholdListView.swift
+│   │   │   ├── HouseholdDetailView.swift
+│   │   │   ├── CreateHouseholdView.swift
+│   │   │   ├── HouseholdMembersView.swift
+│   │   │   └── InvitationsView.swift
+│   │   ├── Reconciliation/
+│   │   │   └── ReconciliationView.swift
+│   │   ├── Settings/
+│   │   │   ├── SettingsView.swift
+│   │   │   ├── ExpenseTypesView.swift
+│   │   │   ├── SplitRulesView.swift
+│   │   │   ├── BudgetRulesView.swift
+│   │   │   └── ExportView.swift
+│   │   └── Profile/
+│   │       └── ProfileView.swift
+│   └── Assets.xcassets/
+├── maestro/                          # E2E test flows
+│   ├── login-flow.yaml
+│   ├── logout.yaml
+│   ├── add-transaction.yaml
+│   ├── reconciliation.yaml
+│   └── receipt-flow.yaml
+└── HouseholdTracker.xcodeproj/
+```
+
+### 8.4 Key Features
+
+| Feature | iOS Implementation |
+|---------|-------------------|
+| Authentication | JWT tokens stored in Keychain |
+| Transaction CRUD | Full create, read, update, delete |
+| Transaction Search | Filter by month, category, expense type, paid by |
+| Receipt Photos | Camera/library upload, image viewer |
+| Household Management | Create, switch, leave, invite members |
+| Reconciliation | Monthly summary with settlement |
+| Expense Types | CRUD with icon/color picker |
+| Split Rules | Custom percentage configuration |
+| Budget Rules | Giver/receiver/amount setup |
+| CSV Export | Share sheet integration |
+| Profile | Name update, password change, account deletion |
+
+### 8.5 Authentication Flow
+
+```
+┌─────────────┐     POST /auth/login      ┌─────────────┐
+│  iOS App    │ ───────────────────────▶  │   Server    │
+│             │                           │             │
+│             │  ◀─────────────────────   │             │
+│             │  {access_token,           │             │
+│             │   refresh_token}          │             │
+└─────────────┘                           └─────────────┘
+      │
+      │ Store tokens in Keychain
+      ▼
+┌─────────────┐     GET /transactions     ┌─────────────┐
+│  iOS App    │ ───────────────────────▶  │   Server    │
+│  (with JWT) │  Authorization: Bearer    │             │
+│             │  <access_token>           │             │
+└─────────────┘                           └─────────────┘
+      │
+      │ If 401 Unauthorized
+      ▼
+┌─────────────┐     POST /auth/refresh    ┌─────────────┐
+│  iOS App    │ ───────────────────────▶  │   Server    │
+│             │  {refresh_token}          │             │
+│             │  ◀─────────────────────   │             │
+│             │  {new_access_token}       │             │
+└─────────────┘                           └─────────────┘
+```
+
+### 8.6 Testing with Maestro
+
+```bash
+# Set Java path (required)
+export JAVA_HOME="/usr/local/opt/openjdk@17"
+export PATH="$JAVA_HOME/bin:$PATH"
+
+# Navigate to iOS project
+cd ios/HouseholdTracker
+
+# Run a specific test
+~/.maestro/bin/maestro test maestro/login-flow.yaml
+
+# Run all tests
+~/.maestro/bin/maestro test maestro/
+```
+
+**Test credentials**: `demo_alice@example.com` / `password123`
+
+---
+
+## 9. Dependencies
+
+### 9.1 requirements.txt
 
 ```
 Flask==3.0.0
@@ -878,13 +1171,16 @@ Flask-Login==0.6.3
 Flask-WTF==1.2.1
 Flask-Mail==0.10.0
 Flask-Limiter==3.5.0
+Flask-Migrate==4.0.5
 email-validator==2.1.0
 requests==2.31.0
 python-dotenv==1.0.0
 gunicorn==21.2.0
+PyJWT==2.8.0
+Pillow==10.2.0
 ```
 
-### 8.2 External Services
+### 9.2 External Services
 
 | Service | Purpose | Cost | URL |
 |---------|---------|------|-----|
@@ -895,15 +1191,15 @@ gunicorn==21.2.0
 
 ---
 
-## 9. Security
+## 10. Security
 
-### 9.1 Authentication Security
+### 10.1 Authentication Security
 
 - **Password hashing**: werkzeug PBKDF2:SHA256
 - **Minimum password length**: 8 characters
 - **Session cookies**: HTTPOnly, Secure (production), SameSite=Lax
 
-### 9.2 Rate Limiting
+### 10.2 Rate Limiting
 
 | Route | Limit |
 |-------|-------|
@@ -912,7 +1208,7 @@ gunicorn==21.2.0
 | POST /forgot-password | 3/minute |
 | POST /reset-password | 5/minute |
 
-### 9.3 Security Headers (Production)
+### 10.3 Security Headers (Production)
 
 ```python
 response.headers['X-Frame-Options'] = 'DENY'
@@ -923,11 +1219,11 @@ response.headers['Content-Security-Policy'] = "default-src 'self' ..."
 response.headers['Strict-Transport-Security'] = 'max-age=31536000'
 ```
 
-### 9.4 HTTPS Enforcement
+### 10.4 HTTPS Enforcement
 
 Production automatically redirects HTTP to HTTPS via `X-Forwarded-Proto` header check.
 
-### 9.5 Data Isolation
+### 10.5 Data Isolation
 
 **Critical**: Every database query MUST filter by `household_id`:
 
@@ -942,14 +1238,14 @@ Transaction.query.filter_by(
 Transaction.query.filter_by(month_year=month).all()
 ```
 
-### 9.6 Invitation Security
+### 10.6 Invitation Security
 
 - 48-character random tokens (secrets.token_urlsafe)
 - 7-day expiration
 - One-time use only
 - Tokens invalidated after acceptance
 
-### 9.7 Password Reset Security
+### 10.7 Password Reset Security
 
 - 32-character random tokens (secrets.token_urlsafe)
 - 1-hour expiration (shorter than invitations for security)
@@ -959,9 +1255,9 @@ Transaction.query.filter_by(month_year=month).all()
 
 ---
 
-## 10. Development Workflow
+## 11. Development Workflow
 
-### 10.1 Setup Steps
+### 11.1 Setup Steps
 
 ```bash
 # 1. Navigate to project
@@ -986,7 +1282,7 @@ python seed_test_users.py
 # Creates: test_alice@example.com / test_bob@example.com (password: password123)
 ```
 
-### 10.2 Implementation Status
+### 11.2 Implementation Status
 
 **✅ v1.0 - Core Features (Completed)**
 - ✅ Project structure and database models
@@ -1077,7 +1373,43 @@ python seed_test_users.py
 - ✅ Update all templates with correct route references
 - ✅ Enhanced seed script with sample transactions, categories, and rules
 
-### 10.3 Testing Checklist
+**✅ v2.7 - REST API v1 for Mobile App (Completed)**
+- ✅ JWT-based authentication with access/refresh tokens
+- ✅ Server-side refresh token tracking for revocation
+- ✅ `@jwt_required` and `@api_household_required` decorators
+- ✅ Transaction CRUD API endpoints
+- ✅ Household management API endpoints
+- ✅ Reconciliation API endpoint
+- ✅ Configuration API (expense types, split rules, categories)
+
+**✅ v2.8 - Receipt Photo Upload (Completed)**
+- ✅ Receipt upload endpoint (`POST /api/v1/transactions/<id>/receipt`)
+- ✅ Receipt download endpoint (`GET /api/v1/receipts/<filename>`)
+- ✅ Receipt deletion endpoint (`DELETE /api/v1/transactions/<id>/receipt`)
+- ✅ Secure file storage with UUID filenames
+- ✅ Image validation (JPEG, PNG, GIF, WebP)
+- ✅ `receipt_url` field on Transaction model
+
+**✅ v2.9 - Transaction Search & Filter (Completed)**
+- ✅ Search by merchant name or notes
+- ✅ Filter by month, category, expense type, paid by
+- ✅ Collapsible filter sidebar in web UI
+- ✅ API query parameters for mobile app
+
+**✅ v3.0 - iOS Mobile App (Completed)**
+- ✅ SwiftUI native iOS app with iOS 17+ support
+- ✅ JWT authentication with Keychain storage
+- ✅ Full transaction CRUD with receipt photo support
+- ✅ Household management (create, switch, leave, invite)
+- ✅ Reconciliation view with monthly summary
+- ✅ Expense types CRUD with icon/color picker
+- ✅ Split rules and budget rules configuration
+- ✅ CSV export with iOS share sheet
+- ✅ Profile management with password change
+- ✅ Maestro E2E test suite
+- ✅ Security fixes (header injection, CSV injection, data isolation)
+
+### 11.3 Testing Checklist
 
 **Core Functionality:**
 - ✅ Can add transaction manually
@@ -1105,9 +1437,9 @@ python seed_test_users.py
 
 ---
 
-## 11. Deployment
+## 12. Deployment
 
-### 11.1 Production Platform: Render.com
+### 12.1 Production Platform: Render.com
 
 **Current Status**: Code is production-ready and pushed to GitHub at https://github.com/yilunzh/household_finance
 
@@ -1160,7 +1492,7 @@ app.run(debug=debug_mode, host='0.0.0.0', port=port)
 - Size: 1GB (enough for thousands of transactions)
 - Database file: `/opt/render/project/src/data/database.db`
 
-### 11.2 Environment Variables
+### 12.2 Environment Variables
 
 **Required for Production:**
 
@@ -1183,7 +1515,7 @@ app.run(debug=debug_mode, host='0.0.0.0', port=port)
 
 **Note:** If email is not configured, invitation links are displayed on-screen instead of emailed.
 
-### 11.3 Deployment Steps
+### 12.3 Deployment Steps
 
 See `DEPLOYMENT.md` for complete step-by-step instructions including:
 1. Render account creation
@@ -1197,7 +1529,7 @@ See `DEPLOYMENT.md` for complete step-by-step instructions including:
 
 ---
 
-## 12. Success Criteria
+## 13. Success Criteria
 
 The MVP is considered successful when:
 
@@ -1209,29 +1541,28 @@ The MVP is considered successful when:
 
 ---
 
-## 13. Future Enhancements
+## 14. Future Enhancements
 
-### Phase 3 (Next)
+### Phase 4 (Next)
 - Email verification on signup
 - Two-factor authentication
-- Smart categorization rules
+- Push notifications for iOS app
 - Bulk CSV import
-- Transaction search/filter
 
-### Phase 4 (Advanced)
+### Phase 5 (Advanced)
 - PDF bank statement parsing
-- Receipt photo upload
 - Spending trends charts
 - Audit log of changes
+- Android mobile app
 
-### Phase 5 (Enterprise)
+### Phase 6 (Enterprise)
 - Banking API integration (Plaid)
-- Mobile app
 - Automated monthly settlements
+- Multi-currency base (beyond USD)
 
 ---
 
-## 14. Cost Breakdown
+## 15. Cost Breakdown
 
 | Item | Cost | Notes |
 |------|------|-------|
@@ -1244,9 +1575,9 @@ The MVP is considered successful when:
 
 ---
 
-## 15. Key Code Snippets
+## 16. Key Code Snippets
 
-### 15.1 Exchange Rate Function
+### 16.1 Exchange Rate Function
 
 ```python
 # utils.py
@@ -1276,7 +1607,7 @@ def get_exchange_rate(from_curr, to_curr, date):
     return get_current_exchange_rate(from_curr, to_curr)
 ```
 
-### 15.2 Reconciliation Calculation
+### 16.2 Reconciliation Calculation
 
 ```python
 # utils.py
@@ -1393,9 +1724,13 @@ def format_settlement(me_balance, wife_balance):
 | 2.4 | Jan 2026 | Password reset flow, UI spacing improvements, split category label clarity |
 | 2.5 | Jan 2026 | Custom split percentages, split rules UI, UX improvements (sorting, form alignment) |
 | 2.6 | Jan 2026 | Codebase refactoring: Blueprint architecture, services layer, config extraction |
+| 2.7 | Jan 2026 | REST API v1 with JWT authentication for mobile app |
+| 2.8 | Jan 2026 | Receipt photo upload feature |
+| 2.9 | Jan 2026 | Transaction search and filter with collapsible sidebar |
+| 3.0 | Jan 2026 | iOS mobile app with full feature parity, security fixes |
 
 ---
 
-**Document Version**: 2.6
-**Last Updated**: January 18, 2026
+**Document Version**: 3.0
+**Last Updated**: January 24, 2026
 **GitHub Repository**: https://github.com/yilunzh/household_finance

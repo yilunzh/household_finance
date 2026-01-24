@@ -104,9 +104,26 @@ def init_db():
     Note: Schema migrations are now handled by Flask-Migrate.
     Use 'flask db migrate' and 'flask db upgrade' for schema changes.
     """
+    from sqlalchemy import text
+
     with app.app_context():
         db.create_all()
         print('Database tables created (if not already existing)')
+
+        # Auto-migration: Add receipt_url column to transactions if missing
+        try:
+            db.session.execute(text(
+                'ALTER TABLE transactions ADD COLUMN receipt_url VARCHAR(500)'
+            ))
+            db.session.commit()
+            print('Added receipt_url column to transactions table')
+        except Exception as e:
+            db.session.rollback()
+            if 'duplicate column' in str(e).lower():
+                print('Column receipt_url already exists - skipping')
+            else:
+                # Column might already exist, which is fine
+                print(f'Note: receipt_url migration skipped ({e})')
 
 
 # Call initialization when module is loaded
