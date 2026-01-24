@@ -42,4 +42,9 @@ enum Endpoints {
     static let expenseTypes = "/expense-types"
     static let splitRules = "/split-rules"
     static let categories = "/categories"
+
+    // Budget & Split Rules
+    static let budgetRules = "/budget-rules"
+    static func budgetRule(_ id: Int) -> String { "/budget-rules/\(id)" }
+    static func splitRule(_ id: Int) -> String { "/split-rules/\(id)" }
 }

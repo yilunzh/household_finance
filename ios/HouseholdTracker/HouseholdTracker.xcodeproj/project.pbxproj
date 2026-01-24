@@ -36,6 +36,9 @@
 		F1A2B3C4D5E6F7A8B9C0D1E2 /* TransactionFilterSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F3 /* TransactionFilterSheet.swift */; };
 		H8B9C0D1E2F3A4B5C6D7E8F9 /* HouseholdSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G7A8B9C0D1E2F3A4B5C6D7E8 /* HouseholdSettingsView.swift */; };
 		J0D1E2F3A4B5C6D7E8F9A0B1 /* MemberListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I9C0D1E2F3A4B5C6D7E8F9A0 /* MemberListView.swift */; };
+		K1E2F3A4B5C6D7E8F9A0B1C2 /* BudgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = L2F3A4B5C6D7E8F9A0B1C2D3 /* BudgetView.swift */; };
+		M3A4B5C6D7E8F9A0B1C2D3E4 /* BudgetRuleEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = N4B5C6D7E8F9A0B1C2D3E4F5 /* BudgetRuleEditSheet.swift */; };
+		O5C6D7E8F9A0B1C2D3E4F5A6 /* SplitRuleEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = P6D7E8F9A0B1C2D3E4F5A6B7 /* SplitRuleEditSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,6 +85,9 @@
 		A1B2C3D4E5F6A7B8C9D0E1F3 /* TransactionFilterSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionFilterSheet.swift; sourceTree = "<group>"; };
 		G7A8B9C0D1E2F3A4B5C6D7E8 /* HouseholdSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseholdSettingsView.swift; sourceTree = "<group>"; };
 		I9C0D1E2F3A4B5C6D7E8F9A0 /* MemberListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberListView.swift; sourceTree = "<group>"; };
+		L2F3A4B5C6D7E8F9A0B1C2D3 /* BudgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetView.swift; sourceTree = "<group>"; };
+		N4B5C6D7E8F9A0B1C2D3E4F5 /* BudgetRuleEditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetRuleEditSheet.swift; sourceTree = "<group>"; };
+		P6D7E8F9A0B1C2D3E4F5A6B7 /* SplitRuleEditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitRuleEditSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -169,11 +175,22 @@
 			isa = PBXGroup;
 			children = (
 				96DC82F42B98A911C52DA9B0 /* Auth */,
+				Q7E8F9A0B1C2D3E4F5A6B7C8 /* Budget */,
 				531095CC2A2B0C84BC100468 /* Households */,
 				6870150CBA9385FF4D2D38A5 /* Reconciliation */,
 				F71FCE927431CBAAE4983BCF /* Transactions */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		Q7E8F9A0B1C2D3E4F5A6B7C8 /* Budget */ = {
+			isa = PBXGroup;
+			children = (
+				L2F3A4B5C6D7E8F9A0B1C2D3 /* BudgetView.swift */,
+				N4B5C6D7E8F9A0B1C2D3E4F5 /* BudgetRuleEditSheet.swift */,
+				P6D7E8F9A0B1C2D3E4F5A6B7 /* SplitRuleEditSheet.swift */,
+			);
+			path = Budget;
 			sourceTree = "<group>";
 		};
 		6870150CBA9385FF4D2D38A5 /* Reconciliation */ = {
@@ -337,6 +354,9 @@
 				B43DB766E327B30EB9884D4E /* TransactionsView.swift in Sources */,
 				951B3A758479C617914B7D42 /* TransactionsViewModel.swift in Sources */,
 				1E5B0695D9DDBB8EA95DBD92 /* User.swift in Sources */,
+				K1E2F3A4B5C6D7E8F9A0B1C2 /* BudgetView.swift in Sources */,
+				M3A4B5C6D7E8F9A0B1C2D3E4 /* BudgetRuleEditSheet.swift in Sources */,
+				O5C6D7E8F9A0B1C2D3E4F5A6 /* SplitRuleEditSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
