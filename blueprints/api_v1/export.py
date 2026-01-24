@@ -6,6 +6,7 @@ Endpoints:
 - GET /api/v1/export/transactions/<month> - Export transactions for specific month
 """
 import csv
+import re
 from io import StringIO
 from flask import g, Response, request
 
@@ -13,6 +14,29 @@ from models import Transaction, HouseholdMember
 from api_decorators import jwt_required, api_household_required
 from blueprints.api_v1 import api_v1_bp
 from utils import calculate_reconciliation
+
+
+def _sanitize_filename(name):
+    """Sanitize filename to prevent header injection attacks."""
+    if not name:
+        return 'export'
+    # Remove any characters that aren't alphanumeric, dash, underscore, or dot
+    return re.sub(r'[^\w\-.]', '_', str(name))
+
+
+def _sanitize_csv_field(value):
+    """Sanitize CSV field to prevent formula injection in spreadsheet apps.
+
+    Prefixes dangerous characters with a single quote to prevent Excel/Sheets
+    from interpreting the value as a formula.
+    """
+    if value is None:
+        return ''
+    value = str(value)
+    # Characters that can trigger formula execution in Excel/Google Sheets
+    if value and value[0] in ('=', '+', '-', '@', '|', '%', '\t', '\r', '\n'):
+        return "'" + value
+    return value
 
 
 @api_v1_bp.route('/export/transactions', methods=['GET'])
@@ -56,13 +80,13 @@ def api_export_all_transactions():
 
     filename = 'transactions'
     if start_date or end_date:
-        filename = f'transactions_{start_date or "start"}_{end_date or "end"}'
+        filename = f'transactions_{_sanitize_filename(start_date) or "start"}_{_sanitize_filename(end_date) or "end"}'
 
     return Response(
         csv_content,
         mimetype='text/csv',
         headers={
-            'Content-Disposition': f'attachment; filename={filename}.csv'
+            'Content-Disposition': f'attachment; filename="{_sanitize_filename(filename)}.csv"'
         }
     )
 
@@ -104,7 +128,7 @@ def api_export_monthly_transactions(month):
         csv_content,
         mimetype='text/csv',
         headers={
-            'Content-Disposition': f'attachment; filename=expenses_{month}.csv'
+            'Content-Disposition': f'attachment; filename="expenses_{_sanitize_filename(month)}.csv"'
         }
     )
 
@@ -124,14 +148,14 @@ def _generate_transactions_csv(transactions, members):
     for txn in transactions:
         writer.writerow([
             txn.date.strftime('%Y-%m-%d'),
-            txn.merchant,
+            _sanitize_csv_field(txn.merchant),
             f'{float(txn.amount):.2f}',
             txn.currency,
             f'{float(txn.amount_in_usd):.2f}',
-            txn.get_paid_by_display_name(),
+            _sanitize_csv_field(txn.get_paid_by_display_name()),
             Transaction.get_category_display_name(txn.category, members),
-            txn.expense_type.name if txn.expense_type else '',
-            txn.notes or ''
+            _sanitize_csv_field(txn.expense_type.name if txn.expense_type else ''),
+            _sanitize_csv_field(txn.notes or '')
         ])
 
     output.seek(0)
@@ -153,14 +177,14 @@ def _generate_monthly_csv(transactions, members, month):
     for txn in transactions:
         writer.writerow([
             txn.date.strftime('%Y-%m-%d'),
-            txn.merchant,
+            _sanitize_csv_field(txn.merchant),
             f'{float(txn.amount):.2f}',
             txn.currency,
             f'{float(txn.amount_in_usd):.2f}',
-            txn.get_paid_by_display_name(),
+            _sanitize_csv_field(txn.get_paid_by_display_name()),
             Transaction.get_category_display_name(txn.category, members),
-            txn.expense_type.name if txn.expense_type else '',
-            txn.notes or ''
+            _sanitize_csv_field(txn.expense_type.name if txn.expense_type else ''),
+            _sanitize_csv_field(txn.notes or '')
         ])
 
     # Add summary section
@@ -175,7 +199,7 @@ def _generate_monthly_csv(transactions, members, month):
         user_id = member.user_id
         if user_id in summary.get('user_payments', {}):
             paid_amount = summary['user_payments'][user_id]
-            writer.writerow([f'{member.display_name} paid', f'${paid_amount:.2f}'])
+            writer.writerow([f'{_sanitize_csv_field(member.display_name)} paid', f'${paid_amount:.2f}'])
 
     writer.writerow([])
     writer.writerow(['Settlement', summary['settlement']])
