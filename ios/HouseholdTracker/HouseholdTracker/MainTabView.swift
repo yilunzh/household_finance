@@ -39,16 +39,22 @@ struct SettingsView: View {
                 if let householdId = authManager.currentHouseholdId,
                    let household = authManager.households.first(where: { $0.id == householdId }) {
                     Section {
-                        HStack {
-                            Label(household.name, systemImage: "house")
-                            Spacer()
-                            if authManager.households.count > 1 {
-                                NavigationLink {
-                                    HouseholdSwitcherView()
-                                } label: {
-                                    Text("Switch")
-                                        .foregroundStyle(.secondary)
-                                }
+                        NavigationLink {
+                            HouseholdSettingsView()
+                        } label: {
+                            HStack {
+                                Label(household.name, systemImage: "house")
+                                Spacer()
+                                Text("Settings")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        if authManager.households.count > 1 {
+                            NavigationLink {
+                                HouseholdSwitcherView()
+                            } label: {
+                                Label("Switch Household", systemImage: "arrow.left.arrow.right")
                             }
                         }
                     } header: {
@@ -69,7 +75,7 @@ struct SettingsView: View {
                             Label("Pending Invitations", systemImage: "envelope.badge")
                         }
                     } header: {
-                        Text("Members")
+                        Text("Invitations")
                     }
                 }
 

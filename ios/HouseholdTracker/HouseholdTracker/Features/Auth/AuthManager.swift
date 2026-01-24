@@ -466,10 +466,6 @@ private struct UserProfileResponse: Codable {
     let user: User
 }
 
-private struct SuccessResponse: Codable {
-    let success: Bool
-}
-
 private struct EmailChangeResponse: Codable {
     let success: Bool
     let message: String
