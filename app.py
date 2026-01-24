@@ -125,6 +125,54 @@ def init_db():
                 # Column might already exist, which is fine
                 print(f'Note: receipt_url migration skipped ({e})')
 
+        # Verify schema completeness - warn if any columns are missing
+        verify_schema_completeness()
+
+
+def verify_schema_completeness():
+    """Check all model columns exist in database, log warnings for any missing.
+
+    This runs at app startup to detect schema drift between code and database.
+    If warnings appear, add ALTER TABLE migrations to init_db() above.
+    """
+    from sqlalchemy import inspect
+    from models import (
+        User, Household, HouseholdMember, Transaction, Settlement,
+        Invitation, ExpenseType, AutoCategoryRule, BudgetRule,
+        BudgetRuleExpenseType, BudgetSnapshot, SplitRule,
+        SplitRuleExpenseType, RefreshToken, DeviceToken
+    )
+
+    all_models = [
+        User, Household, HouseholdMember, Transaction, Settlement,
+        Invitation, ExpenseType, AutoCategoryRule, BudgetRule,
+        BudgetRuleExpenseType, BudgetSnapshot, SplitRule,
+        SplitRuleExpenseType, RefreshToken, DeviceToken
+    ]
+
+    try:
+        inspector = inspect(db.engine)
+        issues_found = False
+
+        for model in all_models:
+            table_name = model.__tablename__
+            try:
+                db_columns = {col['name'] for col in inspector.get_columns(table_name)}
+                model_columns = {col.name for col in model.__table__.columns}
+                missing = model_columns - db_columns
+
+                if missing:
+                    issues_found = True
+                    print(f'WARNING: Table "{table_name}" missing columns: {sorted(missing)}')
+                    print('  -> Add ALTER TABLE migration to init_db() in app.py')
+            except Exception as e:
+                print(f'Note: Could not verify table "{table_name}": {e}')
+
+        if not issues_found:
+            print('Schema verification passed - all model columns exist in database')
+    except Exception as e:
+        print(f'Note: Schema verification skipped: {e}')
+
 
 # Call initialization when module is loaded
 init_db()
