@@ -12,7 +12,10 @@ Endpoints:
 from flask import jsonify, g, request
 
 from extensions import db
-from models import ExpenseType, SplitRule, HouseholdMember
+from models import (
+    ExpenseType, SplitRule, HouseholdMember, Transaction,
+    BudgetRule, BudgetRuleExpenseType, SplitRuleExpenseType
+)
 from api_decorators import jwt_required, api_household_required
 from blueprints.api_v1 import api_v1_bp
 
@@ -181,6 +184,34 @@ def api_delete_expense_type(expense_type_id):
 
     if not expense_type:
         return jsonify({'error': 'Expense type not found'}), 404
+
+    # Check if expense type is used in any transactions
+    transaction_usage = Transaction.query.filter_by(
+        household_id=household_id,
+        expense_type_id=expense_type_id
+    ).first()
+    if transaction_usage:
+        return jsonify({'error': 'Cannot delete expense type that is used in transactions'}), 400
+
+    # Check if expense type is used in active budget rules
+    budget_rule_usage = BudgetRuleExpenseType.query.filter_by(
+        expense_type_id=expense_type_id
+    ).join(BudgetRule).filter(
+        BudgetRule.household_id == household_id,
+        BudgetRule.is_active.is_(True)
+    ).first()
+    if budget_rule_usage:
+        return jsonify({'error': 'Cannot delete expense type that is used in budget rules'}), 400
+
+    # Check if expense type is used in active split rules
+    split_rule_usage = SplitRuleExpenseType.query.filter_by(
+        expense_type_id=expense_type_id
+    ).join(SplitRule).filter(
+        SplitRule.household_id == household_id,
+        SplitRule.is_active.is_(True)
+    ).first()
+    if split_rule_usage:
+        return jsonify({'error': 'Cannot delete expense type that is used in split rules'}), 400
 
     expense_type.is_active = False
     db.session.commit()

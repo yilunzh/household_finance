@@ -125,6 +125,16 @@ def api_create_budget_rule():
         if not member:
             return jsonify({'error': 'Invalid user selected'}), 400
 
+    # Validate expense types belong to this household
+    for et_id in expense_type_ids:
+        expense_type = ExpenseType.query.filter_by(
+            id=et_id,
+            household_id=household_id,
+            is_active=True
+        ).first()
+        if not expense_type:
+            return jsonify({'error': 'Invalid expense type selected'}), 400
+
     # Check if expense types are already used in other active budget rules
     for et_id in expense_type_ids:
         existing_usage = BudgetRuleExpenseType.query.filter_by(
@@ -211,6 +221,16 @@ def api_update_budget_rule(rule_id):
 
             if not expense_type_ids:
                 return jsonify({'error': 'At least one expense type is required'}), 400
+
+            # Validate expense types belong to this household
+            for et_id in expense_type_ids:
+                expense_type = ExpenseType.query.filter_by(
+                    id=et_id,
+                    household_id=household_id,
+                    is_active=True
+                ).first()
+                if not expense_type:
+                    return jsonify({'error': 'Invalid expense type selected'}), 400
 
             # Check for conflicts with other budget rules
             for et_id in expense_type_ids:
@@ -332,6 +352,16 @@ def api_create_split_rule():
         if not expense_type_ids:
             return jsonify({'error': 'Select at least one expense category, or mark as default'}), 400
 
+    # Validate expense types belong to this household
+    for et_id in expense_type_ids:
+        expense_type = ExpenseType.query.filter_by(
+            id=et_id,
+            household_id=household_id,
+            is_active=True
+        ).first()
+        if not expense_type:
+            return jsonify({'error': 'Invalid expense type selected'}), 400
+
     # Get household members for response
     household_members = HouseholdMember.query.filter_by(household_id=household_id).all()
 
@@ -431,6 +461,16 @@ def api_update_split_rule(rule_id):
             # Non-default rules need at least one expense type
             if not split_rule.is_default and not expense_type_ids:
                 return jsonify({'error': 'Non-default rules require at least one expense category'}), 400
+
+            # Validate expense types belong to this household
+            for et_id in expense_type_ids:
+                expense_type = ExpenseType.query.filter_by(
+                    id=et_id,
+                    household_id=household_id,
+                    is_active=True
+                ).first()
+                if not expense_type:
+                    return jsonify({'error': 'Invalid expense type selected'}), 400
 
             # Remove existing associations for this rule
             SplitRuleExpenseType.query.filter_by(split_rule_id=rule_id).delete()
