@@ -161,6 +161,12 @@ Before saying "done":
 2. If user-facing: present options for review
 3. Mark todo items completed
 
+**Verification Efficiency:**
+- **Define "done" upfront**: Before starting a fix, identify what verification is needed (e.g., "build + existing test passes"). Once met, stop.
+- **Trust existing tests**: If a relevant test passes, that's sufficient. Don't create ad-hoc tests for the same thing.
+- **One verification path**: Choose either existing test OR manual check. Not both.
+- **Don't over-verify**: More verification ≠ better. Sufficient verification = done.
+
 **For route/template/blueprint changes (ENFORCED BY HOOK):**
 
 The pre-commit hook blocks commits to UI-affecting files without Playwright verification:
