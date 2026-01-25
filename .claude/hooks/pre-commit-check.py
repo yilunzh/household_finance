@@ -190,24 +190,8 @@ Steps:
 """,
         }
 
-    # Check iOS verification for iOS app files
-    ios_files = get_staged_ios_files()
-    if ios_files and not is_ios_verification_current(ios_files):
-        file_list = "\n".join(f"  - {f}" for f in ios_files)
-        return {
-            "decision": "block",
-            "reason": f"""iOS app files detected. Maestro verification required.
-
-Files needing verification:
-{file_list}
-
-Steps:
-1. Run: ./scripts/ios-test.sh --all
-2. Script auto-starts backend, simulator, builds app, runs tests
-3. On success, .ios-verified marker is created automatically
-4. Retry commit
-""",
-        }
+    # NOTE: iOS verification moved to pre-push hook to speed up iterative development
+    # Full Maestro test suite runs before push, not on every commit
 
     # Lint only changed files (skip if no Python files staged)
     staged_files = get_staged_python_files()
