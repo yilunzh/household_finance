@@ -91,7 +91,7 @@ struct TabBarItem: View {
                     // Background pill for selected state
                     if isSelected {
                         Capsule()
-                            .fill(Color.terracotta100)
+                            .fill(selectedBackground)
                             .frame(width: 56, height: 32)
                     }
 
@@ -112,6 +112,10 @@ struct TabBarItem: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private var selectedBackground: Color {
+        colorScheme == .dark ? Color.terracotta700.opacity(0.3) : Color.terracotta100
     }
 
     private var iconColor: Color {

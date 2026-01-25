@@ -3,6 +3,7 @@ import SwiftUI
 struct TransactionFilterSheet: View {
     @Bindable var viewModel: TransactionsViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var dateFrom: Date?
     @State private var dateTo: Date?
@@ -15,170 +16,309 @@ struct TransactionFilterSheet: View {
     @State private var showDateFromPicker = false
     @State private var showDateToPicker = false
 
+    // MARK: - Computed Properties
+
+    private var textColor: Color {
+        colorScheme == .dark ? .textPrimaryDark : .textPrimary
+    }
+
+    private var cardBackground: Color {
+        colorScheme == .dark ? .backgroundSecondaryDark : .backgroundSecondary
+    }
+
+    private var backgroundColor: Color {
+        colorScheme == .dark ? .backgroundPrimaryDark : .backgroundPrimary
+    }
+
     var body: some View {
         NavigationStack {
-            Form {
-                // Date Range Section
-                Section {
-                    // Date From
-                    HStack {
-                        Text("From")
-                        Spacer()
-                        if let date = dateFrom {
-                            Text(date, style: .date)
-                                .foregroundStyle(.secondary)
-                            Button {
-                                dateFrom = nil
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundStyle(.secondary)
+            ScrollView {
+                VStack(spacing: Spacing.lg) {
+                    // Date Range Section
+                    VStack(spacing: Spacing.md) {
+                        Text("Date Range")
+                            .font(.labelMedium)
+                            .foregroundColor(.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        VStack(spacing: 0) {
+                            // Date From
+                            FilterDateRow(
+                                icon: .calendar,
+                                label: "From",
+                                date: dateFrom,
+                                isExpanded: showDateFromPicker,
+                                onTap: {
+                                    HapticManager.selection()
+                                    withAnimation(.spring(response: 0.3)) {
+                                        showDateFromPicker.toggle()
+                                        if showDateFromPicker { showDateToPicker = false }
+                                    }
+                                },
+                                onClear: {
+                                    HapticManager.selection()
+                                    dateFrom = nil
+                                },
+                                onDateChange: { dateFrom = $0 }
+                            )
+
+                            if showDateFromPicker {
+                                DatePicker(
+                                    "From Date",
+                                    selection: Binding(
+                                        get: { dateFrom ?? Date() },
+                                        set: { dateFrom = $0 }
+                                    ),
+                                    displayedComponents: .date
+                                )
+                                .datePickerStyle(.graphical)
+                                .tint(.brandPrimary)
+                                .padding(Spacing.sm)
                             }
-                            .buttonStyle(.plain)
-                        } else {
-                            Text("Any")
-                                .foregroundStyle(.secondary)
+
+                            Divider().background(Color.warm200)
+
+                            // Date To
+                            FilterDateRow(
+                                icon: .calendar,
+                                label: "To",
+                                date: dateTo,
+                                isExpanded: showDateToPicker,
+                                onTap: {
+                                    HapticManager.selection()
+                                    withAnimation(.spring(response: 0.3)) {
+                                        showDateToPicker.toggle()
+                                        if showDateToPicker { showDateFromPicker = false }
+                                    }
+                                },
+                                onClear: {
+                                    HapticManager.selection()
+                                    dateTo = nil
+                                },
+                                onDateChange: { dateTo = $0 }
+                            )
+
+                            if showDateToPicker {
+                                DatePicker(
+                                    "To Date",
+                                    selection: Binding(
+                                        get: { dateTo ?? Date() },
+                                        set: { dateTo = $0 }
+                                    ),
+                                    displayedComponents: .date
+                                )
+                                .datePickerStyle(.graphical)
+                                .tint(.brandPrimary)
+                                .padding(Spacing.sm)
+                            }
                         }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        showDateFromPicker.toggle()
+                        .padding(Spacing.md)
+                        .background(cardBackground)
+                        .cornerRadius(CornerRadius.large)
+                        .subtleShadow()
                     }
 
-                    if showDateFromPicker {
-                        DatePicker(
-                            "From Date",
-                            selection: Binding(
-                                get: { dateFrom ?? Date() },
-                                set: { dateFrom = $0 }
-                            ),
-                            displayedComponents: .date
+                    // Categories Section
+                    VStack(spacing: Spacing.md) {
+                        Text("Categories")
+                            .font(.labelMedium)
+                            .foregroundColor(.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        VStack(spacing: Spacing.sm) {
+                            FilterSelectField(
+                                icon: .highfive,
+                                label: "Category",
+                                value: selectedCategory?.name ?? "Any",
+                                isSet: selectedCategory != nil,
+                                content: {
+                                    Button {
+                                        HapticManager.selection()
+                                        selectedCategory = nil
+                                    } label: {
+                                        HStack {
+                                            Text("Any")
+                                            if selectedCategory == nil {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+                                    ForEach(viewModel.categories) { category in
+                                        Button {
+                                            HapticManager.selection()
+                                            selectedCategory = category
+                                        } label: {
+                                            HStack {
+                                                Text(category.name)
+                                                if selectedCategory?.id == category.id {
+                                                    Image(systemName: "checkmark")
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+
+                            if !viewModel.expenseTypes.isEmpty {
+                                Divider().background(Color.warm200)
+
+                                FilterSelectField(
+                                    icon: .clipboard,
+                                    label: "Expense Type",
+                                    value: selectedExpenseType?.name ?? "Any",
+                                    isSet: selectedExpenseType != nil,
+                                    content: {
+                                        Button {
+                                            HapticManager.selection()
+                                            selectedExpenseType = nil
+                                        } label: {
+                                            HStack {
+                                                Text("Any")
+                                                if selectedExpenseType == nil {
+                                                    Image(systemName: "checkmark")
+                                                }
+                                            }
+                                        }
+                                        ForEach(viewModel.expenseTypes) { expenseType in
+                                            Button {
+                                                HapticManager.selection()
+                                                selectedExpenseType = expenseType
+                                            } label: {
+                                                HStack {
+                                                    Text(expenseType.name)
+                                                    if selectedExpenseType?.id == expenseType.id {
+                                                        Image(systemName: "checkmark")
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                        .padding(Spacing.md)
+                        .background(cardBackground)
+                        .cornerRadius(CornerRadius.large)
+                        .subtleShadow()
+                    }
+
+                    // Paid By Section
+                    VStack(spacing: Spacing.md) {
+                        Text("Paid By")
+                            .font(.labelMedium)
+                            .foregroundColor(.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        FilterSelectField(
+                            icon: .happy,
+                            label: "Paid By",
+                            value: selectedPaidBy?.displayName ?? "Anyone",
+                            isSet: selectedPaidBy != nil,
+                            content: {
+                                Button {
+                                    HapticManager.selection()
+                                    selectedPaidBy = nil
+                                } label: {
+                                    HStack {
+                                        Text("Anyone")
+                                        if selectedPaidBy == nil {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+                                ForEach(viewModel.members) { member in
+                                    Button {
+                                        HapticManager.selection()
+                                        selectedPaidBy = member
+                                    } label: {
+                                        HStack {
+                                            Text(member.displayName)
+                                            if selectedPaidBy?.id == member.id {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         )
-                        .datePickerStyle(.graphical)
+                        .padding(Spacing.md)
+                        .background(cardBackground)
+                        .cornerRadius(CornerRadius.large)
+                        .subtleShadow()
                     }
 
-                    // Date To
-                    HStack {
-                        Text("To")
-                        Spacer()
-                        if let date = dateTo {
-                            Text(date, style: .date)
-                                .foregroundStyle(.secondary)
-                            Button {
-                                dateTo = nil
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundStyle(.secondary)
-                            }
-                            .buttonStyle(.plain)
-                        } else {
-                            Text("Any")
-                                .foregroundStyle(.secondary)
+                    // Amount Range Section
+                    VStack(spacing: Spacing.md) {
+                        Text("Amount Range (USD)")
+                            .font(.labelMedium)
+                            .foregroundColor(.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        VStack(spacing: Spacing.sm) {
+                            FilterTextField(
+                                icon: .coins,
+                                label: "Minimum",
+                                placeholder: "0",
+                                text: $amountMin
+                            )
+
+                            Divider().background(Color.warm200)
+
+                            FilterTextField(
+                                icon: .coins,
+                                label: "Maximum",
+                                placeholder: "Any",
+                                text: $amountMax
+                            )
                         }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        showDateToPicker.toggle()
-                    }
-
-                    if showDateToPicker {
-                        DatePicker(
-                            "To Date",
-                            selection: Binding(
-                                get: { dateTo ?? Date() },
-                                set: { dateTo = $0 }
-                            ),
-                            displayedComponents: .date
-                        )
-                        .datePickerStyle(.graphical)
-                    }
-                } header: {
-                    Text("Date Range")
-                }
-
-                // Category & Expense Type Section
-                Section {
-                    Picker("Category", selection: $selectedCategory) {
-                        Text("Any").tag(nil as TransactionCategory?)
-                        ForEach(viewModel.categories) { category in
-                            Text(category.name).tag(category as TransactionCategory?)
-                        }
+                        .padding(Spacing.md)
+                        .background(cardBackground)
+                        .cornerRadius(CornerRadius.large)
+                        .subtleShadow()
                     }
 
-                    if !viewModel.expenseTypes.isEmpty {
-                        Picker("Expense Type", selection: $selectedExpenseType) {
-                            Text("Any").tag(nil as ExpenseType?)
-                            ForEach(viewModel.expenseTypes) { expenseType in
-                                Text(expenseType.name).tag(expenseType as ExpenseType?)
-                            }
-                        }
-                    }
-                } header: {
-                    Text("Categories")
-                }
-
-                // Paid By Section
-                Section {
-                    Picker("Paid By", selection: $selectedPaidBy) {
-                        Text("Anyone").tag(nil as HouseholdMember?)
-                        ForEach(viewModel.members) { member in
-                            Text(member.displayName).tag(member as HouseholdMember?)
-                        }
-                    }
-                } header: {
-                    Text("Paid By")
-                }
-
-                // Amount Range Section
-                Section {
-                    HStack {
-                        Text("Min")
-                        Spacer()
-                        TextField("0", text: $amountMin)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 100)
-                    }
-
-                    HStack {
-                        Text("Max")
-                        Spacer()
-                        TextField("Any", text: $amountMax)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 100)
-                    }
-                } header: {
-                    Text("Amount Range (USD)")
-                }
-
-                // Clear Filters Button
-                if hasAnyFilter {
-                    Section {
-                        Button(role: .destructive) {
+                    // Clear Filters Button
+                    if hasAnyFilter {
+                        Button {
+                            HapticManager.buttonTap()
                             clearAllFilters()
                         } label: {
-                            HStack {
-                                Spacer()
+                            HStack(spacing: Spacing.sm) {
+                                CatIcon(name: .trash, size: .sm, color: .danger)
                                 Text("Clear All Filters")
-                                Spacer()
+                                    .font(.labelLarge)
+                                    .foregroundColor(.danger)
                             }
+                            .frame(maxWidth: .infinity)
+                            .padding(Spacing.md)
+                            .background(Color.rose50)
+                            .cornerRadius(CornerRadius.large)
                         }
                     }
+
+                    // Apply Button
+                    PrimaryButton(
+                        title: "Apply Filters",
+                        icon: .sparkle,
+                        action: {
+                            applyFilters()
+                            dismiss()
+                        }
+                    )
                 }
+                .padding(Spacing.md)
             }
+            .background(backgroundColor.ignoresSafeArea())
             .navigationTitle("Filters")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button {
+                        HapticManager.buttonTap()
                         dismiss()
-                    }
-                }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Apply") {
-                        applyFilters()
-                        dismiss()
+                    } label: {
+                        Text("Cancel")
+                            .foregroundColor(.brandPrimary)
                     }
                 }
             }
@@ -215,6 +355,8 @@ struct TransactionFilterSheet: View {
     }
 
     private func applyFilters() {
+        HapticManager.buttonTap()
+
         viewModel.filters.dateFrom = dateFrom
         viewModel.filters.dateTo = dateTo
         viewModel.filters.category = selectedCategory
@@ -228,6 +370,134 @@ struct TransactionFilterSheet: View {
 
         Task {
             await viewModel.fetchTransactions()
+        }
+    }
+}
+
+// MARK: - Filter Date Row
+
+private struct FilterDateRow: View {
+    let icon: CatIcon.Name
+    let label: String
+    let date: Date?
+    let isExpanded: Bool
+    let onTap: () -> Void
+    let onClear: () -> Void
+    let onDateChange: (Date) -> Void
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var textColor: Color {
+        colorScheme == .dark ? .textPrimaryDark : .textPrimary
+    }
+
+    var body: some View {
+        HStack(spacing: Spacing.sm) {
+            CatIcon(name: icon, size: .sm, color: .warm400)
+
+            VStack(alignment: .leading, spacing: Spacing.xxxs) {
+                Text(label)
+                    .font(.labelSmall)
+                    .foregroundColor(.textTertiary)
+
+                Text(date.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "Any")
+                    .font(.bodyLarge)
+                    .foregroundColor(date == nil ? .textTertiary : textColor)
+            }
+
+            Spacer()
+
+            if date != nil {
+                Button {
+                    onClear()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.warm400)
+                }
+                .buttonStyle(.plain)
+            }
+
+            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.warm400)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onTap()
+        }
+    }
+}
+
+// MARK: - Filter Select Field
+
+private struct FilterSelectField<Content: View>: View {
+    let icon: CatIcon.Name
+    let label: String
+    let value: String
+    let isSet: Bool
+    @ViewBuilder let content: () -> Content
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var textColor: Color {
+        colorScheme == .dark ? .textPrimaryDark : .textPrimary
+    }
+
+    var body: some View {
+        HStack(spacing: Spacing.sm) {
+            CatIcon(name: icon, size: .sm, color: .warm400)
+
+            VStack(alignment: .leading, spacing: Spacing.xxxs) {
+                Text(label)
+                    .font(.labelSmall)
+                    .foregroundColor(.textTertiary)
+
+                Menu {
+                    content()
+                } label: {
+                    HStack {
+                        Text(value)
+                            .font(.bodyLarge)
+                            .foregroundColor(isSet ? textColor : .textTertiary)
+                        Spacer()
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 12))
+                            .foregroundColor(.warm400)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Filter Text Field
+
+private struct FilterTextField: View {
+    let icon: CatIcon.Name
+    let label: String
+    let placeholder: String
+    @Binding var text: String
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var textColor: Color {
+        colorScheme == .dark ? .textPrimaryDark : .textPrimary
+    }
+
+    var body: some View {
+        HStack(spacing: Spacing.sm) {
+            CatIcon(name: icon, size: .sm, color: .warm400)
+
+            VStack(alignment: .leading, spacing: Spacing.xxxs) {
+                Text(label)
+                    .font(.labelSmall)
+                    .foregroundColor(.textTertiary)
+
+                TextField(placeholder, text: $text)
+                    .keyboardType(.decimalPad)
+                    .font(.bodyLarge)
+                    .foregroundColor(textColor)
+            }
         }
     }
 }

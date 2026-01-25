@@ -173,6 +173,8 @@ struct GhostButton: View {
     let action: () -> Void
     var isDisabled: Bool = false
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         Button(action: {
             HapticManager.buttonTap()
@@ -180,22 +182,36 @@ struct GhostButton: View {
         }) {
             HStack(spacing: Spacing.xs) {
                 if let icon = icon {
-                    CatIcon(name: icon, size: .sm, color: isDisabled ? .warm400 : .warm600)
+                    CatIcon(name: icon, size: .sm, color: iconColor)
                 }
                 Text(title)
                     .font(.labelLarge)
             }
-            .foregroundColor(isDisabled ? .warm400 : .warm600)
+            .foregroundColor(iconColor)
             .padding(.horizontal, Spacing.md)
             .padding(.vertical, Spacing.sm)
             .background(Color.clear)
             .cornerRadius(CornerRadius.medium)
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.medium)
-                    .stroke(isDisabled ? Color.warm200 : Color.warm300, lineWidth: 2)
+                    .stroke(borderColor, lineWidth: 2)
             )
         }
         .disabled(isDisabled)
+    }
+
+    private var iconColor: Color {
+        if isDisabled {
+            return colorScheme == .dark ? .warm600 : .warm400
+        }
+        return colorScheme == .dark ? .warm300 : .warm600
+    }
+
+    private var borderColor: Color {
+        if isDisabled {
+            return colorScheme == .dark ? .warm700 : .warm200
+        }
+        return colorScheme == .dark ? .warm600 : .warm300
     }
 }
 
@@ -208,6 +224,8 @@ struct IconButton: View {
     var size: IconButtonSize = .medium
     var style: IconButtonStyle = .ghost
     var isDisabled: Bool = false
+
+    @Environment(\.colorScheme) private var colorScheme
 
     enum IconButtonSize {
         case small, medium, large
@@ -251,11 +269,17 @@ struct IconButton: View {
     private var iconColor: Color {
         switch style {
         case .ghost:
-            return isDisabled ? .warm400 : .warm600
+            if isDisabled {
+                return colorScheme == .dark ? .warm600 : .warm400
+            }
+            return colorScheme == .dark ? .warm300 : .warm600
         case .filled:
             return .white
         case .tinted:
-            return isDisabled ? .warm400 : .brandPrimary
+            if isDisabled {
+                return colorScheme == .dark ? .warm600 : .warm400
+            }
+            return .brandPrimary
         }
     }
 
@@ -264,9 +288,15 @@ struct IconButton: View {
         case .ghost:
             return .clear
         case .filled:
-            return isDisabled ? .warm300 : .brandPrimary
+            if isDisabled {
+                return colorScheme == .dark ? .warm700 : .warm300
+            }
+            return .brandPrimary
         case .tinted:
-            return isDisabled ? .warm100 : .terracotta100
+            if isDisabled {
+                return colorScheme == .dark ? .warm800 : .warm100
+            }
+            return colorScheme == .dark ? .terracotta700.opacity(0.3) : .terracotta100
         }
     }
 }
