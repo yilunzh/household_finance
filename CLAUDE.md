@@ -483,6 +483,7 @@ The Stop hook gathers context (git changes, conversation, plan) and prompts for 
 
 ### Hooks
 Custom hooks are in `.claude/hooks/`:
+- `uncommitted-changes-check.py` - **Advisory**: Warns about uncommitted changes at session start (runs on first user prompt)
 - `pre-commit-check.py` - **Blocking**: Runs tests + lint; blocks direct commits to main; requires Playwright verification for route/template changes
 - `post-edit-verify.py` - **Advisory**: Reminds to run tests after editing Python files
 - `checkpoint-reminder.py` - **Advisory**: Reminds to checkpoint every 3-5 edits
@@ -657,6 +658,7 @@ docs/
 .claude/                       # Claude Code configuration
 ├── settings.json              # MCP servers and hooks config
 ├── hooks/                     # Custom hooks
+│   ├── uncommitted-changes-check.py # Advisory: warns about uncommitted changes
 │   ├── pre-commit-check.py    # Blocking: tests + lint + branch policy
 │   ├── post-edit-verify.py    # Advisory: test reminders after edits
 │   ├── checkpoint-reminder.py # Advisory: reminds to checkpoint
