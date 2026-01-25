@@ -229,8 +229,8 @@ enum Layout {
     /// Navigation bar height
     static let navBarHeight: CGFloat = 44
 
-    /// Tab bar height
-    static let tabBarHeight: CGFloat = 80
+    /// Tab bar height (icon 32 + label ~14 + padding)
+    static let tabBarHeight: CGFloat = 60
 
     /// Standard button height
     static let buttonHeight: CGFloat = 48
