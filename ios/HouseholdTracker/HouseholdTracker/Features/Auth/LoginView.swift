@@ -15,22 +15,22 @@ struct LoginView: View {
             ScrollView {
                 VStack(spacing: Spacing.xxl) {
                     // Logo and Title
-                    VStack(spacing: Spacing.md) {
-                        // Kawaii Cat Logo
-                        CatIcon(name: .happy, size: .xxl, color: .terracotta500)
+                    VStack(spacing: Spacing.lg) {
+                        // Kawaii Cat Logo - Hero size for login screen
+                        CatIcon(name: .happy, size: .hero, color: .terracotta500)
                             .modifier(GentleBounceModifier())
 
                         VStack(spacing: Spacing.xs) {
                             Text("Lucky Ledger")
-                                .font(.displayLarge)
-                                .foregroundColor(.textPrimary)
+                                .font(.system(size: 36, weight: .bold, design: .rounded))
+                                .foregroundColor(colorScheme == .dark ? .textPrimaryDark : .textPrimary)
 
                             Text("Track household expenses together")
                                 .font(.bodyMedium)
-                                .foregroundColor(.textSecondary)
+                                .foregroundColor(colorScheme == .dark ? .textSecondaryDark : .textSecondary)
                         }
                     }
-                    .padding(.top, Spacing.xxxl)
+                    .padding(.top, Spacing.xxl)
 
                     // Form Card
                     CardContainer {

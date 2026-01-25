@@ -93,6 +93,7 @@ struct CatIcon: View {
         case lg   // 32pt - Tab bar icons
         case xl   // 48pt - Feature icons
         case xxl  // 64pt - Hero/empty state icons
+        case hero // 96pt - Login/branding hero icon
 
         var dimension: CGFloat {
             switch self {
@@ -101,6 +102,7 @@ struct CatIcon: View {
             case .lg: return IconSize.xl   // 32pt for emphasis
             case .xl: return IconSize.xxl  // 48pt for features
             case .xxl: return IconSize.xxxl // 64pt for heroes
+            case .hero: return 96          // 96pt for login branding
             }
         }
     }
