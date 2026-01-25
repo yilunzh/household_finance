@@ -9,7 +9,7 @@ appId: com.householdtracker.app
 # Wait for the full screen view to appear (either success or error state)
 - extendedWaitUntil:
     visible: "Done"
-    timeout: 5000
+    timeout: 3000
 
 # Close the full screen view (handles both success and error states)
 - tapOn: "Done"
@@ -17,4 +17,4 @@ appId: com.householdtracker.app
 # Verify we're back in the detail view
 - extendedWaitUntil:
     visible: "Receipt"
-    timeout: 3000
+    timeout: 2000

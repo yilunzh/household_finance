@@ -10,18 +10,10 @@ appId: com.householdtracker.app
       visible: "Transactions"
     file: helpers/logout-helper.yaml
 
-# Login
+# Login using helper
 - assertVisible: "Lucky Ledger"
-- tapOn: "your@email.com"
-- inputText: "demo_alice@example.com"
-- tapOn: "Your password"
-- inputText: "password123"
-- tapOn: "Log In"
-
-# Wait for main screen to fully load
-- extendedWaitUntil:
-    visible: "Transactions"
-    timeout: 10000
+- runFlow:
+    file: helpers/do-login.yaml
 
 # Small gesture to ensure UI is responsive
 - swipe:
@@ -37,4 +29,4 @@ appId: com.householdtracker.app
 # Verify reconciliation view is loaded - check for navigation title
 - extendedWaitUntil:
     visible: "Total Spent"
-    timeout: 10000
+    timeout: 5000

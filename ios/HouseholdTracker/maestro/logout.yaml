@@ -10,18 +10,10 @@ appId: com.householdtracker.app
       visible: "Transactions"
     file: helpers/logout-helper.yaml
 
-# Login first
+# Login using helper
 - assertVisible: "Lucky Ledger"
-- tapOn: "your@email.com"
-- inputText: "demo_alice@example.com"
-- tapOn: "Your password"
-- inputText: "password123"
-- tapOn: "Log In"
-
-# Wait for main screen to fully load
-- extendedWaitUntil:
-    visible: "Transactions"
-    timeout: 10000
+- runFlow:
+    file: helpers/do-login.yaml
 
 # Small wait for UI to settle after login
 - swipe:
@@ -37,16 +29,16 @@ appId: com.householdtracker.app
 # Wait for Settings screen to load
 - extendedWaitUntil:
     visible: "Demo Alice"
-    timeout: 5000
+    timeout: 3000
 
 # Log Out button is at bottom of Settings, need to scroll
 - scrollUntilVisible:
     element: "Log Out"
     direction: DOWN
-    timeout: 5000
+    timeout: 3000
 - tapOn: "Log Out"
 
 # Verify back at login screen
 - extendedWaitUntil:
     visible: "Lucky Ledger"
-    timeout: 5000
+    timeout: 3000

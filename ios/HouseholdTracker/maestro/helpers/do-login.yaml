@@ -8,4 +8,4 @@ appId: com.householdtracker.app
 - tapOn: "Log In"
 - extendedWaitUntil:
     visible: "Transactions"
-    timeout: 15000
+    timeout: 7000

@@ -26,7 +26,7 @@ appId: com.householdtracker.app
 # Wait for login to complete and verify we see the main app
 - extendedWaitUntil:
     visible: "Transactions"
-    timeout: 10000
+    timeout: 7000
 
 # Verify we're on the transactions screen
 - assertVisible: "Transactions"

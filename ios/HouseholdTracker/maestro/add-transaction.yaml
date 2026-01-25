@@ -10,18 +10,10 @@ appId: com.householdtracker.app
       visible: "Transactions"
     file: helpers/logout-helper.yaml
 
-# Login first
+# Login using helper
 - assertVisible: "Lucky Ledger"
-- tapOn: "your@email.com"
-- inputText: "demo_alice@example.com"
-- tapOn: "Your password"
-- inputText: "password123"
-- tapOn: "Log In"
-
-# Wait for main screen to fully load
-- extendedWaitUntil:
-    visible: "Transactions"
-    timeout: 10000
+- runFlow:
+    file: helpers/do-login.yaml
 
 # Small gesture to ensure UI is responsive
 - swipe:
@@ -36,7 +28,7 @@ appId: com.householdtracker.app
 # Fill in transaction details - wait for sheet to appear
 - extendedWaitUntil:
     visible: "Where did you spend?"
-    timeout: 5000
+    timeout: 3000
 
 # Tap merchant field by placeholder text
 - tapOn: "Where did you spend?"
@@ -55,7 +47,7 @@ appId: com.householdtracker.app
 - scrollUntilVisible:
     element: "Paid By"
     direction: DOWN
-    timeout: 3000
+    timeout: 2000
 
 # Select Paid By (required field)
 - tapOn: "Paid By"
@@ -63,7 +55,7 @@ appId: com.householdtracker.app
 # Wait for picker and select Alice
 - extendedWaitUntil:
     visible: "Alice"
-    timeout: 3000
+    timeout: 2000
 - tapOn: "Alice"
 
 # Hide keyboard/picker if visible
@@ -73,7 +65,7 @@ appId: com.householdtracker.app
 - scrollUntilVisible:
     element: "Add Transaction"
     direction: DOWN
-    timeout: 3000
+    timeout: 2000
 
 # Submit the transaction (button text is "Add Transaction")
 - tapOn:
@@ -83,4 +75,4 @@ appId: com.householdtracker.app
 # Wait for the sheet to dismiss and return to transactions list
 - extendedWaitUntil:
     visible: "Transactions"
-    timeout: 10000
+    timeout: 7000

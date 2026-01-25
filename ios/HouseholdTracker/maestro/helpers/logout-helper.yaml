@@ -9,14 +9,14 @@ appId: com.householdtracker.app
 # Wait for Settings screen
 - extendedWaitUntil:
     visible: "Demo Alice"
-    timeout: 5000
+    timeout: 3000
 
 # Log Out button is at the bottom of Settings, need to scroll down
 - scrollUntilVisible:
     element: "Log Out"
     direction: DOWN
-    timeout: 5000
+    timeout: 3000
 - tapOn: "Log Out"
 - extendedWaitUntil:
     visible: "Lucky Ledger"
-    timeout: 5000
+    timeout: 3000
