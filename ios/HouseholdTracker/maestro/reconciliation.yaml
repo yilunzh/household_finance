@@ -12,21 +12,29 @@ appId: com.householdtracker.app
 
 # Login
 - assertVisible: "Lucky Ledger"
-- tapOn: "Email"
+- tapOn: "your@email.com"
 - inputText: "demo_alice@example.com"
-- tapOn: "Password"
+- tapOn: "Your password"
 - inputText: "password123"
 - tapOn: "Log In"
 
-# Wait for main screen
+# Wait for main screen to fully load
 - extendedWaitUntil:
     visible: "Transactions"
     timeout: 10000
 
-# Navigate to Reconciliation tab
-- tapOn: "Summary"
+# Small gesture to ensure UI is responsive
+- swipe:
+    direction: UP
+    duration: 100
 
-# Verify reconciliation view is loaded
+# Navigate to Reconciliation tab (Summary in tab bar)
+- tapOn:
+    text: "Summary"
+    index: 0
+    retryTapIfNoChange: true
+
+# Verify reconciliation view is loaded - check for navigation title
 - extendedWaitUntil:
     visible: "Total Spent"
     timeout: 10000

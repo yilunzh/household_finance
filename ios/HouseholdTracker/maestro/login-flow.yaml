@@ -13,11 +13,11 @@ appId: com.householdtracker.app
 # Now we should be at login screen
 - assertVisible: "Lucky Ledger"
 
-# Enter credentials
-- tapOn: "Email"
+# Enter credentials - tap on placeholder text to focus fields
+- tapOn: "your@email.com"
 - inputText: "demo_alice@example.com"
 
-- tapOn: "Password"
+- tapOn: "Your password"
 - inputText: "password123"
 
 # Tap login button

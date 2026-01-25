@@ -14,9 +14,9 @@ appId: com.householdtracker.app
 
 # Login first
 - assertVisible: "Lucky Ledger"
-- tapOn: "Email"
+- tapOn: "your@email.com"
 - inputText: "demo_alice@example.com"
-- tapOn: "Password"
+- tapOn: "Your password"
 - inputText: "password123"
 - tapOn: "Log In"
 
@@ -25,13 +25,20 @@ appId: com.householdtracker.app
     visible: "Transactions"
     timeout: 10000
 
+# Small gesture to ensure UI is responsive
+- swipe:
+    direction: UP
+    duration: 100
+
 # Verify we have transactions loaded (wait for a transaction to appear)
 - extendedWaitUntil:
     visible: "January 2026"
     timeout: 5000
 
-# Tap on a transaction that has a receipt (Safeway has one based on the paperclip)
-- tapOn: "Safeway"
+# Tap on a transaction (Safeway has receipt data)
+- tapOn:
+    text: "Safeway"
+    retryTapIfNoChange: true
 
 # Verify transaction detail view opened
 - extendedWaitUntil:

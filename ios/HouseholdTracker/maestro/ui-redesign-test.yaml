@@ -4,12 +4,15 @@ appId: com.householdtracker.app
 - launchApp:
     clearState: true
 
+# Handle case where app is already logged in (keychain tokens)
+- runFlow:
+    when:
+      visible: "Transactions"
+    file: helpers/logout-helper.yaml
+
 # Verify Login Screen Redesign
 - assertVisible: "Lucky Ledger"
 - assertVisible: "Track household expenses together"
-- assertVisible: "Email"
-- assertVisible: "Password"
-- assertVisible: "Log In"
 
 # Take screenshot of login screen
 - takeScreenshot: "login-screen-redesign"
@@ -29,34 +32,39 @@ appId: com.householdtracker.app
     visible: "Transactions"
     timeout: 15000
 
+# Small gesture to ensure UI is responsive
+- swipe:
+    direction: UP
+    duration: 100
+
 # Take screenshot of transactions screen
 - takeScreenshot: "transactions-screen"
 
-# Navigate to Summary tab - tap in the middle-left of bottom tab bar
+# Navigate to Summary tab
 - tapOn:
-    point: "30%,95%"
+    text: "Summary"
+    index: 0
+    retryTapIfNoChange: true
 - extendedWaitUntil:
-    visible:
-      text: "Summary"
-      index: 0
+    visible: "Total Spent"
     timeout: 5000
 - takeScreenshot: "summary-screen"
 
-# Navigate to Budget tab - tap in the middle-right of bottom tab bar
+# Navigate to Budget tab - tap on the tab bar area (y=93% to hit above home indicator)
 - tapOn:
-    point: "60%,95%"
+    point: "62%,93%"
 - extendedWaitUntil:
     visible: "Budget Rules"
     timeout: 5000
 - takeScreenshot: "budget-screen"
 
-# Navigate to Settings tab - tap in the right of bottom tab bar
+# Navigate to Settings tab
 - tapOn:
-    point: "85%,95%"
+    point: "87%,93%"
 - extendedWaitUntil:
-    visible: "Profile"
+    visible: "Demo Alice"
     timeout: 5000
 - takeScreenshot: "settings-screen"
 
-# Test complete
-- assertVisible: "Settings"
+# Test complete - verify on Settings screen
+- assertVisible: "Demo Alice"

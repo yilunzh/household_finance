@@ -209,6 +209,8 @@ For routes, models, business logic, test structure:
 | Error message | ESCALATE - propose options |
 | Email text | ESCALATE - propose options |
 | CSV format | ESCALATE - propose options |
+| iOS Swift code | Autonomous + **Maestro verify** via `./scripts/ios-test.sh` |
+| iOS UI change | Autonomous + **Maestro verify** + auto-fix tests if needed |
 
 ### Test Files
 
@@ -485,7 +487,7 @@ The Stop hook gathers context (git changes, conversation, plan) and prompts for 
 Custom hooks are in `.claude/hooks/`:
 - `branch-check.py` - **Blocking**: Blocks code file edits when on main branch; must create feature branch first
 - `uncommitted-changes-check.py` - **Advisory**: Warns about uncommitted changes at session start (runs on first user prompt)
-- `pre-commit-check.py` - **Blocking**: Runs tests + lint; blocks direct commits to main; requires Playwright verification for route/template changes
+- `pre-commit-check.py` - **Blocking**: Runs tests + lint; blocks direct commits to main; requires Playwright verification for route/template changes; requires Maestro verification for iOS changes
 - `post-edit-verify.py` - **Advisory**: Reminds to run tests after editing Python files
 - `checkpoint-reminder.py` - **Advisory**: Reminds to checkpoint every 3-5 edits
 - `checkpoint-validator.py` - **Advisory**: Validates checkpoint has required sections
@@ -617,6 +619,41 @@ Test artifacts (screenshots, logs) are saved to:
 ```
 
 Check `screenshot-❌-*.png` for failure screenshots.
+
+### Autonomous iOS Testing (Claude)
+
+For Claude-driven autonomous testing, use the orchestration script:
+
+```bash
+# Smart test runner - auto-detects and auto-starts everything
+./scripts/ios-test.sh [--test <name>] [--all] [--rebuild] [--verbose]
+
+# Run specific test during iteration
+./scripts/ios-test.sh --test login-flow
+
+# Run all tests before commit
+./scripts/ios-test.sh --all
+
+# Force rebuild and run all tests
+./scripts/ios-test.sh --rebuild --all
+```
+
+**The script automatically:**
+- Checks/starts backend server on port 5001
+- Seeds test data if demo user missing
+- Sets up Java/Maestro environment
+- Boots iPhone 16 simulator if not running
+- Builds and installs app if needed
+- Runs Maestro tests
+- Creates `.ios-verified` marker on success
+
+**Commit verification:** The pre-commit hook blocks commits to iOS files without the `.ios-verified` marker. Run `./scripts/ios-test.sh --all` to verify before committing.
+
+**Failure handling:** When tests fail, Claude will:
+1. Parse failure output (logs, screenshots)
+2. Diagnose: outdated test selector vs real bug vs flaky test
+3. Auto-fix the appropriate file (test YAML or Swift code)
+4. Re-run tests until passing
 
 ## Production Deployment (Render)
 
