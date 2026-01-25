@@ -392,8 +392,9 @@ private struct FilterDateRow: View {
     }
 
     var body: some View {
-        HStack(spacing: Spacing.sm) {
+        HStack(alignment: .top, spacing: Spacing.sm) {
             CatIcon(name: icon, size: .sm, color: .warm400)
+                .padding(.top, Spacing.xxxs)  // Align with label baseline
 
             VStack(alignment: .leading, spacing: Spacing.xxxs) {
                 Text(label)
@@ -420,6 +421,7 @@ private struct FilterDateRow: View {
             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(.warm400)
+                .padding(.top, Spacing.xs)  // Align with content center
         }
         .contentShape(Rectangle())
         .onTapGesture {

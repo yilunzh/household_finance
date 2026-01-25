@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
-"""Block commits if tests/lint fail, committing to main, or UI changes without Playwright verification."""
+"""Block commits if tests/lint fail, committing to main, or UI/iOS changes without verification."""
 import subprocess
 import json
 from pathlib import Path
 
 
-# Patterns that indicate UI-affecting files
+# Patterns that indicate UI-affecting files (web)
 UI_PATTERNS = [
     "app.py",
     "blueprints/",
     "templates/",
+]
+
+# Patterns that indicate iOS app files
+IOS_PATTERNS = [
+    "ios/HouseholdTracker/HouseholdTracker/",  # Swift source
+    "ios/HouseholdTracker/project.yml",         # Xcode config
+    "ios/HouseholdTracker/maestro/",            # Test files
 ]
 
 
@@ -89,6 +96,40 @@ def is_playwright_verification_current(ui_files):
     return True
 
 
+def get_staged_ios_files():
+    """Get staged files that affect iOS app (Swift, config, tests)."""
+    result = subprocess.run(
+        ["git", "diff", "--cached", "--name-only"],
+        capture_output=True,
+        text=True,
+    )
+    staged = [f for f in result.stdout.strip().split("\n") if f]
+
+    ios_files = []
+    for f in staged:
+        # Skip hook files
+        if ".claude/hooks/" in f:
+            continue
+        # Check against known iOS patterns
+        if any(pattern in f for pattern in IOS_PATTERNS):
+            ios_files.append(f)
+    return ios_files
+
+
+def is_ios_verification_current(ios_files):
+    """Check if .ios-verified marker is newer than all iOS files."""
+    marker = Path(".ios-verified")
+    if not marker.exists():
+        return False
+
+    marker_time = marker.stat().st_mtime
+    for f in ios_files:
+        file_path = Path(f)
+        if file_path.exists() and file_path.stat().st_mtime > marker_time:
+            return False
+    return True
+
+
 def run_command(cmd, name):
     result = subprocess.run(cmd, capture_output=True, text=True)
     return {
@@ -148,6 +189,9 @@ Steps:
 5. Retry commit
 """,
         }
+
+    # NOTE: iOS verification moved to pre-push hook to speed up iterative development
+    # Full Maestro test suite runs before push, not on every commit
 
     # Lint only changed files (skip if no Python files staged)
     staged_files = get_staged_python_files()

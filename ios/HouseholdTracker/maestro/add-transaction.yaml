@@ -10,47 +10,72 @@ appId: com.householdtracker.app
       visible: "Transactions"
     file: helpers/logout-helper.yaml
 
-# Login first
+# Login using helper
 - assertVisible: "Lucky Ledger"
-- tapOn: "Email"
-- inputText: "demo_alice@example.com"
-- tapOn: "Password"
-- inputText: "password123"
-- tapOn: "Log In"
+- runFlow:
+    file: helpers/do-login.yaml
 
-# Wait for main screen
+# Small gesture to ensure UI is responsive
+- swipe:
+    direction: UP
+    duration: 100
+
+# Tap add button (+ icon in top right, has accessibilityLabel "Add Transaction")
+- tapOn:
+    text: "Add Transaction"
+    retryTapIfNoChange: true
+
+# Fill in transaction details - wait for sheet to appear
 - extendedWaitUntil:
-    visible: "Transactions"
-    timeout: 10000
+    visible: "Where did you spend?"
+    timeout: 3000
 
-# Tap add button (+ icon in top right)
-- tapOn: "Add Transaction"
-
-# Fill in transaction details - look for the sheet
-- extendedWaitUntil:
-    visible: "Add Transaction"
-    timeout: 5000
-
-- tapOn: "Merchant"
+# Tap merchant field by placeholder text
+- tapOn: "Where did you spend?"
 - inputText: "Test Groceries"
 
-# Amount field has placeholder "0.00"
-- tapOn: "0.00"
-- inputText: "50.00"
+# Amount field - tap on the amount display area
+- tapOn:
+    text: "0.00"
+    index: 0
+- inputText: "50"
 
-# Select Paid By (required field) - scroll down first to ensure picker is visible
+# Take screenshot to verify amount formatting
+- takeScreenshot: "add-transaction-amount"
+
+# Hide keyboard by tapping elsewhere
+- hideKeyboard
+
+# Scroll down to see more fields and the save button
 - scrollUntilVisible:
     element: "Paid By"
     direction: DOWN
-- tapOn: "Paid By"
-- tapOn: "Alice"
-# Tap elsewhere to dismiss picker
-- tapOn: "Add Transaction"
+    timeout: 2000
 
-# Submit the transaction
-- tapOn: "Save"
+# Select Paid By (required field)
+- tapOn: "Paid By"
+
+# Wait for picker and select Alice
+- extendedWaitUntil:
+    visible: "Alice"
+    timeout: 2000
+- tapOn: "Alice"
+
+# Hide keyboard/picker if visible
+- hideKeyboard
+
+# Scroll to save button
+- scrollUntilVisible:
+    element: "Add Transaction"
+    direction: DOWN
+    timeout: 2000
+
+# Submit the transaction (button text is "Add Transaction")
+- tapOn:
+    text: "Add Transaction"
+    index: 1
 
 # Wait for the sheet to dismiss and return to transactions list
 - extendedWaitUntil:
     visible: "Transactions"
-    timeout: 10000
+    timeout: 7000

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		ASSETS002BUILDFILE00000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = ASSETS001FILEREF000000001 /* Assets.xcassets */; };
 		067B9FE148E60A6945DC5E6D /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEEAB43A77CED49CDB6B53F7 /* KeychainManager.swift */; };
 		1E5B0695D9DDBB8EA95DBD92 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3859398FB33A7F40B8AD952 /* User.swift */; };
 		21BE821F3941416A98A182E7 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDB15C10C0B84A3CB0DB669F /* MainTabView.swift */; };
@@ -66,6 +67,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		ASSETS001FILEREF000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Resources/Assets.xcassets"; sourceTree = "<group>"; };
 		0A4DE11B426ECCDE54253DFF /* HouseholdSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseholdSelectionView.swift; sourceTree = "<group>"; };
 		2A2EED4210B3AE751F8C4D59 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		2C5089125C09B275B1450445 /* HouseholdTrackerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HouseholdTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -139,6 +141,7 @@
 		1025E8EC278D2566B40EA5CA /* HouseholdTracker */ = {
 			isa = PBXGroup;
 			children = (
+				ASSETS001FILEREF000000001 /* Assets.xcassets */,
 				E78329530E644A3190F40E93 /* Design */,
 				C11FEFAB2BC32A5A1A1B5722 /* ContentView.swift */,
 				384AA84A854F9CA761F52390 /* HouseholdTrackerApp.swift */,
@@ -337,6 +340,7 @@
 			buildConfigurationList = F6C19D95EF50A1A1BBF522B8 /* Build configuration list for PBXNativeTarget "HouseholdTracker" */;
 			buildPhases = (
 				6AEE507F4D953BAE85BF8592 /* Sources */,
+				ASSETS003RESOURCESPHASE01 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -447,6 +451,17 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXResourcesBuildPhase section */
+		ASSETS003RESOURCESPHASE01 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ASSETS002BUILDFILE00000001 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
 		87AC4438D320549821DAFAF3 /* PBXTargetDependency */ = {

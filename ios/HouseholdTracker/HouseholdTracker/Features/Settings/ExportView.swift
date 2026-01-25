@@ -47,7 +47,7 @@ struct ExportView: View {
                             ProgressView()
                                 .padding(.trailing, 8)
                         }
-                        Label("Export Monthly CSV", systemImage: "square.and.arrow.up")
+                        Label("Export Monthly CSV", systemImage: "arrow.down.doc")
                     }
                 }
                 .disabled(selectedMonth.isEmpty || viewModel.isExporting)
@@ -64,7 +64,7 @@ struct ExportView: View {
                             ProgressView()
                                 .padding(.trailing, 8)
                         }
-                        Label("Export All Transactions", systemImage: "doc.text")
+                        Label("Export All Transactions", systemImage: "arrow.down.doc.fill")
                     }
                 }
                 .disabled(viewModel.isExporting)

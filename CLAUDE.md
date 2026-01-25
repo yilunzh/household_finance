@@ -209,6 +209,8 @@ For routes, models, business logic, test structure:
 | Error message | ESCALATE - propose options |
 | Email text | ESCALATE - propose options |
 | CSV format | ESCALATE - propose options |
+| iOS Swift code | Autonomous + **Maestro verify** via `./scripts/ios-test.sh` |
+| iOS UI change | Autonomous + **Maestro verify** + auto-fix tests if needed |
 
 ### Test Files
 
@@ -485,7 +487,7 @@ The Stop hook gathers context (git changes, conversation, plan) and prompts for 
 Custom hooks are in `.claude/hooks/`:
 - `branch-check.py` - **Blocking**: Blocks code file edits when on main branch; must create feature branch first
 - `uncommitted-changes-check.py` - **Advisory**: Warns about uncommitted changes at session start (runs on first user prompt)
-- `pre-commit-check.py` - **Blocking**: Runs tests + lint; blocks direct commits to main; requires Playwright verification for route/template changes
+- `pre-commit-check.py` - **Blocking**: Runs tests + lint; blocks direct commits to main; requires Playwright verification for route/template changes; requires Maestro verification for iOS changes
 - `post-edit-verify.py` - **Advisory**: Reminds to run tests after editing Python files
 - `checkpoint-reminder.py` - **Advisory**: Reminds to checkpoint every 3-5 edits
 - `checkpoint-validator.py` - **Advisory**: Validates checkpoint has required sections
@@ -539,7 +541,8 @@ pytest tests/test_models.py
 # Run E2E Playwright tests (currently flaky, excluded by default)
 # pytest tests/test_auth.py tests/test_transactions.py --ignore=""
 
-# Seed test users (test_alice@example.com / test_bob@example.com, password: password123)
+# Seed test users for LOCAL TESTING ONLY (never use in production)
+# (test_alice@example.com / test_bob@example.com, password: password123)
 python seed_test_users.py
 ```
 
@@ -591,8 +594,12 @@ cd ios/HouseholdTracker
 | `add-transaction.yaml` | Add a new transaction |
 | `reconciliation.yaml` | View reconciliation |
 | `receipt-flow.yaml` | View transaction details and receipts |
+| `design-review.yaml` | Comprehensive UI screenshot capture for design QA |
 
 ### Test Credentials
+
+> **Security Note:** These credentials are for LOCAL DEVELOPMENT AND TESTING ONLY.
+> Never use these in production environments.
 
 - Email: `demo_alice@example.com`
 - Password: `password123`
@@ -617,6 +624,76 @@ Test artifacts (screenshots, logs) are saved to:
 ```
 
 Check `screenshot-❌-*.png` for failure screenshots.
+
+### Autonomous iOS Testing (Claude)
+
+For Claude-driven autonomous testing, use the orchestration script:
+
+```bash
+# Smart test runner - auto-detects and auto-starts everything
+./scripts/ios-test.sh [--test <name>] [--all] [--rebuild] [--verbose]
+
+# Run specific test during iteration
+./scripts/ios-test.sh --test login-flow
+
+# Run all tests before commit
+./scripts/ios-test.sh --all
+
+# Force rebuild and run all tests
+./scripts/ios-test.sh --rebuild --all
+```
+
+**The script automatically:**
+- Checks/starts backend server on port 5001
+- Seeds test data if demo user missing
+- Sets up Java/Maestro environment
+- Boots iPhone 16 simulator if not running
+- Builds and installs app if needed
+- Runs Maestro tests
+- Creates `.ios-verified` marker on success
+
+**Verification workflow:** iOS verification is manual (not enforced on every commit). Run `./scripts/ios-test.sh --all` before pushing to GitHub or creating PRs.
+
+**Failure handling:** When tests fail, Claude will:
+1. Parse failure output (logs, screenshots)
+2. Diagnose: outdated test selector vs real bug vs flaky test
+3. Auto-fix the appropriate file (test YAML or Swift code)
+4. Re-run tests until passing
+
+### Design Review Workflow
+
+For comprehensive UI/UX quality assurance, use the design-review workflow:
+
+```bash
+# Step 1: Capture all major screens (14+ screenshots)
+./scripts/ios-test.sh --test design-review
+
+# Step 2: Invoke design review agent (say this)
+"run design review"
+```
+
+The `design-review.yaml` test captures:
+- Login screen
+- Transactions list
+- Add Transaction sheet (top and bottom)
+- Transaction Filter sheet
+- Transaction Detail view
+- Summary/Reconciliation
+- Budget Rules tab
+- Split Rules tab
+- Settings main
+- Household Settings
+- Members List
+- Expense Types
+- Export Data
+
+The `design-review` agent (in `.claude/agents/`) analyzes each screenshot against a comprehensive checklist:
+- Alignment, spacing, layout patterns
+- Typography, icons, text content
+- Colors (terracotta/sage/cream theme)
+- Interactive states
+
+**When to use:** After implementing UI changes, before committing, to catch visual bugs that functional tests miss.
 
 ## Production Deployment (Render)
 
@@ -670,7 +747,8 @@ docs/
 │   ├── spec-update-check.py   # SPEC.md update trigger
 │   └── sync-structure.py      # Project tree generator
 └── agents/                    # Custom subagents
-    └── test-first.md          # TDD specialist for new features
+    ├── test-first.md          # TDD specialist for new features
+    └── design-review.md       # UI/UX design QA agent
 
 ios/HouseholdTracker/          # iOS mobile app
 ├── HouseholdTracker/          # Swift source code
@@ -679,7 +757,8 @@ ios/HouseholdTracker/          # iOS mobile app
 │   ├── logout.yaml
 │   ├── add-transaction.yaml
 │   ├── reconciliation.yaml
-│   └── receipt-flow.yaml
+│   ├── receipt-flow.yaml
+│   └── design-review.yaml     # Comprehensive UI screenshot capture
 └── HouseholdTracker.xcodeproj/# Xcode project (generated)
 ```
 

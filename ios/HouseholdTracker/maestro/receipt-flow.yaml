@@ -12,31 +12,30 @@ appId: com.householdtracker.app
       visible: "Transactions"
     file: helpers/logout-helper.yaml
 
-# Login first
+# Login using helper
 - assertVisible: "Lucky Ledger"
-- tapOn: "Email"
-- inputText: "demo_alice@example.com"
-- tapOn: "Password"
-- inputText: "password123"
-- tapOn: "Log In"
+- runFlow:
+    file: helpers/do-login.yaml
 
-# Wait for transactions to load
-- extendedWaitUntil:
-    visible: "Transactions"
-    timeout: 10000
+# Small gesture to ensure UI is responsive
+- swipe:
+    direction: UP
+    duration: 100
 
 # Verify we have transactions loaded (wait for a transaction to appear)
 - extendedWaitUntil:
     visible: "January 2026"
-    timeout: 5000
+    timeout: 3000
 
-# Tap on a transaction that has a receipt (Safeway has one based on the paperclip)
-- tapOn: "Safeway"
+# Tap on a transaction (Safeway has receipt data)
+- tapOn:
+    text: "Safeway"
+    retryTapIfNoChange: true
 
 # Verify transaction detail view opened
 - extendedWaitUntil:
     visible: "Details"
-    timeout: 3000
+    timeout: 2000
 
 # Verify the Receipt section is visible
 - assertVisible: "Receipt"

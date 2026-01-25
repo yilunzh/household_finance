@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" fill="#000000">
 <g transform="translate(0.000000,1024.000000) scale(0.100000,-0.100000)">
 <path d="M2409 9066 c-98 -21 -172 -85 -204 -175 -13 -38 -15 -184 -15 -1130
 0 -1170 -1 -1137 51 -1225 18 -30 18 -36 5 -74 -25 -70 -56 -228 -71 -365 -64

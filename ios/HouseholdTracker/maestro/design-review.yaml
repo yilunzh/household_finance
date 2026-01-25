@@ -1,0 +1,227 @@
+appId: com.householdtracker.app
+---
+# Comprehensive UI/UX Design Review
+# Captures all major screens for visual inspection by design-review agent
+#
+# Run: ./scripts/ios-test.sh --test design-review
+# Then: say "run design review" to analyze screenshots
+
+- launchApp:
+    clearState: true
+
+# Handle case where app is already logged in
+- runFlow:
+    when:
+      visible: "Transactions"
+    file: helpers/logout-helper.yaml
+
+# ============================================
+# 1. LOGIN SCREEN
+# ============================================
+- assertVisible: "Lucky Ledger"
+- takeScreenshot: "01-login-screen"
+
+# Login
+- runFlow:
+    file: helpers/do-login.yaml
+
+# Small gesture to ensure UI is responsive
+- swipe:
+    direction: UP
+    duration: 100
+
+# ============================================
+# 2. TRANSACTIONS LIST
+# ============================================
+- extendedWaitUntil:
+    visible: "January 2026"
+    timeout: 3000
+- takeScreenshot: "02-transactions-list"
+
+# ============================================
+# 3. ADD TRANSACTION SHEET
+# ============================================
+- tapOn:
+    text: "Add Transaction"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Where did you spend?"
+    timeout: 3000
+- takeScreenshot: "03-add-transaction-top"
+
+# Scroll down to see Notes section and Add button
+- swipe:
+    direction: UP
+    duration: 500
+- extendedWaitUntil:
+    visible: "Notes"
+    timeout: 2000
+- takeScreenshot: "04-add-transaction-bottom"
+
+# Cancel and return to transactions
+- tapOn: "Cancel"
+- extendedWaitUntil:
+    visible: "Transactions"
+    timeout: 2000
+
+# ============================================
+# 4. TRANSACTION FILTER SHEET
+# ============================================
+# First tap Search to activate search mode
+- tapOn:
+    text: "Search"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Search transactions..."
+    timeout: 2000
+
+# Now tap Filters (icon changes to filter when search active)
+- tapOn:
+    text: "Filters"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Apply Filters"
+    timeout: 3000
+- takeScreenshot: "05-transaction-filter"
+
+# Close filter
+- tapOn: "Cancel"
+- extendedWaitUntil:
+    visible: "Transactions"
+    timeout: 2000
+
+# Deactivate search mode by tapping Cancel
+- tapOn:
+    text: "Cancel"
+    retryTapIfNoChange: true
+
+# ============================================
+# 5. TRANSACTION DETAIL
+# ============================================
+- tapOn:
+    text: "Safeway"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Details"
+    timeout: 2000
+- takeScreenshot: "06-transaction-detail"
+
+# Close detail
+- tapOn: "Done"
+- extendedWaitUntil:
+    visible: "Transactions"
+    timeout: 2000
+
+# ============================================
+# 6. SUMMARY/RECONCILIATION
+# ============================================
+- tapOn:
+    text: "Summary"
+    index: 0
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Total Spent"
+    timeout: 3000
+- takeScreenshot: "07-summary-reconciliation"
+
+# ============================================
+# 7. BUDGET - RULES TAB
+# ============================================
+- tapOn:
+    point: "62%,93%"
+- extendedWaitUntil:
+    visible: "Budget Rules"
+    timeout: 3000
+- takeScreenshot: "08-budget-rules"
+
+# ============================================
+# 8. BUDGET - SPLIT RULES TAB
+# ============================================
+- tapOn:
+    text: "Split Rules"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Split Rules"
+    timeout: 2000
+- takeScreenshot: "09-split-rules"
+
+# ============================================
+# 9. SETTINGS MAIN
+# ============================================
+- tapOn:
+    point: "87%,93%"
+- extendedWaitUntil:
+    visible: "Demo Alice"
+    timeout: 3000
+- takeScreenshot: "10-settings-main"
+
+# ============================================
+# 10. HOUSEHOLD SETTINGS
+# ============================================
+- tapOn:
+    text: "Demo Household"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Household Settings"
+    timeout: 3000
+- takeScreenshot: "11-household-settings"
+
+# Back to settings
+- tapOn:
+    text: "Settings"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Demo Alice"
+    timeout: 2000
+
+# ============================================
+# 11. MEMBERS LIST
+# ============================================
+- tapOn:
+    text: "Members"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Alice"
+    timeout: 3000
+- takeScreenshot: "12-members-list"
+
+# Back to settings
+- tapOn:
+    text: "Settings"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Demo Alice"
+    timeout: 2000
+
+# ============================================
+# 12. EXPENSE TYPES
+# ============================================
+- tapOn:
+    text: "Expense Types"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Expense Types"
+    timeout: 3000
+- takeScreenshot: "13-expense-types"
+
+# Back to settings
+- tapOn:
+    text: "Settings"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Demo Alice"
+    timeout: 2000
+
+# ============================================
+# 13. EXPORT DATA
+# ============================================
+- tapOn:
+    text: "Export Data"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Export Data"
+    timeout: 3000
+- takeScreenshot: "14-export-data"
+
+# Test complete - verify all screenshots captured
+- assertVisible: "Export Data"
