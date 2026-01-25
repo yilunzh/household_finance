@@ -3,11 +3,10 @@ import Foundation
 actor NetworkManager {
     static let shared = NetworkManager()
 
-    // TODO: Change to production URL when deploying
-    #if DEBUG
+    #if targetEnvironment(simulator)
     private let baseURL = "http://localhost:5001/api/v1"
     #else
-    private let baseURL = "https://your-production-url.com/api/v1"
+    private let baseURL = "https://household-finance.onrender.com/api/v1"
     #endif
 
     private let keychain = KeychainManager.shared
