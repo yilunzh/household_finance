@@ -214,7 +214,7 @@ struct StyledSummaryCard: View {
                 Text(summary.settlementMessage)
                     .font(.bodyLarge)
                     .fontWeight(.semibold)
-                    .foregroundColor(textColor)
+                    .foregroundColor(.textPrimary)  // Always dark text on light background
             }
             .padding(Spacing.sm)
             .frame(maxWidth: .infinity)
@@ -439,15 +439,15 @@ struct StyledBudgetStatusCard: View {
 
                     HStack {
                         if budget.isOverBudget {
-                            CatIcon(name: .worried, size: .sm, color: .danger)
+                            CatIcon(name: .worried, size: .sm, color: .rose700)
                             Text("Over budget by \(formatCurrency(budget.spentAmount - budget.budgetAmount))")
                                 .font(.labelSmall)
-                                .foregroundColor(.danger)
+                                .foregroundColor(.rose700)  // Darker for contrast on light background
                         } else {
-                            CatIcon(name: .happy, size: .sm, color: .success)
+                            CatIcon(name: .happy, size: .sm, color: .sage700)
                             Text("\(formatCurrency(budget.remaining)) remaining")
                                 .font(.labelSmall)
-                                .foregroundColor(.success)
+                                .foregroundColor(.sage700)  // Darker for contrast on light background
                         }
                     }
                 }
