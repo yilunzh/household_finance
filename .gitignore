@@ -49,3 +49,12 @@ screenshots/
 .playwright-mcp/
 ios/LuckyLedger/build/
 uploads/
+
+# iOS build artifacts
+ios/HouseholdTracker/build/
+
+# Xcode user data
+ios/HouseholdTracker/HouseholdTracker.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Test screenshots
+ios/HouseholdTracker/*.png
