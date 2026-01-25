@@ -1,10 +1,7 @@
 """Budget calculation utilities for household expense tracker."""
 
 from decimal import Decimal
-from datetime import datetime
-from models import (
-    db, Transaction, BudgetRule, BudgetSnapshot, ExpenseType, BudgetRuleExpenseType
-)
+from models import db, Transaction, BudgetRule, BudgetSnapshot
 
 
 def calculate_budget_status(budget_rule, month_year, transactions=None):
@@ -149,7 +146,7 @@ def get_yearly_cumulative(budget_rule_id, year):
     snapshots = BudgetSnapshot.query.filter(
         BudgetSnapshot.budget_rule_id == budget_rule_id,
         BudgetSnapshot.month_year.like(f'{year}-%'),
-        BudgetSnapshot.is_finalized == True
+        BudgetSnapshot.is_finalized.is_(True)
     ).all()
 
     if not snapshots:

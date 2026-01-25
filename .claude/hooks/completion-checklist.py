@@ -6,7 +6,6 @@ If no test execution is detected, it blocks completion.
 """
 import json
 import os
-import sys
 
 
 def main():

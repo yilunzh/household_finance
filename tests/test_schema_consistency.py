@@ -73,7 +73,8 @@ def test_all_model_columns_exist_in_database(app, db):
 
 def test_all_tables_exist(app, db):
     """Verify all model tables exist in the database."""
-    from models import (
+    # Import all models to verify they are importable (used indirectly via metadata)
+    from models import (  # noqa: F401
         User, Household, HouseholdMember, Transaction, Settlement,
         Invitation, ExpenseType, AutoCategoryRule, BudgetRule,
         BudgetRuleExpenseType, BudgetSnapshot, SplitRule,

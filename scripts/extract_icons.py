@@ -5,7 +5,6 @@ Converts them to standalone SVG files for iOS asset catalog.
 """
 
 import re
-import os
 from pathlib import Path
 
 # Source and destination paths

@@ -16,7 +16,7 @@ from flask import request, jsonify, g
 from extensions import db
 from models import Household, HouseholdMember, User, Invitation
 from api_decorators import jwt_required
-from email_service import send_invitation_email, is_mail_configured
+from email_service import send_invitation_email
 from blueprints.api_v1 import api_v1_bp
 from blueprints.api_v1.auth import is_valid_email
 

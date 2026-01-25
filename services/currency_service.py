@@ -4,7 +4,6 @@ Currency conversion service.
 Handles exchange rate lookups and currency conversion.
 """
 from decimal import Decimal
-from datetime import date
 from utils import get_exchange_rate, get_current_exchange_rate
 
 

@@ -4,7 +4,7 @@ Tests export content and format.
 """
 import pytest
 from datetime import date
-from conftest import BASE_URL, TEST_USERS
+from conftest import BASE_URL
 
 
 pytestmark = pytest.mark.integration

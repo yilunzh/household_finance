@@ -4,16 +4,16 @@ Shared pytest fixtures for household expense tracker tests.
 import pytest
 import os
 import sys
-from datetime import date, datetime, timedelta
+from datetime import date
 from decimal import Decimal
+
+from playwright.sync_api import sync_playwright
 
 # Add project root and tests directory to path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 tests_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, project_root)
 sys.path.insert(0, tests_dir)
-
-from playwright.sync_api import sync_playwright
 
 # ============================================================================
 # Configuration
@@ -83,7 +83,7 @@ def app_context(app):
 @pytest.fixture
 def clean_test_data(app, db):
     """Clean up test data before and after each test."""
-    from models import User, Household, HouseholdMember, Transaction, Settlement, Invitation
+    from models import User
 
     def _cleanup():
         with app.app_context():

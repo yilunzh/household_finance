@@ -10,7 +10,6 @@ Tests:
 - POST /api/v1/auth/forgot-password - Request password reset
 """
 import pytest
-import json
 from datetime import datetime, timedelta
 
 
@@ -83,7 +82,8 @@ class TestUpdateProfile:
 
     def test_update_profile_success(self, api_client, auth_headers, test_user, app):
         """Test successful profile name update."""
-        response = api_client.put('/api/v1/user/profile',
+        response = api_client.put(
+            '/api/v1/user/profile',
             headers=auth_headers,
             json={'name': 'New Display Name'}
         )
@@ -99,7 +99,8 @@ class TestUpdateProfile:
 
     def test_update_profile_empty_name(self, api_client, auth_headers):
         """Test profile update with empty name fails."""
-        response = api_client.put('/api/v1/user/profile',
+        response = api_client.put(
+            '/api/v1/user/profile',
             headers=auth_headers,
             json={'name': ''}
         )
@@ -108,7 +109,8 @@ class TestUpdateProfile:
 
     def test_update_profile_long_name(self, api_client, auth_headers):
         """Test profile update with too long name fails."""
-        response = api_client.put('/api/v1/user/profile',
+        response = api_client.put(
+            '/api/v1/user/profile',
             headers=auth_headers,
             json={'name': 'x' * 101}
         )
@@ -117,7 +119,8 @@ class TestUpdateProfile:
 
     def test_update_profile_unauthorized(self, api_client):
         """Test profile update without auth fails."""
-        response = api_client.put('/api/v1/user/profile',
+        response = api_client.put(
+            '/api/v1/user/profile',
             json={'name': 'New Name'}
         )
         assert response.status_code == 401
@@ -128,7 +131,8 @@ class TestChangePassword:
 
     def test_change_password_success(self, api_client, auth_headers, test_user, app):
         """Test successful password change."""
-        response = api_client.put('/api/v1/user/password',
+        response = api_client.put(
+            '/api/v1/user/password',
             headers=auth_headers,
             json={
                 'current_password': test_user['password'],
@@ -147,7 +151,8 @@ class TestChangePassword:
 
     def test_change_password_wrong_current(self, api_client, auth_headers):
         """Test password change with wrong current password fails."""
-        response = api_client.put('/api/v1/user/password',
+        response = api_client.put(
+            '/api/v1/user/password',
             headers=auth_headers,
             json={
                 'current_password': 'wrongpassword',
@@ -159,7 +164,8 @@ class TestChangePassword:
 
     def test_change_password_too_short(self, api_client, auth_headers, test_user):
         """Test password change with too short new password fails."""
-        response = api_client.put('/api/v1/user/password',
+        response = api_client.put(
+            '/api/v1/user/password',
             headers=auth_headers,
             json={
                 'current_password': test_user['password'],
@@ -171,7 +177,8 @@ class TestChangePassword:
 
     def test_change_password_missing_uppercase(self, api_client, auth_headers, test_user):
         """Test password change without uppercase letter fails."""
-        response = api_client.put('/api/v1/user/password',
+        response = api_client.put(
+            '/api/v1/user/password',
             headers=auth_headers,
             json={
                 'current_password': test_user['password'],
@@ -183,7 +190,8 @@ class TestChangePassword:
 
     def test_change_password_missing_number(self, api_client, auth_headers, test_user):
         """Test password change without number fails."""
-        response = api_client.put('/api/v1/user/password',
+        response = api_client.put(
+            '/api/v1/user/password',
             headers=auth_headers,
             json={
                 'current_password': test_user['password'],
@@ -199,7 +207,8 @@ class TestEmailChange:
 
     def test_request_email_change_success(self, api_client, auth_headers, test_user, app):
         """Test successful email change request."""
-        response = api_client.post('/api/v1/user/email/request',
+        response = api_client.post(
+            '/api/v1/user/email/request',
             headers=auth_headers,
             json={
                 'new_email': 'newemail@example.com',
@@ -223,7 +232,8 @@ class TestEmailChange:
 
     def test_request_email_change_wrong_password(self, api_client, auth_headers):
         """Test email change request with wrong password fails."""
-        response = api_client.post('/api/v1/user/email/request',
+        response = api_client.post(
+            '/api/v1/user/email/request',
             headers=auth_headers,
             json={
                 'new_email': 'newemail@example.com',
@@ -234,7 +244,8 @@ class TestEmailChange:
 
     def test_request_email_change_same_email(self, api_client, auth_headers, test_user):
         """Test email change to same email fails."""
-        response = api_client.post('/api/v1/user/email/request',
+        response = api_client.post(
+            '/api/v1/user/email/request',
             headers=auth_headers,
             json={
                 'new_email': test_user['email'],
@@ -279,7 +290,8 @@ class TestEmailChange:
         tokens = login_response.get_json()
 
         # Cancel email change
-        response = client.post('/api/v1/user/email/cancel',
+        response = client.post(
+            '/api/v1/user/email/cancel',
             headers={
                 'Authorization': f"Bearer {tokens['access_token']}",
                 'Content-Type': 'application/json'
@@ -300,7 +312,8 @@ class TestEmailChange:
 
     def test_cancel_email_change_no_pending(self, api_client, auth_headers):
         """Test canceling when no pending email change."""
-        response = api_client.post('/api/v1/user/email/cancel',
+        response = api_client.post(
+            '/api/v1/user/email/cancel',
             headers=auth_headers
         )
         assert response.status_code == 400
@@ -342,7 +355,8 @@ class TestDeleteAccount:
         tokens = login_response.get_json()
 
         # Delete account
-        response = client.delete('/api/v1/user',
+        response = client.delete(
+            '/api/v1/user',
             headers={
                 'Authorization': f"Bearer {tokens['access_token']}",
                 'Content-Type': 'application/json'
@@ -362,7 +376,8 @@ class TestDeleteAccount:
 
     def test_delete_account_wrong_password(self, api_client, auth_headers):
         """Test account deletion with wrong password fails."""
-        response = api_client.delete('/api/v1/user',
+        response = api_client.delete(
+            '/api/v1/user',
             headers=auth_headers,
             json={
                 'password': 'wrongpassword',
@@ -373,7 +388,8 @@ class TestDeleteAccount:
 
     def test_delete_account_no_confirmation(self, api_client, auth_headers, test_user):
         """Test account deletion without confirmation fails."""
-        response = api_client.delete('/api/v1/user',
+        response = api_client.delete(
+            '/api/v1/user',
             headers=auth_headers,
             json={
                 'password': test_user['password'],
@@ -389,7 +405,8 @@ class TestForgotPassword:
 
     def test_forgot_password_existing_user(self, api_client, test_user, app):
         """Test forgot password for existing user."""
-        response = api_client.post('/api/v1/auth/forgot-password',
+        response = api_client.post(
+            '/api/v1/auth/forgot-password',
             json={'email': test_user['email']}
         )
         # Should always return success (to prevent email enumeration)
@@ -406,7 +423,8 @@ class TestForgotPassword:
 
     def test_forgot_password_nonexistent_user(self, api_client):
         """Test forgot password for non-existent user still returns success."""
-        response = api_client.post('/api/v1/auth/forgot-password',
+        response = api_client.post(
+            '/api/v1/auth/forgot-password',
             json={'email': 'nonexistent@example.com'}
         )
         # Should still return success (to prevent email enumeration)
@@ -415,9 +433,9 @@ class TestForgotPassword:
 
     def test_forgot_password_missing_email(self, api_client):
         """Test forgot password without email fails."""
-        response = api_client.post('/api/v1/auth/forgot-password',
+        response = api_client.post(
+            '/api/v1/auth/forgot-password',
             json={'email': ''}
         )
         assert response.status_code == 400
         assert 'Email is required' in response.get_json()['error']
-

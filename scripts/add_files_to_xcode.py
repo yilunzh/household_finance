@@ -4,7 +4,6 @@ Add new Swift files to the Xcode project.
 This script modifies project.pbxproj to include the Design system files.
 """
 
-import os
 import re
 import uuid
 from pathlib import Path
