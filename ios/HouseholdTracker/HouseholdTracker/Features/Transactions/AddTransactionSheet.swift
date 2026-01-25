@@ -104,9 +104,12 @@ struct AddTransactionSheet: View {
                                 icon: .calendar,
                                 label: "Date",
                                 content: {
-                                    DatePicker("", selection: $selectedDate, displayedComponents: .date)
-                                        .labelsHidden()
-                                        .tint(.brandPrimary)
+                                    HStack {
+                                        DatePicker("", selection: $selectedDate, displayedComponents: .date)
+                                            .labelsHidden()
+                                            .tint(.brandPrimary)
+                                        Spacer()
+                                    }
                                 }
                             )
 
