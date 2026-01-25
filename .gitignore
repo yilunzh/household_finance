@@ -58,3 +58,6 @@ ios/HouseholdTracker/HouseholdTracker.xcodeproj/project.xcworkspace/xcuserdata/
 
 # Test screenshots
 ios/HouseholdTracker/*.png
+
+# Maestro test screenshots
+ios/HouseholdTracker/maestro/*.png
