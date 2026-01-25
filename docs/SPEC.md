@@ -1110,6 +1110,29 @@ ios/HouseholdTracker/
 | CSV Export | Share sheet integration |
 | Profile | Name update, password change, account deletion |
 
+### 8.4.1 Transaction List UI
+
+The transaction list displays each transaction with visual differentiation:
+
+**Expense Type Icons**: Each expense type maps to a semantic cat icon:
+| Expense Type | Icon | Rationale |
+|--------------|------|-----------|
+| Groceries | coins | Money/shopping |
+| Food/Dining | happy | Happy cat eating |
+| Travel | rocket | Movement/journey |
+| Entertainment | celebrate | Fun/celebration |
+| Gas/Fuel | rocket | Vehicle/movement |
+| Bills/Utilities | lightbulb | Utilities/power |
+| Health/Medical | heart | Care/wellness |
+| Home/House | house | Housing |
+| Other/unset | (category icon) | Fallback |
+
+**Visual Improvements (v3.1)**:
+- Expense type text shown below merchant (falls back to "Other" if not set)
+- "Paid by" text uses `.textSecondary` for better contrast (WCAG AA)
+- Required field asterisks use brand terracotta color instead of red
+- Extra bottom padding prevents last transaction from being cut off by tab bar
+
 ### 8.5 Authentication Flow
 
 ```
@@ -1408,6 +1431,13 @@ python seed_test_users.py
 - ✅ Profile management with password change
 - ✅ Maestro E2E test suite
 - ✅ Security fixes (header injection, CSV injection, data isolation)
+
+**✅ v3.1 - iOS UI Improvements (Completed)**
+- ✅ Expense type icon mapping for visual differentiation in transaction list
+- ✅ "Paid by" text contrast increased for better readability
+- ✅ Required field asterisks use brand terracotta color instead of red
+- ✅ Transaction list bottom padding prevents tab bar overlap
+- ✅ "Other" fallback displayed when expense type is not set
 
 ### 11.3 Testing Checklist
 
@@ -1728,9 +1758,10 @@ def format_settlement(me_balance, wife_balance):
 | 2.8 | Jan 2026 | Receipt photo upload feature |
 | 2.9 | Jan 2026 | Transaction search and filter with collapsible sidebar |
 | 3.0 | Jan 2026 | iOS mobile app with full feature parity, security fixes |
+| 3.1 | Jan 2026 | iOS UI improvements: expense type icons, text contrast, brand colors |
 
 ---
 
-**Document Version**: 3.0
-**Last Updated**: January 24, 2026
+**Document Version**: 3.1
+**Last Updated**: January 25, 2026
 **GitHub Repository**: https://github.com/yilunzh/household_finance

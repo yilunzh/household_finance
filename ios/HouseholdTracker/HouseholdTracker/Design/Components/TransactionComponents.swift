@@ -175,13 +175,13 @@ struct StyledTransactionRow: View {
 
     var body: some View {
         HStack(spacing: Spacing.md) {
-            // Category icon circle
+            // Expense type icon circle
             ZStack {
                 Circle()
                     .fill(categoryColor.opacity(0.15))
                     .frame(width: 44, height: 44)
 
-                CatIcon(name: categoryIcon, size: .md, color: categoryColor)
+                CatIcon(name: expenseTypeIcon, size: .md, color: categoryColor)
             }
 
             // Transaction details
@@ -192,11 +192,9 @@ struct StyledTransactionRow: View {
                     .lineLimit(1)
 
                 HStack(spacing: Spacing.xs) {
-                    if let expenseTypeName = transaction.expenseTypeName {
-                        Text(expenseTypeName)
-                            .font(.labelSmall)
-                            .foregroundColor(.textTertiary)
-                    }
+                    Text(transaction.expenseTypeName ?? "Other")
+                        .font(.labelSmall)
+                        .foregroundColor(.textTertiary)
 
                     Text(formattedDate)
                         .font(.labelSmall)
@@ -223,7 +221,7 @@ struct StyledTransactionRow: View {
                 if let paidByName = transaction.paidByName {
                     Text("Paid by \(paidByName)")
                         .font(.labelSmall)
-                        .foregroundColor(.textTertiary)
+                        .foregroundColor(.textSecondary)
                 }
             }
         }
@@ -264,6 +262,33 @@ struct StyledTransactionRow: View {
             return .highfive
         default:
             return .coins
+        }
+    }
+
+    /// Maps expense types to semantic cat icons for visual differentiation
+    private var expenseTypeIcon: CatIcon.Name {
+        guard let expenseType = transaction.expenseTypeName?.lowercased() else {
+            return categoryIcon
+        }
+        switch expenseType {
+        case let t where t.contains("grocer"):
+            return .coins
+        case let t where t.contains("food") || t.contains("drink") || t.contains("dining") || t.contains("restaurant"):
+            return .happy
+        case let t where t.contains("travel") || t.contains("vacation"):
+            return .rocket
+        case let t where t.contains("entertainment") || t.contains("fun"):
+            return .celebrate
+        case let t where t.contains("gas") || t.contains("fuel"):
+            return .rocket
+        case let t where t.contains("bill") || t.contains("utilit"):
+            return .lightbulb
+        case let t where t.contains("health") || t.contains("medical"):
+            return .heart
+        case let t where t.contains("home") || t.contains("house"):
+            return .house
+        default:
+            return categoryIcon
         }
     }
 
