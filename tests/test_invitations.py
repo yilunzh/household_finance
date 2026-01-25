@@ -3,7 +3,6 @@ E2E tests for invitation functionality.
 Tests sending, accepting, and canceling invitations.
 """
 import pytest
-import re
 from datetime import datetime, timedelta
 from conftest import BASE_URL, TEST_USERS
 

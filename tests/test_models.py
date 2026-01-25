@@ -351,7 +351,7 @@ class TestSettlementModel:
 
     def test_is_month_settled_true(self, app, db, clean_test_data):
         """is_month_settled should return True when settlement exists."""
-        from models import User, Household, HouseholdMember, Settlement
+        from models import User, Household, Settlement
 
         with app.app_context():
             # Create test data

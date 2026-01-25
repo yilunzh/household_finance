@@ -242,9 +242,9 @@ class TestMonthNavigation:
         page.goto(f"{BASE_URL}/reconciliation")
         page.wait_for_load_state('networkidle')
 
-        month_select = page.locator('select[name="month"], select[id="month"]')
         # Month selector may or may not exist depending on UI
         # Just check page loaded
+        page.locator('select[name="month"], select[id="month"]')
 
     def test_can_view_different_months(self, page, setup_two_households, login_as):
         """User can view reconciliation for different months."""

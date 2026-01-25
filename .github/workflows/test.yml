@@ -17,7 +17,7 @@ jobs:
       - name: Install linting tools
         run: pip install flake8
       - name: Run flake8
-        run: flake8 app.py models.py utils.py --max-line-length=120 --ignore=E501,W503
+        run: flake8 . --max-line-length=120 --ignore=E501,W503
 
   unit-tests:
     runs-on: ubuntu-latest

@@ -3,9 +3,7 @@ Unit tests for budget tracking functionality.
 Tests budget calculation utilities and model methods.
 """
 import pytest
-from datetime import date
 from decimal import Decimal
-from unittest.mock import MagicMock, patch
 
 
 pytestmark = pytest.mark.unit

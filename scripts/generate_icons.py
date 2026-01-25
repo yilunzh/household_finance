@@ -17,9 +17,7 @@ import sys
 import subprocess
 import tempfile
 from pathlib import Path
-import base64
 import urllib.request
-import json
 
 # Check for dependencies
 try:
@@ -236,7 +234,7 @@ def main():
 
         try:
             # Generate image
-            print(f"  Calling DALL-E 3...")
+            print("  Calling DALL-E 3...")
             png_data = generate_image(client, description, is_logo)
 
             # Save PNG for reference
@@ -247,7 +245,7 @@ def main():
 
             # Convert to SVG
             svg_path = output_dir / f"{name}.svg"
-            print(f"  Converting to SVG...")
+            print("  Converting to SVG...")
             if convert_to_svg(png_data, svg_path):
                 optimize_svg(svg_path)
                 print(f"  Saved SVG: {svg_path.name}")
@@ -263,7 +261,7 @@ def main():
 
     # Summary
     print("=" * 50)
-    print(f"Generation complete!")
+    print("Generation complete!")
     print(f"  Successful: {successful}/{len(all_items)}")
     if failed:
         print(f"  Failed: {', '.join(failed)}")

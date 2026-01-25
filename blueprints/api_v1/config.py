@@ -145,7 +145,7 @@ def api_update_expense_type(expense_type_id):
         existing = ExpenseType.query.filter(
             ExpenseType.household_id == household_id,
             ExpenseType.name == name,
-            ExpenseType.is_active == True,
+            ExpenseType.is_active.is_(True),
             ExpenseType.id != expense_type_id
         ).first()
 

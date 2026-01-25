@@ -7,6 +7,7 @@ Extracts SVG paths from generated files and creates the Jinja macro template.
 import re
 from pathlib import Path
 
+
 def extract_svg_content(svg_path: Path) -> str:
     """Extract the path data from a potrace-generated SVG."""
     content = svg_path.read_text()

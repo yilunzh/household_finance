@@ -4,7 +4,6 @@ Add Design system files to the Xcode project properly.
 Creates groups and adds file references correctly.
 """
 
-import os
 import re
 import uuid
 from pathlib import Path
@@ -77,28 +76,28 @@ def main():
     group_marker = "/* End PBXGroup section */"
 
     # Components group
-    component_children = ",\n".join([f'\t\t\t\t{file_uuid} /* {filename} */' for filename, file_uuid, _ in component_files])
-    components_group = f'''		{components_group_uuid} /* Components */ = {{
-			isa = PBXGroup;
-			children = (
+    component_children = ",\n".join([f'                {file_uuid} /* {filename} */' for filename, file_uuid, _ in component_files])
+    components_group = f'''        {components_group_uuid} /* Components */ = {{
+            isa = PBXGroup;
+            children = (
 {component_children},
-			);
-			path = Components;
-			sourceTree = "<group>";
-		}};
+            );
+            path = Components;
+            sourceTree = "<group>";
+        }};
 '''
 
     # Design group
-    design_children = ",\n".join([f'\t\t\t\t{file_uuid} /* {filename} */' for filename, file_uuid, _ in design_files])
-    design_group = f'''		{design_group_uuid} /* Design */ = {{
-			isa = PBXGroup;
-			children = (
+    design_children = ",\n".join([f'                {file_uuid} /* {filename} */' for filename, file_uuid, _ in design_files])
+    design_group = f'''        {design_group_uuid} /* Design */ = {{
+            isa = PBXGroup;
+            children = (
 {design_children},
-				{components_group_uuid} /* Components */,
-			);
-			path = Design;
-			sourceTree = "<group>";
-		}};
+                {components_group_uuid} /* Components */,
+            );
+            path = Design;
+            sourceTree = "<group>";
+        }};
 '''
 
     content = content.replace(group_marker, components_group + design_group + group_marker)

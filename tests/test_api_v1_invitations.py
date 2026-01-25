@@ -135,7 +135,7 @@ def auth_headers2(auth_tokens2):
 
 def _cleanup_household(db, household_id):
     """Clean up all records associated with a household."""
-    from models import (Household, HouseholdMember, Invitation,
+    from models import (HouseholdMember, Invitation,
                         ExpenseType, BudgetRule, SplitRule,
                         AutoCategoryRule, Transaction, Settlement)
 

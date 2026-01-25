@@ -11,7 +11,6 @@ import json
 import subprocess
 import sys
 import os
-from pathlib import Path
 from glob import glob
 
 
@@ -96,14 +95,6 @@ def check_for_triggers(transcript_content):
 
 def check_todos_complete(transcript_content):
     """Check if all todos were just marked complete."""
-    # Look for patterns indicating todo completion
-    completion_patterns = [
-        '"status": "completed"',
-        "status.*completed",
-        "all tasks complete",
-        "all todos complete",
-    ]
-
     # Simple heuristic: if recent transcript has multiple completions
     # and no pending items, consider it complete
     completed_count = transcript_content.lower().count("completed")

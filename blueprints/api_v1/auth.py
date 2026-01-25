@@ -22,7 +22,18 @@ from datetime import datetime, timedelta
 from flask import request, jsonify, g
 
 from extensions import db, limiter
+from models import User, HouseholdMember, Household, Transaction
+from api_decorators import (
+    generate_access_token,
+    generate_refresh_token,
+    validate_refresh_token,
+    revoke_refresh_token,
+    revoke_all_user_tokens,
+    jwt_required
+)
+from blueprints.api_v1 import api_v1_bp
 
+logger = logging.getLogger(__name__)
 
 # Email validation regex pattern
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
@@ -50,20 +61,6 @@ def validate_password_strength(password):
     if not any(c.isdigit() for c in password):
         return False, 'Password must contain at least one number'
     return True, None
-
-
-from models import User, HouseholdMember, Household, Transaction
-from api_decorators import (
-    generate_access_token,
-    generate_refresh_token,
-    validate_refresh_token,
-    revoke_refresh_token,
-    revoke_all_user_tokens,
-    jwt_required
-)
-from blueprints.api_v1 import api_v1_bp
-
-logger = logging.getLogger(__name__)
 
 
 def _get_user_households(user_id):

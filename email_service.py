@@ -2,7 +2,7 @@
 Email service for sending household invitations.
 """
 import os
-from flask import current_app, render_template, url_for
+from flask import current_app
 from flask_mail import Message
 
 from extensions import mail

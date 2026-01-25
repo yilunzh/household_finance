@@ -11,7 +11,6 @@ Blocks if 2+ signals detected, advisory warning if 1 signal.
 import json
 import os
 import subprocess
-import sys
 from pathlib import Path
 from datetime import datetime, timedelta
 

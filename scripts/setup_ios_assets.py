@@ -5,7 +5,6 @@ Creates proper imageset folders with Contents.json for each SVG.
 """
 
 import json
-import os
 import shutil
 from pathlib import Path
 

@@ -193,7 +193,6 @@ class TestCalculateUserStats:
         db.session.flush()
 
         # Create current year transaction
-        current_year = datetime.utcnow().year
         current_month = date.today().strftime('%Y-%m')
 
         transaction = Transaction(
@@ -353,7 +352,7 @@ def app():
 @pytest.fixture
 def db(app):
     """Create test database."""
-    from models import db as _db, User, Household, HouseholdMember, Transaction
+    from models import db as _db, User
     with app.app_context():
         _db.create_all()
 
