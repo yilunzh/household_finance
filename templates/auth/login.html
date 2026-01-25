@@ -11,33 +11,7 @@
 
         <!-- Lucky Cat Illustration -->
         <div class="flex justify-center mb-6">
-            <svg viewBox="0 0 100 100" class="w-28 h-28 animate-bounce-gentle">
-                <!-- Single beckoning cat welcoming user back -->
-                <circle cx="50" cy="50" r="42" fill="#FEF3C7" stroke="#D97706" stroke-width="2.5"/>
-                <!-- Ears -->
-                <path d="M22 38 L30 14 L42 32" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
-                <path d="M58 32 L70 14 L78 38" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
-                <path d="M26 34 L31 18 L38 30" fill="#FBBF24"/>
-                <path d="M62 30 L69 18 L74 34" fill="#FBBF24"/>
-                <!-- Happy closed eyes -->
-                <path d="M32 48 Q40 42 48 48" stroke="#78350F" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-                <path d="M52 48 Q60 42 68 48" stroke="#78350F" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-                <!-- Nose -->
-                <ellipse cx="50" cy="56" rx="4" ry="3" fill="#F59E0B"/>
-                <!-- Smile -->
-                <path d="M44 64 Q50 72 56 64" stroke="#78350F" stroke-width="2" fill="none" stroke-linecap="round"/>
-                <!-- Whiskers -->
-                <line x1="22" y1="52" x2="36" y2="54" stroke="#D97706" stroke-width="1.5"/>
-                <line x1="22" y1="58" x2="36" y2="58" stroke="#D97706" stroke-width="1.5"/>
-                <line x1="64" y1="54" x2="78" y2="52" stroke="#D97706" stroke-width="1.5"/>
-                <line x1="64" y1="58" x2="78" y2="58" stroke="#D97706" stroke-width="1.5"/>
-                <!-- Beckoning paw (raised) -->
-                <ellipse cx="78" cy="35" rx="8" ry="10" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
-                <ellipse cx="78" cy="32" rx="4" ry="3" fill="#F9A8D4"/>
-                <!-- Collar with bell -->
-                <path d="M30 75 Q50 85 70 75" stroke="#DC2626" stroke-width="4" fill="none"/>
-                <circle cx="50" cy="80" r="5" fill="#F59E0B" stroke="#B45309" stroke-width="1.5"/>
-            </svg>
+            <img src="{{ url_for('static', filename='images/login-mascot.png') }}" alt="Lucky Cat" class="w-28 h-28 animate-bounce-gentle">
         </div>
 
         <h2 class="text-2xl font-bold font-display text-center text-warm-800 mb-2">
