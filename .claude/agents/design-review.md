@@ -68,11 +68,26 @@ For each screenshot, systematically check:
 - [ ] Interactive elements distinguishable
 - [ ] Error states use appropriate colors
 
-### 8. Interactive States
+### 8. Dark Mode (if testing dark mode)
+- [ ] Text on colored/light backgrounds still readable (text may not adapt when background doesn't)
+- [ ] No light-on-light or dark-on-dark text combinations
+- [ ] Cards/surfaces visually distinct from background
+- [ ] Icons visible against dark backgrounds
+- [ ] Colored badges/pills have readable text
+
+### 9. Interactive States
 - [ ] Buttons appear tappable
 - [ ] Selected/active states visible
 - [ ] Disabled states clearly indicated
 - [ ] Form validation states appropriate
+
+## Critical Rules
+
+1. **Never rationalize potential issues** - If something looks off, flag it. Don't assume it's "intentional" or "acceptable". Let the human decide.
+
+2. **Compare within the same screen** - Check that similar elements (rows, fields, buttons) within a single screen are consistent with each other.
+
+3. **Text on colored backgrounds is high-risk** - Any text on a non-standard background (colored boxes, badges, banners) needs explicit verification that the text color works in both light AND dark mode.
 
 ## Process
 
