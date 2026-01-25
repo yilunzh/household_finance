@@ -593,6 +593,7 @@ cd ios/HouseholdTracker
 | `add-transaction.yaml` | Add a new transaction |
 | `reconciliation.yaml` | View reconciliation |
 | `receipt-flow.yaml` | View transaction details and receipts |
+| `design-review.yaml` | Comprehensive UI screenshot capture for design QA |
 
 ### Test Credentials
 
@@ -647,13 +648,48 @@ For Claude-driven autonomous testing, use the orchestration script:
 - Runs Maestro tests
 - Creates `.ios-verified` marker on success
 
-**Commit verification:** The pre-commit hook blocks commits to iOS files without the `.ios-verified` marker. Run `./scripts/ios-test.sh --all` to verify before committing.
+**Verification workflow:** iOS verification is manual (not enforced on every commit). Run `./scripts/ios-test.sh --all` before pushing to GitHub or creating PRs.
 
 **Failure handling:** When tests fail, Claude will:
 1. Parse failure output (logs, screenshots)
 2. Diagnose: outdated test selector vs real bug vs flaky test
 3. Auto-fix the appropriate file (test YAML or Swift code)
 4. Re-run tests until passing
+
+### Design Review Workflow
+
+For comprehensive UI/UX quality assurance, use the design-review workflow:
+
+```bash
+# Step 1: Capture all major screens (14+ screenshots)
+./scripts/ios-test.sh --test design-review
+
+# Step 2: Invoke design review agent (say this)
+"run design review"
+```
+
+The `design-review.yaml` test captures:
+- Login screen
+- Transactions list
+- Add Transaction sheet (top and bottom)
+- Transaction Filter sheet
+- Transaction Detail view
+- Summary/Reconciliation
+- Budget Rules tab
+- Split Rules tab
+- Settings main
+- Household Settings
+- Members List
+- Expense Types
+- Export Data
+
+The `design-review` agent (in `.claude/agents/`) analyzes each screenshot against a comprehensive checklist:
+- Alignment, spacing, layout patterns
+- Typography, icons, text content
+- Colors (terracotta/sage/cream theme)
+- Interactive states
+
+**When to use:** After implementing UI changes, before committing, to catch visual bugs that functional tests miss.
 
 ## Production Deployment (Render)
 
@@ -707,7 +743,8 @@ docs/
 │   ├── spec-update-check.py   # SPEC.md update trigger
 │   └── sync-structure.py      # Project tree generator
 └── agents/                    # Custom subagents
-    └── test-first.md          # TDD specialist for new features
+    ├── test-first.md          # TDD specialist for new features
+    └── design-review.md       # UI/UX design QA agent
 
 ios/HouseholdTracker/          # iOS mobile app
 ├── HouseholdTracker/          # Swift source code
@@ -716,7 +753,8 @@ ios/HouseholdTracker/          # iOS mobile app
 │   ├── logout.yaml
 │   ├── add-transaction.yaml
 │   ├── reconciliation.yaml
-│   └── receipt-flow.yaml
+│   ├── receipt-flow.yaml
+│   └── design-review.yaml     # Comprehensive UI screenshot capture
 └── HouseholdTracker.xcodeproj/# Xcode project (generated)
 ```
 

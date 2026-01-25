@@ -104,6 +104,14 @@ struct LoginView: View {
                                 isDisabled: !isFormValid
                             )
                             .padding(.top, Spacing.xs)
+
+                            // Helper text when form is invalid
+                            if !isFormValid && !authManager.isLoading {
+                                Text(formValidationMessage)
+                                    .font(.labelSmall)
+                                    .foregroundColor(.textTertiary)
+                                    .padding(.top, Spacing.xxs)
+                            }
                         }
                     }
                     .padding(.horizontal, Spacing.lg)
@@ -143,6 +151,19 @@ struct LoginView: View {
     private var isFormValid: Bool {
         !email.isEmpty && !password.isEmpty && password.count >= 6 &&
         (!isRegistering || !displayName.isEmpty || displayName.isEmpty) // Name is optional
+    }
+
+    private var formValidationMessage: String {
+        if email.isEmpty {
+            return "Enter your email address"
+        }
+        if password.isEmpty {
+            return "Enter your password"
+        }
+        if password.count < 6 {
+            return "Password must be at least 6 characters"
+        }
+        return ""
     }
 
     private var passwordError: String? {

@@ -32,6 +32,7 @@ struct SettingsView: View {
     @State private var showingDeleteAccount = false
     @State private var showingInviteMember = false
     @State private var showingPendingInvitations = false
+    @State private var membersViewModel = HouseholdSettingsViewModel()
 
     var body: some View {
         NavigationStack {
@@ -81,7 +82,8 @@ struct SettingsView: View {
                                     SettingsRowContent(
                                         icon: .house,
                                         title: household.name,
-                                        showChevron: true
+                                        showChevron: true,
+                                        iconTint: .terracotta500
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -89,12 +91,13 @@ struct SettingsView: View {
 
                             SectionRow {
                                 NavigationLink {
-                                    HouseholdMembersListView()
+                                    MemberListView(viewModel: membersViewModel)
                                 } label: {
                                     SettingsRowContent(
                                         icon: .group,
                                         title: "Members",
-                                        showChevron: true
+                                        showChevron: true,
+                                        iconTint: .terracotta500
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -108,7 +111,8 @@ struct SettingsView: View {
                                         SettingsRowContent(
                                             icon: .sparkle,
                                             title: "Switch Household",
-                                            showChevron: true
+                                            showChevron: true,
+                                            iconTint: .terracotta500
                                         )
                                     }
                                     .buttonStyle(.plain)
@@ -121,7 +125,8 @@ struct SettingsView: View {
                                         SettingsRowContent(
                                             icon: .sparkle,
                                             title: "Create New Household",
-                                            showChevron: true
+                                            showChevron: true,
+                                            iconTint: .terracotta500
                                         )
                                     }
                                     .buttonStyle(.plain)
@@ -139,7 +144,8 @@ struct SettingsView: View {
                                     SettingsRowContent(
                                         icon: .envelope,
                                         title: "Invite Member",
-                                        showChevron: false
+                                        showChevron: false,
+                                        iconTint: .terracotta500
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -152,7 +158,8 @@ struct SettingsView: View {
                                     SettingsRowContent(
                                         icon: .clock,
                                         title: "Pending Invitations",
-                                        showChevron: false
+                                        showChevron: false,
+                                        iconTint: .terracotta500
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -296,12 +303,13 @@ struct SettingsRowContent: View {
     let icon: CatIcon.Name
     let title: String
     var showChevron: Bool = true
+    var iconTint: Color? = nil  // Optional override for semantic coloring
 
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(spacing: Spacing.sm) {
-            CatIcon(name: icon, size: .md, color: iconColor)
+            CatIcon(name: icon, size: .md, color: iconTint ?? defaultIconColor)
             Text(title)
                 .font(.bodyLarge)
                 .foregroundColor(textColor)
@@ -314,7 +322,7 @@ struct SettingsRowContent: View {
         }
     }
 
-    private var iconColor: Color {
+    private var defaultIconColor: Color {
         colorScheme == .dark ? .warm400 : .warm600
     }
 
@@ -324,13 +332,6 @@ struct SettingsRowContent: View {
 }
 
 // MARK: - Placeholder Views for Navigation
-struct HouseholdMembersListView: View {
-    var body: some View {
-        Text("Members List")
-            .navigationTitle("Members")
-    }
-}
-
 struct CreateHouseholdView: View {
     var body: some View {
         Text("Create Household")

@@ -44,6 +44,7 @@ struct HouseholdSettingsView: View {
                 } label: {
                     HStack {
                         Label("Members", systemImage: "person.2")
+                            .foregroundStyle(Color.terracotta500)
                         Spacer()
                         Text("\(viewModel.members.count)")
                             .foregroundStyle(.secondary)

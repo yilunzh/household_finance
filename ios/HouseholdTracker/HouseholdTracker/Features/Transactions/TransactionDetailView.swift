@@ -510,18 +510,21 @@ struct TransactionDetailView: View {
 
         ToolbarItem(placement: .primaryAction) {
             if !isEditing {
-                HStack(spacing: Spacing.sm) {
+                HStack(alignment: .center, spacing: Spacing.sm) {
                     Button {
                         HapticManager.buttonTap()
                         startEditing()
                     } label: {
                         CatIcon(name: .pencil, size: .sm, color: .brandPrimary)
+                            .frame(minWidth: 44, minHeight: 44)
                     }
                     Button {
                         HapticManager.buttonTap()
                         dismiss()
                     } label: {
-                        Text("Done").foregroundColor(.brandPrimary)
+                        Text("Done")
+                            .foregroundColor(.brandPrimary)
+                            .frame(minHeight: 44)
                     }
                 }
             }

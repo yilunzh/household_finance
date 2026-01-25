@@ -60,6 +60,17 @@ struct MemberListView: View {
         } message: {
             Text(viewModel.error ?? "")
         }
+        .task {
+            // Load data if not already loaded
+            if viewModel.members.isEmpty, let householdId = authManager.currentHouseholdId {
+                await viewModel.loadHousehold(householdId: householdId)
+            }
+        }
+        .refreshable {
+            if let householdId = authManager.currentHouseholdId {
+                await viewModel.loadHousehold(householdId: householdId)
+            }
+        }
     }
 
     private func isCurrentUser(_ member: HouseholdMember) -> Bool {
