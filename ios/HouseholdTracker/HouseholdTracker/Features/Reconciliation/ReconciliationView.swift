@@ -214,7 +214,7 @@ struct StyledSummaryCard: View {
                 Text(summary.settlementMessage)
                     .font(.bodyLarge)
                     .fontWeight(.semibold)
-                    .foregroundColor(textColor)
+                    .foregroundColor(.textPrimary)  // Always dark text on light background
             }
             .padding(Spacing.sm)
             .frame(maxWidth: .infinity)
