@@ -541,7 +541,8 @@ pytest tests/test_models.py
 # Run E2E Playwright tests (currently flaky, excluded by default)
 # pytest tests/test_auth.py tests/test_transactions.py --ignore=""
 
-# Seed test users (test_alice@example.com / test_bob@example.com, password: password123)
+# Seed test users for LOCAL TESTING ONLY (never use in production)
+# (test_alice@example.com / test_bob@example.com, password: password123)
 python seed_test_users.py
 ```
 
@@ -596,6 +597,9 @@ cd ios/HouseholdTracker
 | `design-review.yaml` | Comprehensive UI screenshot capture for design QA |
 
 ### Test Credentials
+
+> **Security Note:** These credentials are for LOCAL DEVELOPMENT AND TESTING ONLY.
+> Never use these in production environments.
 
 - Email: `demo_alice@example.com`
 - Password: `password123`

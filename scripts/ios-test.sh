@@ -210,6 +210,17 @@ get_booted_simulator() {
     xcrun simctl list devices | grep "Booted" | head -1 | sed 's/.*(\([^)]*\)).*/\1/'
 }
 
+# Validate UDID is a proper UUID format (8-4-4-4-12 hex pattern)
+# Defense-in-depth against potential command injection from simctl output
+validate_udid() {
+    local udid="$1"
+    if [[ "$udid" =~ ^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$ ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 check_simulator() {
     BOOTED=$(get_booted_simulator)
     if [ -n "$BOOTED" ]; then
@@ -233,6 +244,12 @@ boot_simulator() {
 
     if [ -z "$UDID" ]; then
         log_error "No iPhone simulator found"
+        return 1
+    fi
+
+    # Validate UDID format before passing to shell command
+    if ! validate_udid "$UDID"; then
+        log_error "Invalid simulator UDID format: $UDID"
         return 1
     fi
 
