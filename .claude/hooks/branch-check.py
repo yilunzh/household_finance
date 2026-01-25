@@ -1,9 +1,40 @@
 #!/usr/bin/env python3
-"""Block Edit/Write on main branch for project files. Enforces feature branch workflow."""
-import json
+"""Block code edits when on main branch - must create feature branch first."""
 import subprocess
+import json
 import sys
 import os
+
+# File extensions that are considered "code" and require a feature branch
+CODE_EXTENSIONS = {
+    # Python
+    ".py",
+    # Swift/iOS
+    ".swift",
+    # Web
+    ".js", ".ts", ".jsx", ".tsx",
+    ".html", ".css", ".scss",
+    # Templates
+    ".jinja", ".jinja2",
+}
+
+# Paths that are always allowed on main (config, docs, etc.)
+ALLOWED_PATHS = [
+    ".claude/",
+    ".github/",
+    "docs/",
+    ".gitignore",
+    ".env",
+    "README.md",
+    "CLAUDE.md",
+    "requirements",
+    "package.json",
+    "package-lock.json",
+    "Podfile",
+    "Podfile.lock",
+    ".xcodeproj/",
+    "maestro/",  # Test files
+]
 
 
 def get_current_branch():
@@ -13,58 +44,63 @@ def get_current_branch():
             ["git", "branch", "--show-current"],
             capture_output=True,
             text=True,
-            cwd=os.environ.get("CLAUDE_PROJECT_DIR", "."),
+            cwd=os.environ.get("CLAUDE_PROJECT_DIR", ".")
         )
         return result.stdout.strip()
     except Exception:
-        return ""
+        return None
 
 
-def is_exempt_path(file_path):
-    """Check if file path is exempt from branch protection."""
+def is_code_file(file_path):
+    """Check if the file is a code file that requires a feature branch."""
     if not file_path:
-        return True
+        return False
 
-    exempt_patterns = [
-        "/.claude/plans/",  # Plan files
-        "/.claude/handoff.md",  # Handoff files
-        "/.claude/session-context.md",  # Context checkpoints
-        "/Users/yilunzhang/.claude/",  # Global claude config
-    ]
+    # Check if path is in allowed list
+    for allowed in ALLOWED_PATHS:
+        if allowed in file_path:
+            return False
 
-    for pattern in exempt_patterns:
-        if pattern in file_path:
+    # Check extension
+    for ext in CODE_EXTENSIONS:
+        if file_path.endswith(ext):
             return True
 
     return False
 
 
 def main():
-    # Read hook input from stdin
+    # Read tool input from stdin
     try:
-        input_data = json.load(sys.stdin)
-    except json.JSONDecodeError:
+        input_data = json.loads(sys.stdin.read())
+        tool_input = input_data.get("tool_input", {})
+        file_path = tool_input.get("file_path", "")
+    except (json.JSONDecodeError, KeyError):
+        # If we can't parse input, allow (fail open)
         return {"decision": "allow"}
 
-    tool_input = input_data.get("tool_input", {})
-    file_path = tool_input.get("file_path", "")
-
-    # Allow exempt paths (plans, handoffs, global config)
-    if is_exempt_path(file_path):
+    # Check if this is a code file
+    if not is_code_file(file_path):
         return {"decision": "allow"}
 
-    # Check branch
+    # Check current branch
     branch = get_current_branch()
 
     if branch == "main":
+        # Extract just the filename for cleaner message
+        filename = file_path.split("/")[-1] if "/" in file_path else file_path
+
         return {
             "decision": "block",
-            "reason": (
-                f"Cannot edit '{file_path}' on main branch.\n"
-                f"Create a feature branch first:\n"
-                f"  git checkout -b feature/<name>\n"
-                f"Then retry your edit."
-            ),
+            "reason": f"""Cannot edit code files on main branch.
+
+File: {filename}
+
+Create a feature branch first:
+  git checkout -b feature/<descriptive-name>
+
+Then proceed with your changes. When done, create a PR to merge into main.
+"""
         }
 
     return {"decision": "allow"}
