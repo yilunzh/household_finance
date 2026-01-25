@@ -181,7 +181,7 @@ struct FormLabel: View {
             if isRequired {
                 Text("*")
                     .font(.labelMedium)
-                    .foregroundColor(.danger)
+                    .foregroundColor(.brandPrimary)
             }
         }
     }
