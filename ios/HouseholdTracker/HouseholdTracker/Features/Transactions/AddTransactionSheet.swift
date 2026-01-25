@@ -65,6 +65,12 @@ struct AddTransactionSheet: View {
                                 .font(.amountLarge)
                                 .foregroundColor(textColor)
                                 .multilineTextAlignment(.trailing)
+                                .onChange(of: amount) { _, newValue in
+                                    let sanitized = sanitizeAmountInput(newValue)
+                                    if sanitized != newValue {
+                                        amount = sanitized
+                                    }
+                                }
                         }
                         .padding(Spacing.md)
                         .background(cardBackground)
@@ -325,6 +331,40 @@ struct AddTransactionSheet: View {
         return !merchant.trimmingCharacters(in: .whitespaces).isEmpty
             && selectedCategory != nil
             && selectedPaidBy != nil
+    }
+
+    /// Sanitizes amount input to allow only valid currency format
+    private func sanitizeAmountInput(_ input: String) -> String {
+        // Filter to only digits and decimal point
+        var sanitized = input.filter { $0.isNumber || $0 == "." }
+
+        // Ensure only one decimal point
+        if let firstDecimal = sanitized.firstIndex(of: ".") {
+            let afterDecimal = sanitized.index(after: firstDecimal)
+            if afterDecimal < sanitized.endIndex {
+                sanitized = String(sanitized[..<afterDecimal]) +
+                            sanitized[afterDecimal...].filter { $0 != "." }
+            }
+        }
+
+        // Limit to 2 decimal places
+        if let decimalIndex = sanitized.firstIndex(of: ".") {
+            let afterDecimal = sanitized.index(after: decimalIndex)
+            if afterDecimal < sanitized.endIndex {
+                let decimalPart = sanitized[afterDecimal...]
+                if decimalPart.count > 2 {
+                    let endIndex = sanitized.index(decimalIndex, offsetBy: 3)
+                    sanitized = String(sanitized[..<endIndex])
+                }
+            }
+        }
+
+        // Remove leading zeros (but keep "0" or "0.xx")
+        while sanitized.hasPrefix("0") && sanitized.count > 1 && !sanitized.hasPrefix("0.") {
+            sanitized.removeFirst()
+        }
+
+        return sanitized
     }
 
     // MARK: - Actions

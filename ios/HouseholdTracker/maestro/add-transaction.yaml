@@ -40,6 +40,9 @@ appId: com.householdtracker.app
     index: 0
 - inputText: "50"
 
+# Take screenshot to verify amount formatting
+- takeScreenshot: "add-transaction-amount"
+
 # Hide keyboard by tapping elsewhere
 - hideKeyboard
 
