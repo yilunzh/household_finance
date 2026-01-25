@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LoginView: View {
     @Environment(AuthManager.self) private var authManager
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var email = ""
     @State private var password = ""
@@ -12,96 +13,122 @@ struct LoginView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 32) {
+                VStack(spacing: Spacing.xxl) {
                     // Logo and Title
-                    VStack(spacing: 16) {
-                        Image(systemName: "dollarsign.circle.fill")
-                            .font(.system(size: 80))
-                            .foregroundStyle(.green)
+                    VStack(spacing: Spacing.md) {
+                        // Kawaii Cat Logo
+                        CatIcon(name: .happy, size: .xxl, color: .terracotta500)
+                            .modifier(GentleBounceModifier())
 
-                        Text("Lucky Ledger")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
+                        VStack(spacing: Spacing.xs) {
+                            Text("Lucky Ledger")
+                                .font(.displayLarge)
+                                .foregroundColor(.textPrimary)
 
-                        Text("Track household expenses together")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.top, 60)
-
-                    // Form
-                    VStack(spacing: 16) {
-                        if isRegistering {
-                            TextField("Display Name", text: $displayName)
-                                .textFieldStyle(.roundedBorder)
-                                .textContentType(.name)
-                                .autocorrectionDisabled()
+                            Text("Track household expenses together")
+                                .font(.bodyMedium)
+                                .foregroundColor(.textSecondary)
                         }
+                    }
+                    .padding(.top, Spacing.xxxl)
 
-                        TextField("Email", text: $email)
-                            .textFieldStyle(.roundedBorder)
-                            .textContentType(.emailAddress)
-                            .keyboardType(.emailAddress)
-                            .autocapitalization(.none)
-                            .autocorrectionDisabled()
-
-                        SecureField("Password", text: $password)
-                            .textFieldStyle(.roundedBorder)
-                            .textContentType(isRegistering ? .newPassword : .password)
-
-                        if !isRegistering {
-                            HStack {
-                                Spacer()
-                                Button("Forgot Password?") {
-                                    showingForgotPassword = true
+                    // Form Card
+                    CardContainer {
+                        VStack(spacing: Spacing.md) {
+                            if isRegistering {
+                                FormField(label: "Display Name") {
+                                    StyledTextField(
+                                        placeholder: "Your name",
+                                        text: $displayName,
+                                        icon: .silhouette,
+                                        autocapitalization: .words
+                                    )
                                 }
-                                .font(.caption)
                             }
-                        }
 
-                        if let error = authManager.error {
-                            Text(error)
-                                .font(.caption)
-                                .foregroundStyle(.red)
-                                .multilineTextAlignment(.center)
-                        }
+                            FormField(label: "Email", isRequired: true) {
+                                StyledTextField(
+                                    placeholder: "your@email.com",
+                                    text: $email,
+                                    icon: .envelope,
+                                    keyboardType: .emailAddress,
+                                    autocapitalization: .never
+                                )
+                            }
 
-                        Button {
-                            Task {
-                                await performAuth()
+                            FormField(label: "Password", isRequired: true) {
+                                StyledTextField(
+                                    placeholder: isRegistering ? "Create a password" : "Your password",
+                                    text: $password,
+                                    icon: .lock,
+                                    isSecure: true,
+                                    errorMessage: passwordError
+                                )
                             }
-                        } label: {
-                            if authManager.isLoading {
-                                ProgressView()
-                                    .tint(.white)
-                            } else {
-                                Text(isRegistering ? "Create Account" : "Log In")
+
+                            if !isRegistering {
+                                HStack {
+                                    Spacer()
+                                    Button {
+                                        showingForgotPassword = true
+                                    } label: {
+                                        Text("Forgot Password?")
+                                            .font(.labelSmall)
+                                            .foregroundColor(.textLink)
+                                    }
+                                }
                             }
+
+                            if let error = authManager.error {
+                                HStack(spacing: Spacing.xs) {
+                                    CatIcon(name: .worried, size: .sm, color: .danger)
+                                    Text(error)
+                                        .font(.labelSmall)
+                                        .foregroundColor(.danger)
+                                }
+                                .padding(Spacing.sm)
+                                .frame(maxWidth: .infinity)
+                                .background(Color.dangerLight)
+                                .cornerRadius(CornerRadius.medium)
+                            }
+
+                            PrimaryButton(
+                                title: isRegistering ? "Create Account" : "Log In",
+                                icon: isRegistering ? .sparkle : nil,
+                                action: {
+                                    Task {
+                                        await performAuth()
+                                    }
+                                },
+                                isLoading: authManager.isLoading,
+                                isDisabled: !isFormValid
+                            )
+                            .padding(.top, Spacing.xs)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
-                        .disabled(!isFormValid || authManager.isLoading)
                     }
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, Spacing.lg)
 
                     // Toggle between login and register
                     Button {
-                        withAnimation {
+                        withAnimation(.spring(response: 0.3)) {
                             isRegistering.toggle()
                             authManager.clearError()
                         }
                     } label: {
-                        if isRegistering {
-                            Text("Already have an account? **Log in**")
-                        } else {
-                            Text("Don't have an account? **Sign up**")
+                        HStack(spacing: Spacing.xxs) {
+                            Text(isRegistering ? "Already have an account?" : "Don't have an account?")
+                                .foregroundColor(.textSecondary)
+                            Text(isRegistering ? "Log in" : "Sign up")
+                                .fontWeight(.semibold)
+                                .foregroundColor(.textLink)
                         }
+                        .font(.bodyMedium)
                     }
-                    .font(.subheadline)
 
-                    Spacer()
+                    Spacer(minLength: Spacing.xxxl)
                 }
             }
+            .background(backgroundColor.ignoresSafeArea())
             .navigationBarHidden(true)
             .sheet(isPresented: $showingForgotPassword) {
                 ForgotPasswordSheet(prefillEmail: email)
@@ -109,19 +136,42 @@ struct LoginView: View {
         }
     }
 
+    private var backgroundColor: Color {
+        colorScheme == .dark ? .backgroundPrimaryDark : .backgroundPrimary
+    }
+
     private var isFormValid: Bool {
-        !email.isEmpty && !password.isEmpty && password.count >= 6
+        !email.isEmpty && !password.isEmpty && password.count >= 6 &&
+        (!isRegistering || !displayName.isEmpty || displayName.isEmpty) // Name is optional
+    }
+
+    private var passwordError: String? {
+        if !password.isEmpty && password.count < 6 {
+            return "Password must be at least 6 characters"
+        }
+        return nil
     }
 
     private func performAuth() async {
+        HapticManager.buttonTap()
         if isRegistering {
-            _ = await authManager.register(
+            let success = await authManager.register(
                 email: email,
                 password: password,
                 displayName: displayName.isEmpty ? nil : displayName
             )
+            if success {
+                HapticManager.success()
+            } else {
+                HapticManager.error()
+            }
         } else {
-            _ = await authManager.login(email: email, password: password)
+            let success = await authManager.login(email: email, password: password)
+            if success {
+                HapticManager.success()
+            } else {
+                HapticManager.error()
+            }
         }
     }
 }

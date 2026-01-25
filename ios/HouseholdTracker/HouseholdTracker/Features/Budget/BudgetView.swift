@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BudgetView: View {
     @Environment(AuthManager.self) private var authManager
+    @Environment(\.colorScheme) private var colorScheme
     @State private var viewModel = BudgetViewModel()
     @State private var selectedTab = 0 // 0 = Budget Rules, 1 = Split Rules
     @State private var showAddBudgetRule = false
@@ -12,46 +13,73 @@ struct BudgetView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Tab Picker
-                Picker("View", selection: $selectedTab) {
-                    Text("Budget Rules").tag(0)
-                    Text("Split Rules").tag(1)
+                // Styled Tab Picker
+                HStack(spacing: Spacing.sm) {
+                    StyledTabButton(
+                        title: "Budget Rules",
+                        icon: .coins,
+                        isSelected: selectedTab == 0,
+                        action: {
+                            HapticManager.selection()
+                            withAnimation(.spring(response: 0.3)) {
+                                selectedTab = 0
+                            }
+                        }
+                    )
+
+                    StyledTabButton(
+                        title: "Split Rules",
+                        icon: .highfive,
+                        isSelected: selectedTab == 1,
+                        action: {
+                            HapticManager.selection()
+                            withAnimation(.spring(response: 0.3)) {
+                                selectedTab = 1
+                            }
+                        }
+                    )
                 }
-                .pickerStyle(.segmented)
-                .padding()
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, Spacing.sm)
 
                 if viewModel.isLoading && viewModel.budgetRules.isEmpty && viewModel.splitRules.isEmpty {
-                    Spacer()
-                    ProgressView()
-                    Spacer()
+                    LoadingState(message: "Loading rules...")
                 } else {
                     if selectedTab == 0 {
-                        BudgetRulesListView(
+                        StyledBudgetRulesListView(
                             budgetRules: viewModel.budgetRules,
                             members: viewModel.members,
                             onEdit: { rule in editingBudgetRule = rule },
-                            onDelete: { rule in Task { await viewModel.deleteBudgetRule(rule.id) } }
+                            onDelete: { rule in
+                                HapticManager.warning()
+                                Task { await viewModel.deleteBudgetRule(rule.id) }
+                            }
                         )
                     } else {
-                        SplitRulesListView(
+                        StyledSplitRulesListView(
                             splitRules: viewModel.splitRules,
                             onEdit: { rule in editingSplitRule = rule },
-                            onDelete: { rule in Task { await viewModel.deleteSplitRule(rule.id) } }
+                            onDelete: { rule in
+                                HapticManager.warning()
+                                Task { await viewModel.deleteSplitRule(rule.id) }
+                            }
                         )
                     }
                 }
             }
+            .background(backgroundColor.ignoresSafeArea())
             .navigationTitle("Rules")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        HapticManager.buttonTap()
                         if selectedTab == 0 {
                             showAddBudgetRule = true
                         } else {
                             showAddSplitRule = true
                         }
                     } label: {
-                        Image(systemName: "plus")
+                        CatIcon(name: .plus, size: .md, color: .brandPrimary)
                     }
                 }
             }
@@ -99,11 +127,46 @@ struct BudgetView: View {
             }
         }
     }
+
+    private var backgroundColor: Color {
+        colorScheme == .dark ? .backgroundPrimaryDark : .backgroundPrimary
+    }
 }
 
-// MARK: - Budget Rules List
+// MARK: - Styled Tab Button
 
-struct BudgetRulesListView: View {
+struct StyledTabButton: View {
+    let title: String
+    let icon: CatIcon.Name
+    let isSelected: Bool
+    let action: () -> Void
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Spacing.xs) {
+                CatIcon(name: icon, size: .sm, color: isSelected ? .white : .warm500)
+                Text(title)
+                    .font(.labelMedium)
+            }
+            .foregroundColor(isSelected ? .white : .warm600)
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+            .frame(maxWidth: .infinity)
+            .background(isSelected ? Color.brandPrimary : Color.clear)
+            .cornerRadius(CornerRadius.large)
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.large)
+                    .stroke(isSelected ? Color.clear : Color.warm300, lineWidth: 1)
+            )
+        }
+    }
+}
+
+// MARK: - Styled Budget Rules List
+
+struct StyledBudgetRulesListView: View {
     let budgetRules: [BudgetRule]
     let members: [HouseholdMember]
     let onEdit: (BudgetRule) -> Void
@@ -111,64 +174,106 @@ struct BudgetRulesListView: View {
 
     var body: some View {
         if budgetRules.isEmpty {
-            VStack(spacing: 12) {
-                Spacer()
-                Image(systemName: "dollarsign.circle")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.secondary)
-                Text("No Budget Rules")
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
-                Text("Tap + to add a budget rule")
-                    .font(.subheadline)
-                    .foregroundStyle(.tertiary)
-                Spacer()
-            }
+            EmptyState(
+                icon: .coins,
+                title: "No Budget Rules",
+                message: "Set monthly spending limits between household members.",
+                actionTitle: nil,
+                action: nil
+            )
         } else {
-            List {
-                ForEach(budgetRules) { rule in
-                    BudgetRuleRow(rule: rule)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                onDelete(rule)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
+            ScrollView {
+                LazyVStack(spacing: Spacing.sm) {
+                    ForEach(budgetRules) { rule in
+                        StyledBudgetRuleRow(rule: rule)
+                            .contextMenu {
+                                Button {
+                                    HapticManager.light()
+                                    onEdit(rule)
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+
+                                Button(role: .destructive) {
+                                    onDelete(rule)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
                             }
-                            Button {
+                            .onTapGesture {
+                                HapticManager.light()
                                 onEdit(rule)
-                            } label: {
-                                Label("Edit", systemImage: "pencil")
                             }
-                            .tint(.blue)
-                        }
+                    }
                 }
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, Spacing.sm)
             }
-            .listStyle(.plain)
         }
     }
 }
 
-struct BudgetRuleRow: View {
+// MARK: - Styled Budget Rule Row
+
+struct StyledBudgetRuleRow: View {
     let rule: BudgetRule
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("\(rule.giverName) \u{2192} \(rule.receiverName)")
-                    .font(.headline)
-                Spacer()
-                Text(formattedAmount)
-                    .font(.headline)
-                    .foregroundStyle(.green)
+        HStack(spacing: Spacing.md) {
+            // Icon
+            ZStack {
+                Circle()
+                    .fill(Color.sage100)
+                    .frame(width: 44, height: 44)
+
+                CatIcon(name: .coins, size: .md, color: .sage600)
             }
 
-            if !rule.expenseTypeNames.isEmpty {
-                Text(rule.expenseTypeNames.joined(separator: ", "))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            // Details
+            VStack(alignment: .leading, spacing: Spacing.xxxs) {
+                HStack(spacing: Spacing.xs) {
+                    Text(rule.giverName)
+                        .font(.labelMedium)
+                        .foregroundColor(textColor)
+
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.brandPrimary)
+
+                    Text(rule.receiverName)
+                        .font(.labelMedium)
+                        .foregroundColor(textColor)
+                }
+
+                if !rule.expenseTypeNames.isEmpty {
+                    Text(rule.expenseTypeNames.joined(separator: ", "))
+                        .font(.labelSmall)
+                        .foregroundColor(.textTertiary)
+                        .lineLimit(1)
+                }
             }
+
+            Spacer()
+
+            // Amount
+            Text(formattedAmount)
+                .font(.amountMedium)
+                .foregroundColor(.success)
         }
-        .padding(.vertical, 4)
+        .padding(Spacing.md)
+        .background(cardBackground)
+        .cornerRadius(CornerRadius.large)
+        .subtleShadow()
+    }
+
+    private var textColor: Color {
+        colorScheme == .dark ? .textPrimaryDark : .textPrimary
+    }
+
+    private var cardBackground: Color {
+        colorScheme == .dark ? .backgroundSecondaryDark : .backgroundSecondary
     }
 
     private var formattedAmount: String {
@@ -179,79 +284,125 @@ struct BudgetRuleRow: View {
     }
 }
 
-// MARK: - Split Rules List
+// MARK: - Styled Split Rules List
 
-struct SplitRulesListView: View {
+struct StyledSplitRulesListView: View {
     let splitRules: [SplitRule]
     let onEdit: (SplitRule) -> Void
     let onDelete: (SplitRule) -> Void
 
     var body: some View {
         if splitRules.isEmpty {
-            VStack(spacing: 12) {
-                Spacer()
-                Image(systemName: "percent")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.secondary)
-                Text("No Split Rules")
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
-                Text("Tap + to add a split rule")
-                    .font(.subheadline)
-                    .foregroundStyle(.tertiary)
-                Spacer()
-            }
+            EmptyState(
+                icon: .highfive,
+                title: "No Split Rules",
+                message: "Customize how shared expenses are divided between members.",
+                actionTitle: nil,
+                action: nil
+            )
         } else {
-            List {
-                ForEach(splitRules) { rule in
-                    SplitRuleRow(rule: rule)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                onDelete(rule)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
+            ScrollView {
+                LazyVStack(spacing: Spacing.sm) {
+                    ForEach(splitRules) { rule in
+                        StyledSplitRuleRow(rule: rule)
+                            .contextMenu {
+                                Button {
+                                    HapticManager.light()
+                                    onEdit(rule)
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+
+                                Button(role: .destructive) {
+                                    onDelete(rule)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
                             }
-                            Button {
+                            .onTapGesture {
+                                HapticManager.light()
                                 onEdit(rule)
-                            } label: {
-                                Label("Edit", systemImage: "pencil")
                             }
-                            .tint(.blue)
-                        }
+                    }
                 }
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, Spacing.sm)
             }
-            .listStyle(.plain)
         }
     }
 }
 
-struct SplitRuleRow: View {
+// MARK: - Styled Split Rule Row
+
+struct StyledSplitRuleRow: View {
     let rule: SplitRule
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(rule.description ?? "\(rule.member1Percent)% / \(rule.member2Percent)%")
-                    .font(.headline)
-                Spacer()
-                if rule.isDefault {
-                    Text("Default")
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.blue.opacity(0.1))
-                        .foregroundStyle(.blue)
-                        .clipShape(Capsule())
+        HStack(spacing: Spacing.md) {
+            // Icon
+            ZStack {
+                Circle()
+                    .fill(Color.terracotta100)
+                    .frame(width: 44, height: 44)
+
+                CatIcon(name: .highfive, size: .md, color: .terracotta600)
+            }
+
+            // Details
+            VStack(alignment: .leading, spacing: Spacing.xxxs) {
+                HStack(spacing: Spacing.xs) {
+                    Text(rule.description ?? "\(rule.member1Percent)% / \(rule.member2Percent)%")
+                        .font(.labelMedium)
+                        .foregroundColor(textColor)
+
+                    if rule.isDefault {
+                        Badge(text: "Default", style: .default)
+                    }
+                }
+
+                if let names = rule.expenseTypeNames, !names.isEmpty {
+                    Text(names.joined(separator: ", "))
+                        .font(.labelSmall)
+                        .foregroundColor(.textTertiary)
+                        .lineLimit(1)
                 }
             }
 
-            if let names = rule.expenseTypeNames, !names.isEmpty {
-                Text(names.joined(separator: ", "))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            Spacer()
+
+            // Split visualization
+            HStack(spacing: Spacing.xxs) {
+                Text("\(rule.member1Percent)%")
+                    .font(.labelSmall)
+                    .foregroundColor(.brandPrimary)
+
+                Text("/")
+                    .font(.labelSmall)
+                    .foregroundColor(.textTertiary)
+
+                Text("\(rule.member2Percent)%")
+                    .font(.labelSmall)
+                    .foregroundColor(.sage600)
             }
+            .padding(.horizontal, Spacing.sm)
+            .padding(.vertical, Spacing.xxs)
+            .background(Color.warm100)
+            .cornerRadius(CornerRadius.medium)
         }
-        .padding(.vertical, 4)
+        .padding(Spacing.md)
+        .background(cardBackground)
+        .cornerRadius(CornerRadius.large)
+        .subtleShadow()
+    }
+
+    private var textColor: Color {
+        colorScheme == .dark ? .textPrimaryDark : .textPrimary
+    }
+
+    private var cardBackground: Color {
+        colorScheme == .dark ? .backgroundSecondaryDark : .backgroundSecondary
     }
 }
 

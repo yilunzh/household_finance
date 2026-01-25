@@ -41,6 +41,18 @@
 		O5C6D7E8F9A0B1C2D3E4F5A6 /* SplitRuleEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = P6D7E8F9A0B1C2D3E4F5A6B7 /* SplitRuleEditSheet.swift */; };
 		R8F9A0B1C2D3E4F5A6B7C8D9 /* ExpenseTypesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = S9A0B1C2D3E4F5A6B7C8D9E0 /* ExpenseTypesView.swift */; };
 		U1C2D3E4F5A6B7C8D9E0F1A2 /* ExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = V2D3E4F5A6B7C8D9E0F1A2B3 /* ExportView.swift */; };
+		BFF7D1A0FE0F4F559F78596E /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 486527EA183448B8991DB698 /* Colors.swift */; };
+		9AE5C3C0D958435C9F1F7EC1 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 365B41A999434C3DA98C2DCA /* Typography.swift */; };
+		32053636AF194D56A7491815 /* Spacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF4635B524D94C1E86515054 /* Spacing.swift */; };
+		05F478D1CF7145A8BE7F9297 /* CatIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174596D1BFCB41E0AFCBB4B6 /* CatIcon.swift */; };
+		16F7921D38B44F35B829018B /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A7C0575E9A4DA49DA51EA4 /* HapticManager.swift */; };
+		6918EF2976304F598788273C /* Buttons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08F06C2CEF134904848D9A6B /* Buttons.swift */; };
+		B1AD645C53504B5890BCDF4E /* CardContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E4813A24C54EA994C24DDF /* CardContainer.swift */; };
+		E31B9FA46DA2458BB4CE5870 /* Badge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D9768FA0B24FEEAC92E4E1 /* Badge.swift */; };
+		AD9AE064622F44D58E78C9FE /* EmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F47E18FBCD4DC79D266F9F /* EmptyState.swift */; };
+		6A170A96FFC441E19CC2CE85 /* InputField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 078B8481803E4424B47CF186 /* InputField.swift */; };
+		2468C8CDB3CD4492A929A0C9 /* CustomTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5787195831A546FC9B8071E7 /* CustomTabBar.swift */; };
+		D2A3A1173BE84D8C9A9072BC /* TransactionComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3760CF07BD245D1AEDC1C58 /* TransactionComponents.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -92,6 +104,18 @@
 		P6D7E8F9A0B1C2D3E4F5A6B7 /* SplitRuleEditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitRuleEditSheet.swift; sourceTree = "<group>"; };
 		S9A0B1C2D3E4F5A6B7C8D9E0 /* ExpenseTypesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseTypesView.swift; sourceTree = "<group>"; };
 		V2D3E4F5A6B7C8D9E0F1A2B3 /* ExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportView.swift; sourceTree = "<group>"; };
+		486527EA183448B8991DB698 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
+		365B41A999434C3DA98C2DCA /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
+		EF4635B524D94C1E86515054 /* Spacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spacing.swift; sourceTree = "<group>"; };
+		174596D1BFCB41E0AFCBB4B6 /* CatIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatIcon.swift; sourceTree = "<group>"; };
+		D0A7C0575E9A4DA49DA51EA4 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
+		08F06C2CEF134904848D9A6B /* Buttons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Buttons.swift; sourceTree = "<group>"; };
+		C9E4813A24C54EA994C24DDF /* CardContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardContainer.swift; sourceTree = "<group>"; };
+		D5D9768FA0B24FEEAC92E4E1 /* Badge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Badge.swift; sourceTree = "<group>"; };
+		A4F47E18FBCD4DC79D266F9F /* EmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyState.swift; sourceTree = "<group>"; };
+		078B8481803E4424B47CF186 /* InputField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputField.swift; sourceTree = "<group>"; };
+		5787195831A546FC9B8071E7 /* CustomTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBar.swift; sourceTree = "<group>"; };
+		C3760CF07BD245D1AEDC1C58 /* TransactionComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionComponents.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -115,6 +139,7 @@
 		1025E8EC278D2566B40EA5CA /* HouseholdTracker */ = {
 			isa = PBXGroup;
 			children = (
+				E78329530E644A3190F40E93 /* Design */,
 				C11FEFAB2BC32A5A1A1B5722 /* ContentView.swift */,
 				384AA84A854F9CA761F52390 /* HouseholdTrackerApp.swift */,
 				4B95A6A689A6465FA02DB13B /* Info.plist */,
@@ -259,6 +284,33 @@
 			path = Settings;
 			sourceTree = "<group>";
 		};
+		5497CD2B9F90486F95E083AE /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				C3760CF07BD245D1AEDC1C58 /* TransactionComponents.swift */,
+				08F06C2CEF134904848D9A6B /* Buttons.swift */,
+				C9E4813A24C54EA994C24DDF /* CardContainer.swift */,
+				D5D9768FA0B24FEEAC92E4E1 /* Badge.swift */,
+				A4F47E18FBCD4DC79D266F9F /* EmptyState.swift */,
+				078B8481803E4424B47CF186 /* InputField.swift */,
+				5787195831A546FC9B8071E7 /* CustomTabBar.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		E78329530E644A3190F40E93 /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				486527EA183448B8991DB698 /* Colors.swift */,
+				365B41A999434C3DA98C2DCA /* Typography.swift */,
+				EF4635B524D94C1E86515054 /* Spacing.swift */,
+				174596D1BFCB41E0AFCBB4B6 /* CatIcon.swift */,
+				D0A7C0575E9A4DA49DA51EA4 /* HapticManager.swift */,
+				5497CD2B9F90486F95E083AE /* Components */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -338,6 +390,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D2A3A1173BE84D8C9A9072BC /* TransactionComponents.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* AcceptInvitationView.swift in Sources */,
 				B6253C5CA81EA1F3CDDCDD97 /* APIError.swift in Sources */,
 				8CA9187601CC3FDB7A0D20A5 /* AddTransactionSheet.swift in Sources */,
@@ -371,7 +424,18 @@
 				O5C6D7E8F9A0B1C2D3E4F5A6 /* SplitRuleEditSheet.swift in Sources */,
 				R8F9A0B1C2D3E4F5A6B7C8D9 /* ExpenseTypesView.swift in Sources */,
 				U1C2D3E4F5A6B7C8D9E0F1A2 /* ExportView.swift in Sources */,
-			);
+			
+				BFF7D1A0FE0F4F559F78596E /* Colors.swift in Sources */,
+				9AE5C3C0D958435C9F1F7EC1 /* Typography.swift in Sources */,
+				32053636AF194D56A7491815 /* Spacing.swift in Sources */,
+				05F478D1CF7145A8BE7F9297 /* CatIcon.swift in Sources */,
+				16F7921D38B44F35B829018B /* HapticManager.swift in Sources */,
+				6918EF2976304F598788273C /* Buttons.swift in Sources */,
+				B1AD645C53504B5890BCDF4E /* CardContainer.swift in Sources */,
+				E31B9FA46DA2458BB4CE5870 /* Badge.swift in Sources */,
+				AD9AE064622F44D58E78C9FE /* EmptyState.swift in Sources */,
+				6A170A96FFC441E19CC2CE85 /* InputField.swift in Sources */,
+				2468C8CDB3CD4492A929A0C9 /* CustomTabBar.swift in Sources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		7A11C963F13FE81C4B5B8B3C /* Sources */ = {

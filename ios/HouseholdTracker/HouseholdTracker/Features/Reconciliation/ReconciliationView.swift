@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ReconciliationView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @State private var viewModel = ReconciliationViewModel()
     @State private var showSettleConfirmation = false
     @State private var showUnsettleConfirmation = false
@@ -9,79 +10,79 @@ struct ReconciliationView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 // Month Selector
-                MonthSelectorView(
+                StyledMonthSelector(
                     month: viewModel.formattedMonth,
-                    onPrevious: { viewModel.previousMonth() },
-                    onNext: { viewModel.nextMonth() }
+                    onPrevious: {
+                        HapticManager.selection()
+                        viewModel.previousMonth()
+                    },
+                    onNext: {
+                        HapticManager.selection()
+                        viewModel.nextMonth()
+                    }
                 )
 
                 if viewModel.isLoading && viewModel.reconciliation == nil {
-                    Spacer()
-                    ProgressView()
-                    Spacer()
+                    LoadingState(message: "Loading summary...")
                 } else if let reconciliation = viewModel.reconciliation {
                     ScrollView {
-                        VStack(spacing: 20) {
+                        VStack(spacing: Spacing.md) {
                             // Settlement Banner
                             if reconciliation.isSettled {
-                                SettledBannerView(settlement: reconciliation.settlement)
+                                StyledSettledBanner(settlement: reconciliation.settlement)
                             }
 
                             // Summary Card
-                            SummaryCardView(summary: reconciliation.summary)
+                            StyledSummaryCard(summary: reconciliation.summary)
 
                             // Category Breakdown
                             if !reconciliation.summary.breakdown.isEmpty {
-                                BreakdownCardView(breakdown: reconciliation.summary.breakdown)
+                                StyledBreakdownCard(breakdown: reconciliation.summary.breakdown)
                             }
 
                             // Budget Status
                             if let budgetStatus = reconciliation.budgetStatus, !budgetStatus.isEmpty {
-                                BudgetStatusCardView(budgets: budgetStatus)
+                                StyledBudgetStatusCard(budgets: budgetStatus)
                             }
 
                             // Settlement Button
                             if !reconciliation.isSettled {
-                                Button {
-                                    showSettleConfirmation = true
-                                } label: {
-                                    Label("Mark as Settled", systemImage: "checkmark.circle")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .padding(.horizontal)
+                                SecondaryButton(
+                                    title: "Mark as Settled",
+                                    icon: .celebrate,
+                                    action: {
+                                        showSettleConfirmation = true
+                                    }
+                                )
+                                .padding(.horizontal, Spacing.md)
                             } else {
-                                Button(role: .destructive) {
-                                    showUnsettleConfirmation = true
-                                } label: {
-                                    Label("Unsettle Month", systemImage: "arrow.uturn.backward")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                                .padding(.horizontal)
+                                DangerButton(
+                                    title: "Unsettle Month",
+                                    icon: .unlock,
+                                    action: {
+                                        showUnsettleConfirmation = true
+                                    },
+                                    style: .outlined
+                                )
+                                .padding(.horizontal, Spacing.md)
                             }
 
-                            Spacer(minLength: 32)
+                            Spacer(minLength: Spacing.xxl)
                         }
-                        .padding(.top)
+                        .padding(.top, Spacing.sm)
                     }
                     .refreshable {
                         await viewModel.fetchReconciliation()
                     }
                 } else {
-                    Spacer()
-                    VStack(spacing: 12) {
-                        Image(systemName: "chart.pie")
-                            .font(.system(size: 48))
-                            .foregroundStyle(.secondary)
-
-                        Text("No data available")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
+                    EmptyState(
+                        icon: .sleeping,
+                        title: "No data available",
+                        message: "There are no transactions for this month yet."
+                    )
                 }
             }
+            .background(backgroundColor.ignoresSafeArea())
             .navigationTitle("Summary")
             .task {
                 await viewModel.fetchReconciliation()
@@ -96,6 +97,7 @@ struct ReconciliationView: View {
             }
             .confirmationDialog("Settle Month", isPresented: $showSettleConfirmation) {
                 Button("Mark as Settled") {
+                    HapticManager.success()
                     Task {
                         await viewModel.settleMonth()
                     }
@@ -106,6 +108,7 @@ struct ReconciliationView: View {
             }
             .confirmationDialog("Unsettle Month", isPresented: $showUnsettleConfirmation) {
                 Button("Unsettle", role: .destructive) {
+                    HapticManager.warning()
                     Task {
                         await viewModel.unsettleMonth()
                     }
@@ -116,33 +119,63 @@ struct ReconciliationView: View {
             }
         }
     }
+
+    private var backgroundColor: Color {
+        colorScheme == .dark ? .backgroundPrimaryDark : .backgroundPrimary
+    }
 }
 
-struct SettledBannerView: View {
+// MARK: - Styled Settled Banner
+
+struct StyledSettledBanner: View {
     let settlement: Settlement?
 
-    var body: some View {
-        HStack {
-            Image(systemName: "checkmark.seal.fill")
-                .foregroundStyle(.green)
+    @Environment(\.colorScheme) private var colorScheme
 
-            VStack(alignment: .leading) {
+    var body: some View {
+        HStack(spacing: Spacing.md) {
+            ZStack {
+                Circle()
+                    .fill(Color.sage100)
+                    .frame(width: 44, height: 44)
+
+                CatIcon(name: .lock, size: .md, color: .sage600)
+            }
+
+            VStack(alignment: .leading, spacing: Spacing.xxxs) {
                 Text("Month Settled")
-                    .font(.headline)
+                    .font(.labelLarge)
+                    .foregroundColor(textColor)
 
                 if let settlement = settlement {
                     Text("Settled on \(formattedDate(settlement.settledDate))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.labelSmall)
+                        .foregroundColor(.textSecondary)
                 }
             }
 
             Spacer()
+
+            CatIcon(name: .celebrate, size: .lg, color: .sage500)
         }
-        .padding()
-        .background(Color.green.opacity(0.1))
-        .cornerRadius(12)
-        .padding(.horizontal)
+        .padding(Spacing.md)
+        .background(
+            LinearGradient(
+                colors: [Color.sage50, Color.sage100.opacity(0.5)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        )
+        .cornerRadius(CornerRadius.large)
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.large)
+                .stroke(Color.sage200, lineWidth: 1)
+        )
+        .padding(.horizontal, Spacing.md)
+    }
+
+    private var textColor: Color {
+        colorScheme == .dark ? .textPrimaryDark : .textPrimary
     }
 
     private func formattedDate(_ dateString: String) -> String {
@@ -159,28 +192,47 @@ struct SettledBannerView: View {
     }
 }
 
-struct SummaryCardView: View {
+// MARK: - Styled Summary Card
+
+struct StyledSummaryCard: View {
     let summary: ReconciliationSummary
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Settlement")
-                .font(.headline)
+    @Environment(\.colorScheme) private var colorScheme
 
-            // Settlement Message
-            Text(summary.settlementMessage)
-                .font(.title3)
-                .fontWeight(.semibold)
-                .foregroundStyle(.primary)
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            // Header
+            HStack {
+                CatIcon(name: .highfive, size: .md, color: .brandPrimary)
+                Text("Settlement")
+                    .font(.labelLarge)
+                    .foregroundColor(textColor)
+            }
+
+            // Settlement Message - highlighted
+            HStack {
+                Text(summary.settlementMessage)
+                    .font(.bodyLarge)
+                    .fontWeight(.semibold)
+                    .foregroundColor(textColor)
+            }
+            .padding(Spacing.sm)
+            .frame(maxWidth: .infinity)
+            .background(Color.terracotta50)
+            .cornerRadius(CornerRadius.medium)
 
             Divider()
+                .background(Color.warm200)
 
             // Total Spent
             HStack {
                 Text("Total Spent")
+                    .font(.labelMedium)
+                    .foregroundColor(textColor)
                 Spacer()
                 Text(formatCurrency(summary.totalSpent))
-                    .fontWeight(.semibold)
+                    .font(.amountMedium)
+                    .foregroundColor(.brandPrimary)
             }
 
             // User Payments
@@ -189,9 +241,12 @@ struct SummaryCardView: View {
                    let name = summary.memberNames[userId] {
                     HStack {
                         Text("\(name) paid")
-                            .foregroundStyle(.secondary)
+                            .font(.labelMedium)
+                            .foregroundColor(.textSecondary)
                         Spacer()
                         Text(formatCurrency(amount))
+                            .font(.amountSmall)
+                            .foregroundColor(textColor)
                     }
                 }
             }
@@ -202,18 +257,29 @@ struct SummaryCardView: View {
                    let name = summary.memberNames[userId] {
                     HStack {
                         Text("\(name)'s balance")
-                            .foregroundStyle(.secondary)
+                            .font(.labelMedium)
+                            .foregroundColor(.textSecondary)
                         Spacer()
                         Text(formatCurrency(balance))
-                            .foregroundStyle(balance >= 0 ? .green : .red)
+                            .font(.amountSmall)
+                            .foregroundColor(balance >= 0 ? .success : .danger)
                     }
                 }
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(12)
-        .padding(.horizontal)
+        .padding(Spacing.md)
+        .background(cardBackground)
+        .cornerRadius(CornerRadius.large)
+        .subtleShadow()
+        .padding(.horizontal, Spacing.md)
+    }
+
+    private var textColor: Color {
+        colorScheme == .dark ? .textPrimaryDark : .textPrimary
+    }
+
+    private var cardBackground: Color {
+        colorScheme == .dark ? .backgroundSecondaryDark : .backgroundSecondary
     }
 
     private func formatCurrency(_ amount: Double) -> String {
@@ -224,30 +290,92 @@ struct SummaryCardView: View {
     }
 }
 
-struct BreakdownCardView: View {
+// MARK: - Styled Breakdown Card
+
+struct StyledBreakdownCard: View {
     let breakdown: [CategoryBreakdown]
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("By Category")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            // Header
+            HStack {
+                CatIcon(name: .clipboard, size: .md, color: .brandPrimary)
+                Text("By Category")
+                    .font(.labelLarge)
+                    .foregroundColor(textColor)
+            }
 
             ForEach(breakdown) { category in
-                HStack {
+                HStack(spacing: Spacing.sm) {
+                    // Category icon circle
+                    ZStack {
+                        Circle()
+                            .fill(categoryColor(for: category.categoryName).opacity(0.15))
+                            .frame(width: 32, height: 32)
+
+                        CatIcon(name: categoryIcon(for: category.categoryName), size: .sm, color: categoryColor(for: category.categoryName))
+                    }
+
                     Text(category.categoryName)
+                        .font(.labelMedium)
+                        .foregroundColor(textColor)
+
                     Spacer()
-                    Text("\(category.count) items")
-                        .foregroundStyle(.secondary)
+
+                    Text("\(category.count)")
+                        .font(.labelSmall)
+                        .foregroundColor(.textSecondary)
+                        .padding(.horizontal, Spacing.xs)
+                        .padding(.vertical, Spacing.xxxs)
+                        .background(Color.warm200)
+                        .cornerRadius(CornerRadius.full)
+
                     Text(formatCurrency(category.total))
-                        .fontWeight(.medium)
+                        .font(.amountSmall)
+                        .foregroundColor(textColor)
                         .frame(width: 80, alignment: .trailing)
                 }
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(12)
-        .padding(.horizontal)
+        .padding(Spacing.md)
+        .background(cardBackground)
+        .cornerRadius(CornerRadius.large)
+        .subtleShadow()
+        .padding(.horizontal, Spacing.md)
+    }
+
+    private var textColor: Color {
+        colorScheme == .dark ? .textPrimaryDark : .textPrimary
+    }
+
+    private var cardBackground: Color {
+        colorScheme == .dark ? .backgroundSecondaryDark : .backgroundSecondary
+    }
+
+    private func categoryColor(for name: String) -> Color {
+        switch name.uppercased() {
+        case "SHARED":
+            return .brandPrimary
+        case "PERSONAL_ME", "PERSONAL_WIFE":
+            return .sage500
+        default:
+            return .warm500
+        }
+    }
+
+    private func categoryIcon(for name: String) -> CatIcon.Name {
+        switch name.uppercased() {
+        case "SHARED":
+            return .highfive
+        case "PERSONAL_ME":
+            return .happy
+        case "PERSONAL_WIFE":
+            return .wave
+        default:
+            return .coins
+        }
     }
 
     private func formatCurrency(_ amount: Double) -> String {
@@ -258,50 +386,89 @@ struct BreakdownCardView: View {
     }
 }
 
-struct BudgetStatusCardView: View {
+// MARK: - Styled Budget Status Card
+
+struct StyledBudgetStatusCard: View {
     let budgets: [BudgetStatus]
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Budget Status")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            // Header
+            HStack {
+                CatIcon(name: .coins, size: .md, color: .brandPrimary)
+                Text("Budget Status")
+                    .font(.labelLarge)
+                    .foregroundColor(textColor)
+            }
 
             ForEach(budgets) { budget in
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Spacing.sm) {
                     HStack {
                         Text("\(budget.giverDisplayName) → \(budget.receiverDisplayName)")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
+                            .font(.labelMedium)
+                            .foregroundColor(textColor)
 
                         Spacer()
 
                         Text(formatCurrency(budget.spentAmount))
+                            .font(.amountSmall)
+                            .foregroundColor(budget.isOverBudget ? .danger : textColor)
                         Text("/")
-                            .foregroundStyle(.secondary)
+                            .font(.labelSmall)
+                            .foregroundColor(.textTertiary)
                         Text(formatCurrency(budget.budgetAmount))
-                            .foregroundStyle(.secondary)
+                            .font(.labelSmall)
+                            .foregroundColor(.textSecondary)
                     }
 
-                    ProgressView(value: min(budget.percentUsed / 100, 1.0))
-                        .tint(budget.isOverBudget ? .red : .green)
+                    // Custom progress bar
+                    GeometryReader { geometry in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: CornerRadius.small)
+                                .fill(Color.warm200)
+                                .frame(height: 8)
 
-                    if budget.isOverBudget {
-                        Text("Over budget by \(formatCurrency(budget.spentAmount - budget.budgetAmount))")
-                            .font(.caption)
-                            .foregroundStyle(.red)
-                    } else {
-                        Text("\(formatCurrency(budget.remaining)) remaining")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            RoundedRectangle(cornerRadius: CornerRadius.small)
+                                .fill(budget.isOverBudget ? Color.danger : Color.success)
+                                .frame(width: geometry.size.width * min(CGFloat(budget.percentUsed / 100), 1.0), height: 8)
+                        }
+                    }
+                    .frame(height: 8)
+
+                    HStack {
+                        if budget.isOverBudget {
+                            CatIcon(name: .worried, size: .sm, color: .danger)
+                            Text("Over budget by \(formatCurrency(budget.spentAmount - budget.budgetAmount))")
+                                .font(.labelSmall)
+                                .foregroundColor(.danger)
+                        } else {
+                            CatIcon(name: .happy, size: .sm, color: .success)
+                            Text("\(formatCurrency(budget.remaining)) remaining")
+                                .font(.labelSmall)
+                                .foregroundColor(.success)
+                        }
                     }
                 }
-                .padding(.vertical, 4)
+                .padding(Spacing.sm)
+                .background(budget.isOverBudget ? Color.rose50.opacity(0.5) : Color.sage50.opacity(0.5))
+                .cornerRadius(CornerRadius.medium)
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(12)
-        .padding(.horizontal)
+        .padding(Spacing.md)
+        .background(cardBackground)
+        .cornerRadius(CornerRadius.large)
+        .subtleShadow()
+        .padding(.horizontal, Spacing.md)
+    }
+
+    private var textColor: Color {
+        colorScheme == .dark ? .textPrimaryDark : .textPrimary
+    }
+
+    private var cardBackground: Color {
+        colorScheme == .dark ? .backgroundSecondaryDark : .backgroundSecondary
     }
 
     private func formatCurrency(_ amount: Double) -> String {

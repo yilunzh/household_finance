@@ -2,34 +2,30 @@ import SwiftUI
 
 struct MainTabView: View {
     @Environment(AuthManager.self) private var authManager
+    @State private var selectedTab: CustomTabBar.Tab = .transactions
 
     var body: some View {
-        TabView {
-            TransactionsView()
-                .tabItem {
-                    Label("Transactions", systemImage: "list.bullet.rectangle")
+        TabBarContainer(selectedTab: $selectedTab) {
+            Group {
+                switch selectedTab {
+                case .transactions:
+                    TransactionsView()
+                case .reconciliation:
+                    ReconciliationView()
+                case .budget:
+                    BudgetView()
+                case .settings:
+                    SettingsView()
                 }
-
-            ReconciliationView()
-                .tabItem {
-                    Label("Summary", systemImage: "chart.pie")
-                }
-
-            BudgetView()
-                .tabItem {
-                    Label("Rules", systemImage: "dollarsign.circle")
-                }
-
-            SettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gear")
-                }
+            }
+            .padding(.bottom, Layout.tabBarHeight) // Account for custom tab bar
         }
     }
 }
 
 struct SettingsView: View {
     @Environment(AuthManager.self) private var authManager
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showingEditName = false
     @State private var showingChangePassword = false
     @State private var showingChangeEmail = false
@@ -39,142 +35,236 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                // Current Household Section
-                if let householdId = authManager.currentHouseholdId,
-                   let household = authManager.households.first(where: { $0.id == householdId }) {
-                    Section {
-                        NavigationLink {
-                            HouseholdSettingsView()
-                        } label: {
-                            HStack {
-                                Label(household.name, systemImage: "house")
-                                Spacer()
-                                Text("Settings")
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-
-                        if authManager.households.count > 1 {
-                            NavigationLink {
-                                HouseholdSwitcherView()
-                            } label: {
-                                Label("Switch Household", systemImage: "arrow.left.arrow.right")
-                            }
-                        }
-                    } header: {
-                        Text("Current Household")
-                    }
-
-                    // Invitations Section
-                    Section {
-                        Button {
-                            showingInviteMember = true
-                        } label: {
-                            Label("Invite Member", systemImage: "person.badge.plus")
-                        }
-
-                        Button {
-                            showingPendingInvitations = true
-                        } label: {
-                            Label("Pending Invitations", systemImage: "envelope.badge")
-                        }
-                    } header: {
-                        Text("Invitations")
-                    }
-
-                    // Configuration Section
-                    Section {
-                        NavigationLink {
-                            ExpenseTypesView()
-                        } label: {
-                            Label("Expense Types", systemImage: "tag")
-                        }
-                    } header: {
-                        Text("Configuration")
-                    }
-
-                    // Data Management Section
-                    Section {
-                        NavigationLink {
-                            ExportView()
-                        } label: {
-                            Label("Export Data", systemImage: "square.and.arrow.up")
-                        }
-                    } header: {
-                        Text("Data")
-                    }
-                }
-
-                // Account Section
-                Section {
+            ScrollView {
+                VStack(spacing: Spacing.lg) {
+                    // Profile Card
                     if let user = authManager.currentUser {
-                        Button {
-                            showingEditName = true
-                        } label: {
-                            HStack {
-                                Text("Name")
+                        CardContainer(hasGradient: true) {
+                            HStack(spacing: Spacing.md) {
+                                // Avatar
+                                Circle()
+                                    .fill(Color.terracotta100)
+                                    .frame(width: 56, height: 56)
+                                    .overlay(
+                                        CatIcon(name: .silhouette, size: .lg, color: .terracotta500)
+                                    )
+
+                                VStack(alignment: .leading, spacing: Spacing.xxs) {
+                                    Text(user.name)
+                                        .font(.displaySmall)
+                                        .foregroundColor(.textPrimary)
+                                    Text(user.email)
+                                        .font(.bodySmall)
+                                        .foregroundColor(.textSecondary)
+                                }
+
                                 Spacer()
-                                Text(user.name)
-                                    .foregroundStyle(.secondary)
-                                Image(systemName: "chevron.right")
-                                    .font(.footnote)
-                                    .foregroundStyle(.tertiary)
+
+                                Button {
+                                    showingEditName = true
+                                } label: {
+                                    CatIcon(name: .pencil, size: .md, color: .terracotta500)
+                                }
                             }
                         }
-                        .foregroundStyle(.primary)
+                        .padding(.horizontal, Spacing.md)
+                    }
 
-                        HStack {
-                            Text("Email")
-                            Spacer()
-                            Text(user.email)
-                                .foregroundStyle(.secondary)
+                    // Household Section
+                    if let householdId = authManager.currentHouseholdId,
+                       let household = authManager.households.first(where: { $0.id == householdId }) {
+                        SectionCard(title: "Household") {
+                            SectionRow {
+                                NavigationLink {
+                                    HouseholdSettingsView()
+                                } label: {
+                                    SettingsRowContent(
+                                        icon: .house,
+                                        title: household.name,
+                                        showChevron: true
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+
+                            SectionRow {
+                                NavigationLink {
+                                    HouseholdMembersListView()
+                                } label: {
+                                    SettingsRowContent(
+                                        icon: .group,
+                                        title: "Members",
+                                        showChevron: true
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+
+                            if authManager.households.count > 1 {
+                                SectionRow(showDivider: false) {
+                                    NavigationLink {
+                                        HouseholdSwitcherView()
+                                    } label: {
+                                        SettingsRowContent(
+                                            icon: .sparkle,
+                                            title: "Switch Household",
+                                            showChevron: true
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            } else {
+                                SectionRow(showDivider: false) {
+                                    NavigationLink {
+                                        CreateHouseholdView()
+                                    } label: {
+                                        SettingsRowContent(
+                                            icon: .sparkle,
+                                            title: "Create New Household",
+                                            showChevron: true
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, Spacing.md)
+
+                        // Invitations Section
+                        SectionCard(title: "Invitations") {
+                            SectionRow {
+                                Button {
+                                    showingInviteMember = true
+                                } label: {
+                                    SettingsRowContent(
+                                        icon: .envelope,
+                                        title: "Invite Member",
+                                        showChevron: false
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+
+                            SectionRow(showDivider: false) {
+                                Button {
+                                    showingPendingInvitations = true
+                                } label: {
+                                    SettingsRowContent(
+                                        icon: .clock,
+                                        title: "Pending Invitations",
+                                        showChevron: false
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, Spacing.md)
+
+                        // Configuration Section
+                        SectionCard(title: "Configuration") {
+                            SectionRow {
+                                NavigationLink {
+                                    ExpenseTypesView()
+                                } label: {
+                                    SettingsRowContent(
+                                        icon: .folder,
+                                        title: "Expense Types",
+                                        showChevron: true
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+
+                            SectionRow(showDivider: false) {
+                                NavigationLink {
+                                    ExportView()
+                                } label: {
+                                    SettingsRowContent(
+                                        icon: .download,
+                                        title: "Export Data",
+                                        showChevron: true
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, Spacing.md)
+                    }
+
+                    // Security Section
+                    SectionCard(title: "Security") {
+                        SectionRow {
+                            Button {
+                                showingChangePassword = true
+                            } label: {
+                                SettingsRowContent(
+                                    icon: .lock,
+                                    title: "Change Password",
+                                    showChevron: false
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+
+                        SectionRow(showDivider: false) {
+                            Button {
+                                showingChangeEmail = true
+                            } label: {
+                                SettingsRowContent(
+                                    icon: .envelope,
+                                    title: "Change Email",
+                                    showChevron: false
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
-                } header: {
-                    Text("Account")
-                }
+                    .padding(.horizontal, Spacing.md)
 
-                // Security Section
-                Section {
+                    // Log Out Button
                     Button {
-                        showingChangePassword = true
-                    } label: {
-                        Label("Change Password", systemImage: "lock")
-                    }
-
-                    Button {
-                        showingChangeEmail = true
-                    } label: {
-                        Label("Change Email", systemImage: "envelope")
-                    }
-                } header: {
-                    Text("Security")
-                }
-
-                // Actions Section
-                Section {
-                    Button(role: .destructive) {
+                        HapticManager.warning()
                         Task {
                             await authManager.logout()
                         }
                     } label: {
-                        Label("Log Out", systemImage: "rectangle.portrait.and.arrow.right")
+                        HStack(spacing: Spacing.sm) {
+                            CatIcon(name: .wave, size: .md, color: .rose500)
+                            Text("Log Out")
+                                .font(.labelLarge)
+                                .foregroundColor(.rose500)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, Spacing.sm)
+                        .background(Color.rose100)
+                        .cornerRadius(CornerRadius.large)
                     }
-                }
+                    .padding(.horizontal, Spacing.md)
 
-                // Danger Zone
-                Section {
-                    Button(role: .destructive) {
+                    // Delete Account
+                    Button {
                         showingDeleteAccount = true
                     } label: {
-                        Label("Delete Account", systemImage: "trash")
+                        Text("Delete Account")
+                            .font(.labelMedium)
+                            .foregroundColor(.textTertiary)
                     }
-                } footer: {
-                    Text("This will permanently delete your account and all associated data.")
+                    .padding(.top, Spacing.sm)
+
+                    // Footer
+                    VStack(spacing: Spacing.xs) {
+                        CatIcon(name: .heart, size: .md, color: .terracotta400)
+                        Text("Made with love for families")
+                            .font(.caption)
+                            .foregroundColor(.textTertiary)
+                    }
+                    .padding(.vertical, Spacing.lg)
                 }
+                .padding(.top, Spacing.md)
             }
+            .background(backgroundColor.ignoresSafeArea())
             .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.large)
             .sheet(isPresented: $showingEditName) {
                 EditNameSheet()
             }
@@ -194,6 +284,57 @@ struct SettingsView: View {
                 PendingInvitationsView()
             }
         }
+    }
+
+    private var backgroundColor: Color {
+        colorScheme == .dark ? .backgroundPrimaryDark : .backgroundPrimary
+    }
+}
+
+// MARK: - Settings Row Content
+struct SettingsRowContent: View {
+    let icon: CatIcon.Name
+    let title: String
+    var showChevron: Bool = true
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        HStack(spacing: Spacing.sm) {
+            CatIcon(name: icon, size: .md, color: iconColor)
+            Text(title)
+                .font(.bodyLarge)
+                .foregroundColor(textColor)
+            Spacer()
+            if showChevron {
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.textTertiary)
+            }
+        }
+    }
+
+    private var iconColor: Color {
+        colorScheme == .dark ? .warm400 : .warm600
+    }
+
+    private var textColor: Color {
+        colorScheme == .dark ? .textPrimaryDark : .textPrimary
+    }
+}
+
+// MARK: - Placeholder Views for Navigation
+struct HouseholdMembersListView: View {
+    var body: some View {
+        Text("Members List")
+            .navigationTitle("Members")
+    }
+}
+
+struct CreateHouseholdView: View {
+    var body: some View {
+        Text("Create Household")
+            .navigationTitle("New Household")
     }
 }
 

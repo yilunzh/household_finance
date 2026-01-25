@@ -1,0 +1,11 @@
+appId: com.householdtracker.app
+---
+# Helper to log in with test credentials
+- tapOn: "your@email.com"
+- inputText: "demo_alice@example.com"
+- tapOn: "Your password"
+- inputText: "password123"
+- tapOn: "Log In"
+- extendedWaitUntil:
+    visible: "Transactions"
+    timeout: 15000

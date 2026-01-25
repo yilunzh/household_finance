@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TransactionsView: View {
     @Environment(AuthManager.self) private var authManager
+    @Environment(\.colorScheme) private var colorScheme
     @State private var viewModel = TransactionsViewModel()
     @State private var showAddSheet = false
     @State private var showFilterSheet = false
@@ -12,7 +13,7 @@ struct TransactionsView: View {
             VStack(spacing: 0) {
                 // Search Bar (when search is active)
                 if viewModel.isSearchActive {
-                    SearchBarView(
+                    StyledSearchBar(
                         searchText: $viewModel.searchText,
                         onSearch: {
                             Task {
@@ -26,23 +27,28 @@ struct TransactionsView: View {
                             }
                         }
                     )
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemBackground))
+                    .padding(.horizontal, Spacing.md)
+                    .padding(.vertical, Spacing.sm)
                 }
 
                 // Month Selector (hidden when searching)
                 if !viewModel.isSearchActive {
-                    MonthSelectorView(
+                    StyledMonthSelector(
                         month: viewModel.formattedMonth,
-                        onPrevious: { viewModel.previousMonth() },
-                        onNext: { viewModel.nextMonth() }
+                        onPrevious: {
+                            HapticManager.selection()
+                            viewModel.previousMonth()
+                        },
+                        onNext: {
+                            HapticManager.selection()
+                            viewModel.nextMonth()
+                        }
                     )
                 }
 
                 // Active Filters Summary
                 if viewModel.hasActiveFilters {
-                    ActiveFiltersView(
+                    StyledActiveFilters(
                         filterCount: viewModel.activeFilterCount,
                         onClear: {
                             viewModel.clearSearchAndFilters()
@@ -55,55 +61,60 @@ struct TransactionsView: View {
 
                 // Transactions List
                 if viewModel.isLoading && viewModel.transactions.isEmpty {
-                    Spacer()
-                    ProgressView()
-                    Spacer()
+                    LoadingState(message: "Loading transactions...")
                 } else if viewModel.transactions.isEmpty {
-                    Spacer()
-                    VStack(spacing: 12) {
-                        Image(systemName: viewModel.hasActiveFilters ? "magnifyingglass" : "tray")
-                            .font(.system(size: 48))
-                            .foregroundStyle(.secondary)
-
-                        Text(viewModel.hasActiveFilters ? "No matching transactions" : "No transactions")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-
-                        Text(viewModel.hasActiveFilters ? "Try adjusting your filters" : "Tap + to add your first expense")
-                            .font(.subheadline)
-                            .foregroundStyle(.tertiary)
+                    if viewModel.hasActiveFilters {
+                        EmptyState(
+                            icon: .alert,
+                            title: "No matching transactions",
+                            message: "Try adjusting your search or filters to find what you're looking for."
+                        )
+                    } else {
+                        EmptyState(
+                            icon: .sleeping,
+                            title: "No transactions yet",
+                            message: "Start tracking your expenses by adding your first transaction.",
+                            actionTitle: "Add Transaction",
+                            action: { showAddSheet = true }
+                        )
                     }
-                    Spacer()
                 } else {
-                    List {
-                        ForEach(viewModel.transactions) { transaction in
-                            Button {
-                                selectedTransaction = transaction
-                            } label: {
-                                TransactionRowView(transaction: transaction)
-                            }
-                            .buttonStyle(.plain)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(role: .destructive) {
-                                    Task {
-                                        await viewModel.deleteTransaction(transaction.id)
-                                    }
+                    ScrollView {
+                        LazyVStack(spacing: Spacing.sm) {
+                            ForEach(viewModel.transactions) { transaction in
+                                Button {
+                                    HapticManager.light()
+                                    selectedTransaction = transaction
                                 } label: {
-                                    Label("Delete", systemImage: "trash")
+                                    StyledTransactionRow(transaction: transaction)
+                                }
+                                .buttonStyle(.plain)
+                                .contextMenu {
+                                    Button(role: .destructive) {
+                                        HapticManager.warning()
+                                        Task {
+                                            await viewModel.deleteTransaction(transaction.id)
+                                        }
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
                                 }
                             }
                         }
+                        .padding(.horizontal, Spacing.md)
+                        .padding(.vertical, Spacing.sm)
                     }
-                    .listStyle(.plain)
                     .refreshable {
                         await viewModel.fetchTransactions()
                     }
                 }
             }
+            .background(backgroundColor.ignoresSafeArea())
             .navigationTitle("Transactions")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
+                        HapticManager.buttonTap()
                         if viewModel.isSearchActive {
                             showFilterSheet = true
                         } else {
@@ -112,14 +123,9 @@ struct TransactionsView: View {
                     } label: {
                         ZStack(alignment: .topTrailing) {
                             Image(systemName: viewModel.isSearchActive ? "line.3.horizontal.decrease.circle" : "magnifyingglass")
+                                .foregroundColor(.terracotta500)
                             if viewModel.activeFilterCount > 0 {
-                                Text("\(viewModel.activeFilterCount)")
-                                    .font(.caption2)
-                                    .fontWeight(.bold)
-                                    .foregroundStyle(.white)
-                                    .padding(4)
-                                    .background(Color.accentColor)
-                                    .clipShape(Circle())
+                                CountBadge(count: viewModel.activeFilterCount, style: .brand)
                                     .offset(x: 8, y: -8)
                             }
                         }
@@ -129,9 +135,10 @@ struct TransactionsView: View {
 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
+                        HapticManager.buttonTap()
                         showAddSheet = true
                     } label: {
-                        Image(systemName: "plus")
+                        CatIcon(name: .plus, size: .md, color: .terracotta500)
                     }
                     .accessibilityLabel("Add Transaction")
                 }
@@ -168,182 +175,12 @@ struct TransactionsView: View {
             }
         }
     }
-}
 
-// MARK: - Search Bar View
-
-struct SearchBarView: View {
-    @Binding var searchText: String
-    let onSearch: () -> Void
-    let onCancel: () -> Void
-
-    var body: some View {
-        HStack {
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-
-                TextField("Search transactions...", text: $searchText)
-                    .textFieldStyle(.plain)
-                    .submitLabel(.search)
-                    .onSubmit {
-                        onSearch()
-                    }
-
-                if !searchText.isEmpty {
-                    Button {
-                        searchText = ""
-                        onSearch()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            .padding(8)
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
-
-            Button("Cancel") {
-                onCancel()
-            }
-        }
+    private var backgroundColor: Color {
+        colorScheme == .dark ? .backgroundPrimaryDark : .backgroundPrimary
     }
 }
 
-// MARK: - Active Filters View
-
-struct ActiveFiltersView: View {
-    let filterCount: Int
-    let onClear: () -> Void
-
-    var body: some View {
-        HStack {
-            Image(systemName: "line.3.horizontal.decrease.circle.fill")
-                .foregroundStyle(Color.accentColor)
-
-            Text("\(filterCount) filter\(filterCount == 1 ? "" : "s") active")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            Spacer()
-
-            Button("Clear") {
-                onClear()
-            }
-            .font(.subheadline)
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .background(Color(.systemGray6))
-    }
-}
-
-struct MonthSelectorView: View {
-    let month: String
-    let onPrevious: () -> Void
-    let onNext: () -> Void
-
-    var body: some View {
-        HStack {
-            Button(action: onPrevious) {
-                Image(systemName: "chevron.left")
-                    .font(.title3)
-            }
-
-            Spacer()
-
-            Text(month)
-                .font(.headline)
-
-            Spacer()
-
-            Button(action: onNext) {
-                Image(systemName: "chevron.right")
-                    .font(.title3)
-            }
-        }
-        .padding()
-        .background(Color(.systemBackground))
-    }
-}
-
-struct TransactionRowView: View {
-    let transaction: Transaction
-
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(transaction.merchant)
-                    .font(.headline)
-
-                HStack(spacing: 8) {
-                    if let expenseTypeName = transaction.expenseTypeName {
-                        Text(expenseTypeName)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Text(formattedDate)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 4) {
-                HStack(spacing: 4) {
-                    if transaction.receiptUrl != nil {
-                        Image(systemName: "paperclip")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Text(formattedAmount)
-                        .font(.headline)
-                        .foregroundStyle(amountColor)
-                }
-
-                if let paidByName = transaction.paidByName {
-                    Text("Paid by \(paidByName)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-        .padding(.vertical, 4)
-    }
-
-    private var formattedAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = transaction.currency
-        return formatter.string(from: NSNumber(value: transaction.amount)) ?? "$\(transaction.amount)"
-    }
-
-    private var formattedDate: String {
-        // Input: "2024-01-15"
-        let inputFormatter = DateFormatter()
-        inputFormatter.dateFormat = "yyyy-MM-dd"
-
-        let outputFormatter = DateFormatter()
-        outputFormatter.dateFormat = "MMM d"
-
-        if let date = inputFormatter.date(from: transaction.date) {
-            return outputFormatter.string(from: date)
-        }
-        return transaction.date
-    }
-
-    private var amountColor: Color {
-        switch transaction.category {
-        case "PERSONAL_ME", "PERSONAL_WIFE":
-            return .secondary
-        default:
-            return .primary
-        }
-    }
-}
 
 #Preview {
     TransactionsView()
