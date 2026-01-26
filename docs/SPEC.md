@@ -218,11 +218,15 @@ CREATE INDEX idx_expense_types_household ON expense_types(household_id);
 -- Auto-category rules (merchant keyword matching)
 CREATE TABLE auto_category_rules (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id) ON DELETE CASCADE,
+    keyword VARCHAR(100) NOT NULL,  -- Case-insensitive match, e.g., "publix", "whole foods"
     expense_type_id INTEGER NOT NULL REFERENCES expense_types(id) ON DELETE CASCADE,
-    keyword VARCHAR(100) NOT NULL,  -- e.g., "publix", "whole foods"
+    category VARCHAR(20),  -- Transaction category (SHARED, PERSONAL, etc.)
+    priority INTEGER DEFAULT 0,  -- Higher = checked first
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX idx_auto_rules_expense ON auto_category_rules(expense_type_id);
+CREATE INDEX idx_auto_rules_household ON auto_category_rules(household_id);
+CREATE INDEX idx_household_keyword ON auto_category_rules(household_id, keyword);
 
 -- Budget rules (giver/receiver/amount/categories)
 CREATE TABLE budget_rules (
@@ -1759,9 +1763,10 @@ def format_settlement(me_balance, wife_balance):
 | 2.9 | Jan 2026 | Transaction search and filter with collapsible sidebar |
 | 3.0 | Jan 2026 | iOS mobile app with full feature parity, security fixes |
 | 3.1 | Jan 2026 | iOS UI improvements: expense type icons, text contrast, brand colors |
+| 3.2 | Jan 2026 | iOS auto-categorization, fix auto_category_rules schema (add household_id, category, priority columns) |
 
 ---
 
-**Document Version**: 3.1
+**Document Version**: 3.2
 **Last Updated**: January 25, 2026
 **GitHub Repository**: https://github.com/yilunzh/household_finance
