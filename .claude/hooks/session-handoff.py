@@ -98,7 +98,7 @@ def handoff_exists_and_recent():
 def main():
     # Skip if handoff already written
     if handoff_exists_and_recent():
-        return {"decision": "allow"}
+        return {"continue": True}
 
     # Collect signals
     signals = []
@@ -123,8 +123,8 @@ def main():
     # Require 2+ signals to block (reduces false positives)
     if len(signals) >= 2:
         return {
-            "decision": "block",
-            "reason": (
+            "continue": False,
+            "stopReason": (
                 "Incomplete work detected:\n"
                 + "\n".join(f"  - {s}" for s in signals)
                 + "\n\nWrite .claude/handoff.md before ending session with:\n"
@@ -138,11 +138,11 @@ def main():
     # Single signal: advisory warning only
     if len(signals) == 1:
         return {
-            "decision": "allow",
+            "continue": True,
             "message": f"Note: {signals[0]}. Consider writing .claude/handoff.md if work is incomplete.",
         }
 
-    return {"decision": "allow"}
+    return {"continue": True}
 
 
 if __name__ == "__main__":

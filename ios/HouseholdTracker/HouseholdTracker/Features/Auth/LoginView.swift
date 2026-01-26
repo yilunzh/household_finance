@@ -52,7 +52,8 @@ struct LoginView: View {
                                     text: $email,
                                     icon: .envelope,
                                     keyboardType: .emailAddress,
-                                    autocapitalization: .never
+                                    autocapitalization: .never,
+                                    accessibilityId: "email-field"
                                 )
                             }
 
@@ -62,7 +63,8 @@ struct LoginView: View {
                                     text: $password,
                                     icon: .lock,
                                     isSecure: true,
-                                    errorMessage: passwordError
+                                    errorMessage: passwordError,
+                                    accessibilityId: "password-field"
                                 )
                             }
 

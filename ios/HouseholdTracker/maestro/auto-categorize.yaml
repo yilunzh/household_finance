@@ -1,0 +1,78 @@
+appId: com.householdtracker.app
+---
+# Auto-Categorization E2E Test
+# Verifies that typing a merchant name auto-fills the expense type
+
+- launchApp:
+    clearState: true
+    clearKeychain: true
+
+# Login
+- extendedWaitUntil:
+    visible: "Lucky Ledger"
+    timeout: 5000
+
+- runFlow:
+    file: helpers/do-login.yaml
+
+# Small gesture to ensure UI is responsive
+- swipe:
+    direction: UP
+    duration: 100
+
+# Tap add button
+- tapOn:
+    text: "Add Transaction"
+    retryTapIfNoChange: true
+
+# Wait for sheet to appear
+- extendedWaitUntil:
+    visible: "Where did you spend?"
+    timeout: 3000
+
+# Take screenshot before typing (expense type should show "None")
+- takeScreenshot: "01-before-auto-categorize"
+
+# Type a merchant name that matches an auto-category rule
+- tapOn: "Where did you spend?"
+- inputText: "Whole Foods Market"
+
+# Wait for debounce (500ms) + network request
+- extendedWaitUntil:
+    visible: "Grocery"
+    timeout: 5000
+
+# Take screenshot showing auto-categorization with "Auto" badge
+- takeScreenshot: "02-after-auto-categorize"
+
+# Verify expense type was auto-filled to "Grocery"
+- assertVisible: "Grocery"
+
+# Verify budget-rule-derived category was set
+# Alice (owner/giver) pays, Bob (receiver, not owner) → I_PAY_FOR_WIFE → "For Bob (by Alice)"
+- assertVisible: "For Bob (by Alice)"
+
+# Look for the "Auto" badge text
+- assertVisible: "Auto"
+
+# Now test that manual selection removes "Auto" badge
+# Dismiss keyboard first (pressKey Enter works on iOS 26)
+- pressKey: Enter
+
+# Tap on the expense type menu (Grocery is now visible)
+- tapOn: "Grocery"
+
+# Select a different expense type manually
+- extendedWaitUntil:
+    visible: "Dining"
+    timeout: 2000
+- tapOn: "Dining"
+
+# Take screenshot - should show "Dining" without "Auto" badge
+- takeScreenshot: "03-manual-selection"
+
+# Verify "Auto" badge is gone after manual selection
+- assertNotVisible: "Auto"
+
+# Verify "Dining" is now selected
+- assertVisible: "Dining"

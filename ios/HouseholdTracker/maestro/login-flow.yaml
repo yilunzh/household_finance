@@ -3,30 +3,28 @@ appId: com.householdtracker.app
 # Login Flow E2E Test
 - launchApp:
     clearState: true
+    clearKeychain: true
 
-# Check if already logged in (might have keychain tokens)
-- runFlow:
-    when:
-      visible: "Transactions"
-    file: helpers/logout-helper.yaml
+# Wait for login screen
+- extendedWaitUntil:
+    visible: "Lucky Ledger"
+    timeout: 5000
 
-# Now we should be at login screen
-- assertVisible: "Lucky Ledger"
-
-# Enter credentials - tap on placeholder text to focus fields
+# Enter email using placeholder text
 - tapOn: "your@email.com"
 - inputText: "demo_alice@example.com"
 
+# Enter password
 - tapOn: "Your password"
 - inputText: "password123"
 
-# Tap login button
+# Press Enter to dismiss keyboard (hideKeyboard doesn't work on iOS 26)
+- pressKey: Enter
+
+# Tap Log In button
 - tapOn: "Log In"
 
-# Wait for login to complete and verify we see the main app
+# Wait for main screen
 - extendedWaitUntil:
     visible: "Transactions"
-    timeout: 7000
-
-# Verify we're on the transactions screen
-- assertVisible: "Transactions"
+    timeout: 10000

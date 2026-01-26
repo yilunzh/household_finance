@@ -15,6 +15,10 @@ struct AddTransactionSheet: View {
     @State private var notes = ""
     @State private var currency = "USD"
 
+    // Auto-categorization state
+    @State private var isAutoDetected = false
+    @State private var autoCategorizeTask: Task<Void, Never>?
+
     private let currencies = ["USD", "CAD"]
 
     var body: some View {
@@ -94,6 +98,9 @@ struct AddTransactionSheet: View {
                                     TextField("Where did you spend?", text: $merchant)
                                         .font(.bodyLarge)
                                         .foregroundColor(textColor)
+                                        .onChange(of: merchant) { _, newValue in
+                                            triggerAutoCategorize(merchant: newValue)
+                                        }
                                 }
                             )
 
@@ -160,6 +167,8 @@ struct AddTransactionSheet: View {
                                             Button {
                                                 HapticManager.selection()
                                                 selectedExpenseType = nil
+                                                isAutoDetected = false
+                                                selectedCategory = viewModel.categories.first { $0.code == "SHARED" }
                                             } label: {
                                                 HStack {
                                                     Text("None")
@@ -172,6 +181,8 @@ struct AddTransactionSheet: View {
                                                 Button {
                                                     HapticManager.selection()
                                                     selectedExpenseType = expenseType
+                                                    isAutoDetected = false
+                                                    Task { await updateCategoryFromServer(expenseTypeId: expenseType.id) }
                                                 } label: {
                                                     HStack {
                                                         Text(expenseType.name)
@@ -186,6 +197,17 @@ struct AddTransactionSheet: View {
                                                 Text(selectedExpenseType?.name ?? "None")
                                                     .font(.bodyLarge)
                                                     .foregroundColor(selectedExpenseType == nil ? .textTertiary : textColor)
+
+                                                if isAutoDetected && selectedExpenseType != nil {
+                                                    Text("Auto")
+                                                        .font(.labelSmall)
+                                                        .foregroundColor(.success)
+                                                        .padding(.horizontal, Spacing.xs)
+                                                        .padding(.vertical, Spacing.xxxs)
+                                                        .background(Color.successLight)
+                                                        .cornerRadius(CornerRadius.small)
+                                                }
+
                                                 Spacer()
                                                 Image(systemName: "chevron.up.chevron.down")
                                                     .font(.system(size: 12))
@@ -208,6 +230,9 @@ struct AddTransactionSheet: View {
                                             Button {
                                                 HapticManager.selection()
                                                 selectedPaidBy = member
+                                                if let et = selectedExpenseType {
+                                                    Task { await updateCategoryFromServer(expenseTypeId: et.id, paidByOverride: member) }
+                                                }
                                             } label: {
                                                 HStack {
                                                     Text(member.displayName)
@@ -313,6 +338,19 @@ struct AddTransactionSheet: View {
             // Default category to SHARED
             selectedCategory = viewModel.categories.first { $0.code == "SHARED" }
         }
+        .onChange(of: viewModel.members) { _, newMembers in
+            // Members may load after sheet appears — set default paid-by when they arrive
+            if selectedPaidBy == nil, let currentUserId = authManager.currentUser?.id {
+                selectedPaidBy = newMembers.first { $0.userId == currentUserId }
+                // If expense type was already auto-detected, re-fetch category with paid-by
+                if let et = selectedExpenseType, isAutoDetected {
+                    Task { await updateCategoryFromServer(expenseTypeId: et.id) }
+                }
+            }
+        }
+        .onDisappear {
+            autoCategorizeTask?.cancel()
+        }
     }
 
     // MARK: - Computed Properties
@@ -368,6 +406,64 @@ struct AddTransactionSheet: View {
         }
 
         return sanitized
+    }
+
+    // MARK: - Auto-Categorization
+
+    private func triggerAutoCategorize(merchant: String) {
+        autoCategorizeTask?.cancel()
+
+        // Don't override manual selection
+        if selectedExpenseType != nil && !isAutoDetected {
+            return
+        }
+
+        autoCategorizeTask = Task {
+            try? await Task.sleep(nanoseconds: 500_000_000)  // 500ms debounce
+            guard !Task.isCancelled else { return }
+
+            if let response = await viewModel.fetchAutoCategorySuggestion(
+                merchant: merchant,
+                paidByUserId: selectedPaidBy?.userId
+            ) {
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    if selectedExpenseType == nil || isAutoDetected {
+                        selectedExpenseType = response.expenseType
+                        isAutoDetected = true
+                        HapticManager.light()
+
+                        // Set category from response
+                        if let categoryCode = response.category {
+                            selectedCategory = viewModel.categories.first { $0.code == categoryCode }
+                        }
+
+                        // If paid_by is now available and we got an expense type,
+                        // re-fetch to get budget-rule-derived category
+                        if let paidBy = selectedPaidBy, let et = response.expenseType {
+                            Task { await updateCategoryFromServer(expenseTypeId: et.id, paidByOverride: paidBy) }
+                        }
+                    }
+                }
+            } else {
+                print("[AutoCat] No suggestion returned")
+            }
+        }
+    }
+
+    // MARK: - Budget Category Lookup
+
+    private func updateCategoryFromServer(expenseTypeId: Int, paidByOverride: HouseholdMember? = nil) async {
+        // paidByUserId is optional — server defaults to JWT user when nil
+        let paidByUserId = (paidByOverride ?? selectedPaidBy)?.userId
+        if let response = await viewModel.fetchAutoCategorySuggestion(
+            expenseTypeId: expenseTypeId,
+            paidByUserId: paidByUserId
+        ), let categoryCode = response.category {
+            await MainActor.run {
+                selectedCategory = viewModel.categories.first { $0.code == categoryCode }
+            }
+        }
     }
 
     // MARK: - Actions

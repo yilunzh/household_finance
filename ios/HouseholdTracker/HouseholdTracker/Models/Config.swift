@@ -114,3 +114,42 @@ struct BudgetRuleResponse: Codable, Sendable {
         case budgetRule = "budget_rule"
     }
 }
+
+// MARK: - Auto-Categorization
+
+struct AutoCategorizeRequest: Codable, Sendable {
+    let merchant: String?
+    let expenseTypeId: Int?
+    let paidByUserId: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case merchant
+        case expenseTypeId = "expense_type_id"
+        case paidByUserId = "paid_by_user_id"
+    }
+}
+
+struct AutoCategorizeResponse: Codable, Sendable {
+    let expenseType: ExpenseType?
+    let matchedRule: AutoCategoryRuleInfo?
+    let category: String?
+
+    enum CodingKeys: String, CodingKey {
+        case expenseType = "expense_type"
+        case matchedRule = "matched_rule"
+        case category
+    }
+}
+
+struct AutoCategoryRuleInfo: Codable, Sendable {
+    let id: Int
+    let keyword: String
+    let expenseTypeId: Int
+    let priority: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id, keyword
+        case expenseTypeId = "expense_type_id"
+        case priority
+    }
+}
