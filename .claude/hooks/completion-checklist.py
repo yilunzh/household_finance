@@ -15,8 +15,8 @@ def main():
     # If no transcript available, allow but remind
     if not transcript:
         return {
-            "decision": "allow",
-            "message": "Reminder: Ensure you ran `pytest` before finishing.",
+            "continue": True,
+            "stopReason": "Reminder: Ensure you ran `pytest` before finishing.",
         }
 
     transcript_lower = transcript.lower()
@@ -24,8 +24,8 @@ def main():
     # Check if tests were run
     if "pytest" not in transcript_lower:
         return {
-            "decision": "block",
-            "reason": "You haven't run tests this session. "
+            "continue": False,
+            "stopReason": "You haven't run tests this session. "
             "Run `pytest tests/ -v --tb=short` before finishing.",
         }
 
@@ -38,12 +38,12 @@ def main():
         # If there's no "passed" after the last "failed", tests might still be failing
         if "passed" not in remaining and "0 failed" not in remaining:
             return {
-                "decision": "block",
-                "reason": "Tests appear to be failing. "
+                "continue": False,
+                "stopReason": "Tests appear to be failing. "
                 "Fix failing tests before finishing.",
             }
 
-    return {"decision": "allow"}
+    return {"continue": True}
 
 
 if __name__ == "__main__":

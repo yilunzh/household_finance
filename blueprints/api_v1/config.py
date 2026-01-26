@@ -14,7 +14,8 @@ from flask import jsonify, g, request
 from extensions import db
 from models import (
     ExpenseType, SplitRule, HouseholdMember, Transaction,
-    BudgetRule, BudgetRuleExpenseType, SplitRuleExpenseType
+    BudgetRule, BudgetRuleExpenseType, SplitRuleExpenseType,
+    AutoCategoryRule
 )
 from api_decorators import jwt_required, api_household_required
 from blueprints.api_v1 import api_v1_bp
@@ -309,3 +310,128 @@ def api_get_categories():
     return jsonify({
         'categories': categories
     })
+
+
+@api_v1_bp.route('/auto-categorize', methods=['POST'])
+@jwt_required
+@api_household_required
+def api_auto_categorize():
+    """Get suggested expense type and category for a transaction.
+
+    Supports two modes:
+    1. Merchant keyword match: provide "merchant" to match auto-category rules
+    2. Budget rule lookup: provide "expense_type_id" + "paid_by_user_id" to compute
+       category from budget rules (overrides static rule category)
+
+    Request body:
+        {
+            "merchant": "Whole Foods",           // optional
+            "expense_type_id": 1,                // optional
+            "paid_by_user_id": 2                 // optional
+        }
+
+    Returns:
+        {
+            "expense_type": {...} or null,
+            "matched_rule": {...} or null,
+            "category": "I_PAY_FOR_WIFE" or null
+        }
+    """
+    household_id = g.household_id
+    data = request.get_json() or {}
+    merchant = data.get('merchant', '').strip().lower()
+    expense_type_id = data.get('expense_type_id')
+    paid_by_user_id = data.get('paid_by_user_id') or g.current_user_id
+
+    result_expense_type = None
+    result_matched_rule = None
+    result_category = None
+
+    # Step 1: If expense_type_id provided, look up directly
+    if expense_type_id:
+        et = ExpenseType.query.filter_by(
+            id=expense_type_id,
+            household_id=household_id,
+            is_active=True
+        ).first()
+        if et:
+            result_expense_type = et.to_dict()
+
+    # Step 2: If merchant provided (and no expense_type_id), keyword match
+    if merchant and not expense_type_id:
+        rules = AutoCategoryRule.query.filter_by(
+            household_id=household_id
+        ).order_by(AutoCategoryRule.priority.desc()).all()
+
+        for rule in rules:
+            if rule.keyword.lower() in merchant:
+                result_expense_type = rule.expense_type.to_dict() if rule.expense_type else None
+                result_matched_rule = rule.to_dict()
+                result_category = rule.category
+                # Use matched expense type for budget lookup
+                if not expense_type_id and rule.expense_type_id:
+                    expense_type_id = rule.expense_type_id
+                break
+
+    # Step 3: If we have expense_type_id AND paid_by_user_id, compute category
+    # from budget rules (overrides static rule.category)
+    if expense_type_id and paid_by_user_id:
+        budget_category = _compute_budget_category(
+            household_id, expense_type_id, paid_by_user_id
+        )
+        if budget_category:
+            result_category = budget_category
+
+    if not merchant and not expense_type_id:
+        return jsonify({'expense_type': None, 'matched_rule': None, 'category': None})
+
+    return jsonify({
+        'expense_type': result_expense_type,
+        'matched_rule': result_matched_rule,
+        'category': result_category
+    })
+
+
+def _compute_budget_category(household_id, expense_type_id, paid_by_user_id):
+    """Compute transaction category based on budget rules.
+
+    Logic mirrors web's updateSplitBasedOnBudget():
+    - Find budget rule whose expense_type_ids includes the expense type
+    - Get household owner as member1
+    - If payer == receiver: PERSONAL_ME (receiver is owner) or PERSONAL_WIFE
+    - If payer == giver: WIFE_PAYS_FOR_ME (receiver is owner) or I_PAY_FOR_WIFE
+    """
+    # Find budget rule containing this expense type
+    budget_rule_et = BudgetRuleExpenseType.query.filter_by(
+        expense_type_id=expense_type_id
+    ).join(BudgetRule).filter(
+        BudgetRule.household_id == household_id,
+        BudgetRule.is_active.is_(True)
+    ).first()
+
+    if not budget_rule_et:
+        return None
+
+    budget_rule = budget_rule_et.budget_rule
+    giver_id = budget_rule.giver_user_id
+    receiver_id = budget_rule.receiver_user_id
+
+    # Find owner (member1)
+    owner_member = HouseholdMember.query.filter_by(
+        household_id=household_id,
+        role='owner'
+    ).first()
+
+    if not owner_member:
+        return None
+
+    member1_id = owner_member.user_id
+
+    if paid_by_user_id == receiver_id:
+        # Receiver paid → personal expense
+        return 'PERSONAL_ME' if receiver_id == member1_id else 'PERSONAL_WIFE'
+    elif paid_by_user_id == giver_id:
+        # Giver paid → paying for the other
+        return 'WIFE_PAYS_FOR_ME' if receiver_id == member1_id else 'I_PAY_FOR_WIFE'
+
+    return None

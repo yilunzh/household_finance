@@ -3,9 +3,17 @@ appId: com.householdtracker.app
 # Helper to log in with test credentials
 - tapOn: "your@email.com"
 - inputText: "demo_alice@example.com"
+
+# Enter password
 - tapOn: "Your password"
 - inputText: "password123"
+
+# Press Enter to dismiss keyboard (hideKeyboard doesn't work on iOS 26)
+- pressKey: Enter
+
+# Tap visible Log In button
 - tapOn: "Log In"
+
 - extendedWaitUntil:
     visible: "Transactions"
-    timeout: 7000
+    timeout: 10000

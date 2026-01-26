@@ -288,6 +288,45 @@ final class TransactionsViewModel: Sendable {
         error = nil
     }
 
+    // MARK: - Auto-Categorization
+
+    @MainActor
+    func fetchAutoCategorySuggestion(
+        merchant: String? = nil,
+        expenseTypeId: Int? = nil,
+        paidByUserId: Int? = nil
+    ) async -> AutoCategorizeResponse? {
+        // Need at least merchant (non-empty) or expenseTypeId
+        let hasMerchant = merchant != nil && !merchant!.trimmingCharacters(in: .whitespaces).isEmpty
+        guard hasMerchant || expenseTypeId != nil else {
+            print("[AutoCat] No merchant or expenseTypeId, skipping")
+            return nil
+        }
+
+        print("[AutoCat] Fetching suggestion for merchant=\(merchant ?? "nil"), expenseTypeId=\(String(describing: expenseTypeId)), paidByUserId=\(String(describing: paidByUserId))")
+
+        do {
+            let request = AutoCategorizeRequest(
+                merchant: merchant,
+                expenseTypeId: expenseTypeId,
+                paidByUserId: paidByUserId
+            )
+            let response: AutoCategorizeResponse = try await network.request(
+                endpoint: Endpoints.autoCategorize,
+                method: .post,
+                body: request,
+                requiresAuth: true,
+                requiresHousehold: true
+            )
+            print("[AutoCat] Response: expense_type=\(String(describing: response.expenseType?.name)), category=\(String(describing: response.category))")
+            // Return if we got an expense type OR a category
+            return (response.expenseType != nil || response.category != nil) ? response : nil
+        } catch {
+            print("[AutoCat] Error: \(error)")
+            return nil  // Silent fail - auto-categorization is optional
+        }
+    }
+
     /// Update a transaction in the list without fetching from server
     @MainActor
     func updateTransactionInList(_ transaction: Transaction) {

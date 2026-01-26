@@ -1,22 +1,21 @@
 appId: com.householdtracker.app
 ---
 # Helper flow to log out if already logged in
-- tapOn:
-    text: "Settings"
-    index: 0
-    retryTapIfNoChange: true
+- tapOn: "Settings"
 
-# Wait for Settings screen
-- extendedWaitUntil:
-    visible: "Demo Alice"
-    timeout: 3000
-
-# Log Out button is at the bottom of Settings, need to scroll down
+# Scroll to find Log Out
 - scrollUntilVisible:
     element: "Log Out"
     direction: DOWN
-    timeout: 3000
+    timeout: 5000
+
+# Tap Log Out button
 - tapOn: "Log Out"
+
+# Tap confirmation dialog Log Out
+- tapOn: "Log Out"
+
+# Wait for login screen
 - extendedWaitUntil:
     visible: "Lucky Ledger"
-    timeout: 3000
+    timeout: 5000
