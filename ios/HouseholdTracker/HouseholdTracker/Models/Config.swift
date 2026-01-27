@@ -153,3 +153,40 @@ struct AutoCategoryRuleInfo: Codable, Sendable {
         case priority
     }
 }
+
+// MARK: - Auto-Category Rules CRUD
+
+struct AutoCategoryRule: Codable, Identifiable, Sendable, Hashable {
+    let id: Int
+    let keyword: String
+    let expenseTypeId: Int
+    let expenseTypeName: String?
+    let category: String?
+    let priority: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id, keyword, category, priority
+        case expenseTypeId = "expense_type_id"
+        case expenseTypeName = "expense_type_name"
+    }
+}
+
+struct AutoCategoryRuleListResponse: Codable, Sendable {
+    let rules: [AutoCategoryRule]
+}
+
+struct AutoCategoryRuleResponse: Codable, Sendable {
+    let rule: AutoCategoryRule
+}
+
+struct AutoCategoryRuleRequest: Codable, Sendable {
+    let keyword: String?
+    let expenseTypeId: Int?
+    let category: String?
+    let priority: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case keyword, category, priority
+        case expenseTypeId = "expense_type_id"
+    }
+}

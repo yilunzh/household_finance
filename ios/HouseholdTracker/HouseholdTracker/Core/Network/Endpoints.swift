@@ -44,6 +44,8 @@ enum Endpoints {
     static let splitRules = "/split-rules"
     static let categories = "/categories"
     static let autoCategorize = "/auto-categorize"
+    static let autoCategoryRules = "/auto-category-rules"
+    static func autoCategoryRule(_ id: Int) -> String { "/auto-category-rules/\(id)" }
 
     // Budget & Split Rules
     static let budgetRules = "/budget-rules"
