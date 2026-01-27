@@ -395,6 +395,7 @@ class TestCreateAutoCategoryRule:
         assert response.status_code == 400
         assert 'already exists' in response.get_json()['error'].lower()
 
+
 class TestUpdateAutoCategoryRule:
     """Tests for PUT /api/v1/auto-category-rules/<id>"""
 
