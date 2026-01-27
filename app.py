@@ -125,19 +125,33 @@ def init_db():
                 # Column might already exist, which is fine
                 print(f'Note: receipt_url migration skipped ({e})')
 
-        # Auto-migration: Add category column to auto_category_rules if missing
+        # Auto-migration: Drop priority column from auto_category_rules if present
         try:
             db.session.execute(text(
-                'ALTER TABLE auto_category_rules ADD COLUMN category VARCHAR(20)'
+                'ALTER TABLE auto_category_rules DROP COLUMN priority'
             ))
             db.session.commit()
-            print('Added category column to auto_category_rules table')
+            print('Dropped priority column from auto_category_rules table')
         except Exception as e:
             db.session.rollback()
-            if 'duplicate column' in str(e).lower():
-                print('Column category already exists - skipping')
+            if 'no such column' in str(e).lower() or 'no column' in str(e).lower():
+                print('Column priority already removed - skipping')
             else:
-                print(f'Note: category migration skipped ({e})')
+                print(f'Note: priority drop migration skipped ({e})')
+
+        # Auto-migration: Drop category column from auto_category_rules if present
+        try:
+            db.session.execute(text(
+                'ALTER TABLE auto_category_rules DROP COLUMN category'
+            ))
+            db.session.commit()
+            print('Dropped category column from auto_category_rules table')
+        except Exception as e:
+            db.session.rollback()
+            if 'no such column' in str(e).lower() or 'no column' in str(e).lower():
+                print('Column category already removed - skipping')
+            else:
+                print(f'Note: category drop migration skipped ({e})')
 
         # Verify schema completeness - warn if any columns are missing
         verify_schema_completeness()

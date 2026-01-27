@@ -366,13 +366,12 @@ def api_auto_categorize():
     if merchant and not expense_type_id:
         rules = AutoCategoryRule.query.filter_by(
             household_id=household_id
-        ).order_by(AutoCategoryRule.priority.desc()).all()
+        ).all()
 
         for rule in rules:
             if rule.keyword.lower() in merchant:
                 result_expense_type = rule.expense_type.to_dict() if rule.expense_type else None
                 result_matched_rule = rule.to_dict()
-                result_category = rule.category
                 # Use matched expense type for budget lookup
                 if not expense_type_id and rule.expense_type_id:
                     expense_type_id = rule.expense_type_id
@@ -459,7 +458,7 @@ def api_get_auto_category_rules():
 
     rules = AutoCategoryRule.query.filter_by(
         household_id=household_id
-    ).order_by(AutoCategoryRule.priority.desc(), AutoCategoryRule.keyword).all()
+    ).order_by(AutoCategoryRule.keyword).all()
 
     return jsonify({
         'rules': [rule.to_dict() for rule in rules]
@@ -475,9 +474,7 @@ def api_create_auto_category_rule():
     Request body:
         {
             "keyword": "whole foods",
-            "expense_type_id": 1,
-            "category": "SHARED",   // optional
-            "priority": 10          // optional, defaults to 0
+            "expense_type_id": 1
         }
 
     Returns:
@@ -517,9 +514,7 @@ def api_create_auto_category_rule():
     rule = AutoCategoryRule(
         household_id=household_id,
         keyword=keyword,
-        expense_type_id=expense_type_id,
-        category=data.get('category'),
-        priority=data.get('priority', 0)
+        expense_type_id=expense_type_id
     )
 
     db.session.add(rule)
@@ -537,9 +532,7 @@ def api_update_auto_category_rule(rule_id):
     Request body (all optional):
         {
             "keyword": "trader joe",
-            "expense_type_id": 2,
-            "category": "PERSONAL_ME",
-            "priority": 5
+            "expense_type_id": 2
         }
 
     Returns:
@@ -585,12 +578,6 @@ def api_update_auto_category_rule(rule_id):
         if not expense_type:
             return jsonify({'error': 'Expense type not found'}), 400
         rule.expense_type_id = expense_type_id
-
-    if 'category' in data:
-        rule.category = data['category']
-
-    if 'priority' in data:
-        rule.priority = data['priority']
 
     db.session.commit()
 

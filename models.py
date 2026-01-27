@@ -310,8 +310,6 @@ class AutoCategoryRule(db.Model):
     household_id = db.Column(db.Integer, db.ForeignKey('households.id'), nullable=False, index=True)
     keyword = db.Column(db.String(100), nullable=False)  # Case-insensitive match
     expense_type_id = db.Column(db.Integer, db.ForeignKey('expense_types.id'), nullable=False)
-    category = db.Column(db.String(20), nullable=True)  # e.g., SHARED, PERSONAL - sets transaction category
-    priority = db.Column(db.Integer, default=0)  # Higher = checked first
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -328,9 +326,7 @@ class AutoCategoryRule(db.Model):
             'household_id': self.household_id,
             'keyword': self.keyword,
             'expense_type_id': self.expense_type_id,
-            'expense_type_name': self.expense_type.name if self.expense_type else None,
-            'category': self.category,
-            'priority': self.priority
+            'expense_type_name': self.expense_type.name if self.expense_type else None
         }
 
 
