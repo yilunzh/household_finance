@@ -355,10 +355,10 @@ def auto_categorize():
     if not merchant:
         return jsonify({'success': True, 'expense_type': None})
 
-    # Find matching rule (highest priority first)
+    # Find matching rule
     rules = AutoCategoryRule.query.filter_by(
         household_id=household_id
-    ).order_by(AutoCategoryRule.priority.desc()).all()
+    ).all()
 
     for rule in rules:
         if rule.keyword.lower() in merchant:

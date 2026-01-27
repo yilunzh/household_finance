@@ -9,6 +9,7 @@ Endpoints:
 - GET /api/v1/split-rules - List split rules
 - GET /api/v1/categories - List transaction categories
 - POST /api/v1/auto-categorize - Auto-categorize a transaction
+- GET /api/v1/merchant-suggestions - Combined merchant suggestions
 - GET /api/v1/auto-category-rules - List auto-category rules
 - POST /api/v1/auto-category-rules - Create auto-category rule
 - PUT /api/v1/auto-category-rules/<id> - Update auto-category rule
@@ -439,6 +440,37 @@ def _compute_budget_category(household_id, expense_type_id, paid_by_user_id):
         return 'WIFE_PAYS_FOR_ME' if receiver_id == member1_id else 'I_PAY_FOR_WIFE'
 
     return None
+
+
+@api_v1_bp.route('/merchant-suggestions', methods=['GET'])
+@jwt_required
+@api_household_required
+def api_merchant_suggestions():
+    """Get combined merchant suggestions from auto-category rules and past transactions.
+
+    Returns:
+        {"merchants": ["Amazon", "Costco", "Whole Foods", ...]}
+    """
+    household_id = g.household_id
+
+    # Rule keywords
+    rule_keywords = [r.keyword for r in AutoCategoryRule.query.filter_by(
+        household_id=household_id).all()]
+    # Past transaction merchants (distinct, non-null)
+    txn_merchants = [m[0] for m in db.session.query(Transaction.merchant).filter(
+        Transaction.household_id == household_id).distinct().all() if m[0]]
+
+    # Deduplicate case-insensitively, prefer rule keyword casing
+    seen = {}
+    for m in rule_keywords:
+        seen[m.lower()] = m
+    for m in txn_merchants:
+        if m.lower() not in seen:
+            seen[m.lower()] = m
+
+    merchants = sorted(seen.values(), key=str.lower)
+
+    return jsonify({'merchants': merchants})
 
 
 # ============================================================================

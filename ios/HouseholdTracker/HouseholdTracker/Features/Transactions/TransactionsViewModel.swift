@@ -7,6 +7,7 @@ final class TransactionsViewModel: Sendable {
     private(set) var expenseTypes: [ExpenseType] = []
     private(set) var categories: [TransactionCategory] = []
     private(set) var members: [HouseholdMember] = []
+    private(set) var merchantSuggestions: [String] = []
 
     private(set) var isLoading = false
     private(set) var error: String?
@@ -132,9 +133,18 @@ final class TransactionsViewModel: Sendable {
                 requiresHousehold: true
             )
 
-            let (expenseTypesResponse, categoriesResponse) = try await (expenseTypesTask, categoriesTask)
+            async let suggestionsTask: MerchantSuggestionsResponse = network.request(
+                endpoint: Endpoints.merchantSuggestions,
+                requiresAuth: true,
+                requiresHousehold: true
+            )
+
+            let (expenseTypesResponse, categoriesResponse, suggestionsResponse) = try await (
+                expenseTypesTask, categoriesTask, suggestionsTask
+            )
             expenseTypes = expenseTypesResponse.expenseTypes
             categories = categoriesResponse.categories
+            merchantSuggestions = suggestionsResponse.merchants
         } catch {
             // Silently fail - config is supplementary
         }

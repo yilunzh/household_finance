@@ -17,7 +17,11 @@ struct AddTransactionSheet: View {
 
     // Auto-categorization state
     @State private var isAutoDetected = false
+    @State private var isCategoryAutoDetected = false
     @State private var autoCategorizeTask: Task<Void, Never>?
+
+    // Merchant suggestions state
+    @State private var showSuggestions = true
 
     private let currencies = ["USD", "CAD"]
 
@@ -98,11 +102,58 @@ struct AddTransactionSheet: View {
                                     TextField("Where did you spend?", text: $merchant)
                                         .font(.bodyLarge)
                                         .foregroundColor(textColor)
-                                        .onChange(of: merchant) { _, newValue in
-                                            triggerAutoCategorize(merchant: newValue)
+                                        .onChange(of: merchant) { _, _ in
+                                            showSuggestions = true
+                                            triggerAutoCategorize(merchant: merchant)
                                         }
                                 }
                             )
+
+                            // Merchant suggestions
+                            if !filteredSuggestions.isEmpty {
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: Spacing.xs) {
+                                        ForEach(filteredSuggestions.prefix(5), id: \.self) { suggestion in
+                                            Button {
+                                                HapticManager.selection()
+                                                merchant = suggestion
+                                                showSuggestions = false
+                                                // Immediately auto-categorize, bypass debounce
+                                                autoCategorizeTask?.cancel()
+                                                autoCategorizeTask = Task {
+                                                    if let response = await viewModel.fetchAutoCategorySuggestion(
+                                                        merchant: suggestion,
+                                                        paidByUserId: selectedPaidBy?.userId
+                                                    ) {
+                                                        await MainActor.run {
+                                                            if selectedExpenseType == nil || isAutoDetected {
+                                                                selectedExpenseType = response.expenseType
+                                                                isAutoDetected = true
+                                                                if let categoryCode = response.category {
+                                                                    selectedCategory = viewModel.categories.first { $0.code == categoryCode }
+                                                                    isCategoryAutoDetected = true
+                                                                }
+                                                                if let paidBy = selectedPaidBy, let et = response.expenseType {
+                                                                    Task { await updateCategoryFromServer(expenseTypeId: et.id, paidByOverride: paidBy) }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            } label: {
+                                                Text(suggestion)
+                                                    .font(.labelMedium)
+                                                    .foregroundColor(.brandPrimary)
+                                                    .padding(.horizontal, Spacing.sm)
+                                                    .padding(.vertical, Spacing.xs)
+                                                    .background(Color.terracotta100)
+                                                    .cornerRadius(CornerRadius.medium)
+                                            }
+                                        }
+                                    }
+                                    .padding(.leading, Spacing.xl)
+                                }
+                            }
 
                             Divider().background(Color.warm200)
 
@@ -132,6 +183,7 @@ struct AddTransactionSheet: View {
                                             Button {
                                                 HapticManager.selection()
                                                 selectedCategory = category
+                                                isCategoryAutoDetected = false
                                             } label: {
                                                 HStack {
                                                     Text(category.name)
@@ -146,6 +198,17 @@ struct AddTransactionSheet: View {
                                             Text(selectedCategory?.name ?? "Select...")
                                                 .font(.bodyLarge)
                                                 .foregroundColor(selectedCategory == nil ? .textTertiary : textColor)
+
+                                            if isCategoryAutoDetected && selectedCategory != nil {
+                                                Text("Auto")
+                                                    .font(.labelSmall)
+                                                    .foregroundColor(.success)
+                                                    .padding(.horizontal, Spacing.xs)
+                                                    .padding(.vertical, Spacing.xxxs)
+                                                    .background(Color.successLight)
+                                                    .cornerRadius(CornerRadius.small)
+                                            }
+
                                             Spacer()
                                             Image(systemName: "chevron.up.chevron.down")
                                                 .font(.system(size: 12))
@@ -168,6 +231,7 @@ struct AddTransactionSheet: View {
                                                 HapticManager.selection()
                                                 selectedExpenseType = nil
                                                 isAutoDetected = false
+                                                isCategoryAutoDetected = false
                                                 selectedCategory = viewModel.categories.first { $0.code == "SHARED" }
                                             } label: {
                                                 HStack {
@@ -182,6 +246,7 @@ struct AddTransactionSheet: View {
                                                     HapticManager.selection()
                                                     selectedExpenseType = expenseType
                                                     isAutoDetected = false
+                                                    isCategoryAutoDetected = false
                                                     Task { await updateCategoryFromServer(expenseTypeId: expenseType.id) }
                                                 } label: {
                                                     HStack {
@@ -367,6 +432,24 @@ struct AddTransactionSheet: View {
         colorScheme == .dark ? .backgroundPrimaryDark : .backgroundPrimary
     }
 
+    private var filteredSuggestions: [String] {
+        let text = merchant.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !text.isEmpty, showSuggestions else { return [] }
+        return viewModel.merchantSuggestions
+            .filter { $0.lowercased().contains(text) && $0.lowercased() != text }
+            .sorted { a, b in
+                let aLower = a.lowercased()
+                let bLower = b.lowercased()
+                let aPrefix = aLower.hasPrefix(text)
+                let bPrefix = bLower.hasPrefix(text)
+                if aPrefix != bPrefix { return aPrefix }
+                let aWord = aLower.split(separator: " ").contains { $0.hasPrefix(text) }
+                let bWord = bLower.split(separator: " ").contains { $0.hasPrefix(text) }
+                if aWord != bWord { return aWord }
+                return aLower < bLower
+            }
+    }
+
     private var isFormValid: Bool {
         guard let amountValue = Double(amount), amountValue > 0 else { return false }
         return !merchant.trimmingCharacters(in: .whitespaces).isEmpty
@@ -436,6 +519,7 @@ struct AddTransactionSheet: View {
                         // Set category from response
                         if let categoryCode = response.category {
                             selectedCategory = viewModel.categories.first { $0.code == categoryCode }
+                            isCategoryAutoDetected = true
                         }
 
                         // If paid_by is now available and we got an expense type,
@@ -462,6 +546,7 @@ struct AddTransactionSheet: View {
         ), let categoryCode = response.category {
             await MainActor.run {
                 selectedCategory = viewModel.categories.first { $0.code == categoryCode }
+                isCategoryAutoDetected = true
             }
         }
     }

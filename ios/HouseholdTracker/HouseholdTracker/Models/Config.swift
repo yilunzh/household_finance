@@ -115,6 +115,12 @@ struct BudgetRuleResponse: Codable, Sendable {
     }
 }
 
+// MARK: - Merchant Suggestions
+
+struct MerchantSuggestionsResponse: Codable, Sendable {
+    let merchants: [String]
+}
+
 // MARK: - Auto-Categorization
 
 struct AutoCategorizeRequest: Codable, Sendable {
