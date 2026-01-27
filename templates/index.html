@@ -349,7 +349,7 @@
                 >
             </div>
 
-            <div class="md:col-span-2">
+            <div class="md:col-span-2 relative">
                 <label for="merchant" class="block text-sm font-semibold text-warm-700 mb-1.5">Merchant</label>
                 <input
                     type="text"
@@ -357,10 +357,15 @@
                     name="merchant"
                     required
                     placeholder="e.g., Whole Foods"
+                    autocomplete="off"
                     class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
                            focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
                            placeholder-warm-400 text-warm-800 transition-all duration-200"
                 >
+                <div id="merchant-dropdown"
+                     class="hidden absolute z-50 w-full mt-1 max-h-64 overflow-y-auto
+                            bg-cream-50 border-2 border-warm-200 rounded-xl shadow-lg">
+                </div>
             </div>
 
             <div class="md:col-span-1">
@@ -408,53 +413,53 @@
             </div>
 
             <div class="md:col-span-1">
-                <label for="expense_type" class="block text-sm font-semibold text-warm-700 mb-1.5">Expense Type</label>
-                <div class="flex items-center gap-1">
-                    <select
-                        id="expense_type"
-                        name="expense_type"
-                        class="flex-1 px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
-                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
-                               text-warm-800 cursor-pointer transition-all duration-200"
-                    >
-                        <option value="">-- None --</option>
-                        {% for et in expense_types %}
-                        <option value="{{ et.id }}">{{ et.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <span id="auto-detected-badge" class="hidden px-2 py-1 bg-sage-100 text-sage-700 text-xs rounded-full whitespace-nowrap">
+                <div class="flex items-center gap-1.5 mb-1.5">
+                    <label for="expense_type" class="block text-sm font-semibold text-warm-700">Expense Type</label>
+                    <span id="auto-detected-badge" class="hidden px-1.5 py-0.5 bg-sage-100 text-sage-700 text-xs rounded-full whitespace-nowrap">
                         Auto
                     </span>
                 </div>
+                <select
+                    id="expense_type"
+                    name="expense_type"
+                    class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                           focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                           text-warm-800 cursor-pointer transition-all duration-200"
+                >
+                    <option value="">-- None --</option>
+                    {% for et in expense_types %}
+                    <option value="{{ et.id }}">{{ et.name }}</option>
+                    {% endfor %}
+                </select>
             </div>
         </form>
 
         <!-- Split + Notes Row (aligned with grid above) -->
         <div class="mt-4 grid grid-cols-1 md:grid-cols-7 gap-4 items-start">
             <div class="md:col-span-3">
-                <label for="category" class="block text-sm font-semibold text-warm-700 mb-1.5">Split</label>
-                <div class="flex items-center gap-2">
-                    <select
-                        id="category"
-                        name="category"
-                        form="add-transaction-form"
-                        class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
-                               focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
-                               text-warm-800 cursor-pointer transition-all duration-200"
-                        onchange="updateSplitInfoText()"
-                    >
-                        <option value="SHARED">🤝 Shared</option>
-                        {% if household_members|length == 2 %}
-                            <option value="I_PAY_FOR_WIFE">💝 For {{ household_members[1].display_name }} (by {{ household_members[0].display_name }})</option>
-                            <option value="WIFE_PAYS_FOR_ME">💝 For {{ household_members[0].display_name }} (by {{ household_members[1].display_name }})</option>
-                            <option value="PERSONAL_ME">👤 {{ household_members[0].display_name }} only</option>
-                            <option value="PERSONAL_WIFE">👤 {{ household_members[1].display_name }} only</option>
-                        {% endif %}
-                    </select>
-                    <span id="split-auto-badge" class="hidden px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded-full whitespace-nowrap">
+                <div class="flex items-center gap-1.5 mb-1.5">
+                    <label for="category" class="block text-sm font-semibold text-warm-700">Split</label>
+                    <span id="split-auto-badge" class="hidden px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full whitespace-nowrap">
                         Auto
                     </span>
                 </div>
+                <select
+                    id="category"
+                    name="category"
+                    form="add-transaction-form"
+                    class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
+                           focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
+                           text-warm-800 cursor-pointer transition-all duration-200"
+                    onchange="updateSplitInfoText()"
+                >
+                    <option value="SHARED">🤝 Shared</option>
+                    {% if household_members|length == 2 %}
+                        <option value="I_PAY_FOR_WIFE">💝 For {{ household_members[1].display_name }} (by {{ household_members[0].display_name }})</option>
+                        <option value="WIFE_PAYS_FOR_ME">💝 For {{ household_members[0].display_name }} (by {{ household_members[1].display_name }})</option>
+                        <option value="PERSONAL_ME">👤 {{ household_members[0].display_name }} only</option>
+                        <option value="PERSONAL_WIFE">👤 {{ household_members[1].display_name }} only</option>
+                    {% endif %}
+                </select>
                 <p id="split-info-text" class="text-xs text-warm-500 mt-1">Split depends on expense type. Configure in Settings.</p>
             </div>
             <div class="md:col-span-4">
@@ -826,7 +831,7 @@
                     </div>
                 </div>
 
-                <div>
+                <div class="relative">
                     <label for="edit-merchant" class="block text-sm font-semibold text-warm-700 mb-1.5">Merchant</label>
                     <input
                         type="text"
@@ -834,10 +839,15 @@
                         name="merchant"
                         required
                         placeholder="e.g., Whole Foods"
+                        autocomplete="off"
                         class="w-full px-3 py-2.5 bg-cream-50 border-2 border-warm-200 rounded-xl
                                focus:border-terracotta-400 focus:ring-4 focus:ring-terracotta-100
                                placeholder-warm-400 text-warm-800 transition-all duration-200"
                     >
+                    <div id="edit-merchant-dropdown"
+                         class="hidden absolute z-50 w-full mt-1 max-h-64 overflow-y-auto
+                                bg-cream-50 border-2 border-warm-200 rounded-xl shadow-lg">
+                    </div>
                 </div>
 
                 <div>
@@ -1156,8 +1166,82 @@
     // Transaction form submission handler (defined in app.js)
     document.getElementById('add-transaction-form').addEventListener('submit', handleTransactionSubmit);
 
+    // Merchant suggestions data
+    const merchantSuggestions = {{ merchant_suggestions | tojson }};
+
+    // Custom merchant dropdown logic
+    function filterMerchants(typed) {
+        if (!typed) return [];
+        const lower = typed.toLowerCase();
+        return merchantSuggestions
+            .filter(m => m.toLowerCase().includes(lower) && m.toLowerCase() !== lower)
+            .sort((a, b) => {
+                const aLower = a.toLowerCase();
+                const bLower = b.toLowerCase();
+                const aStarts = aLower.startsWith(lower);
+                const bStarts = bLower.startsWith(lower);
+                if (aStarts !== bStarts) return aStarts ? -1 : 1;
+                const aWordStart = aLower.split(/\s+/).some(w => w.startsWith(lower));
+                const bWordStart = bLower.split(/\s+/).some(w => w.startsWith(lower));
+                if (aWordStart !== bWordStart) return aWordStart ? -1 : 1;
+                return aLower.localeCompare(bLower);
+            })
+            .slice(0, 8);
+    }
+
+    function showMerchantDropdown(inputEl, dropdownEl, onSelect) {
+        const typed = inputEl.value.trim();
+        const results = filterMerchants(typed);
+
+        if (results.length === 0) {
+            dropdownEl.classList.add('hidden');
+            return;
+        }
+
+        dropdownEl.innerHTML = results.map(m =>
+            `<div class="px-3 py-2 cursor-pointer text-warm-800 hover:bg-terracotta-50 hover:text-terracotta-700
+                         transition-colors duration-100 first:rounded-t-xl last:rounded-b-xl text-sm"
+                 data-value="${m.replace(/"/g, '&quot;')}">${m}</div>`
+        ).join('');
+
+        dropdownEl.classList.remove('hidden');
+
+        // Attach click handlers to items
+        dropdownEl.querySelectorAll('[data-value]').forEach(item => {
+            item.addEventListener('mousedown', function(e) {
+                e.preventDefault(); // prevent blur from firing first
+                const value = this.dataset.value;
+                inputEl.value = value;
+                dropdownEl.classList.add('hidden');
+                if (onSelect) onSelect(value);
+            });
+        });
+    }
+
+    function setupMerchantDropdown(inputEl, dropdownEl, onSelect) {
+        inputEl.addEventListener('input', function() {
+            showMerchantDropdown(inputEl, dropdownEl, onSelect);
+        });
+
+        inputEl.addEventListener('focus', function() {
+            if (inputEl.value.trim()) {
+                showMerchantDropdown(inputEl, dropdownEl, onSelect);
+            }
+        });
+
+        inputEl.addEventListener('blur', function() {
+            // Small delay so mousedown on item fires first
+            setTimeout(() => dropdownEl.classList.add('hidden'), 150);
+        });
+
+        inputEl.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                dropdownEl.classList.add('hidden');
+            }
+        });
+    }
+
     // Auto-categorization on merchant blur
-    let autoDetectTimeout;
     const merchantInput = document.getElementById('merchant');
     const expenseTypeSelect = document.getElementById('expense_type');
     const autoDetectedBadge = document.getElementById('auto-detected-badge');
@@ -1165,13 +1249,10 @@
     const splitAutoBadge = document.getElementById('split-auto-badge');
 
     if (merchantInput && expenseTypeSelect) {
-        merchantInput.addEventListener('blur', async function() {
-            const merchant = this.value.trim();
+        // Helper: trigger auto-categorize API call
+        async function doAutoCategorize(merchant, force = false) {
             if (!merchant) return;
-
-            // Only auto-detect if no expense type is selected
-            if (expenseTypeSelect.value) return;
-
+            if (!force && expenseTypeSelect.value) return;
             try {
                 const response = await fetch('/api/auto-categorize', {
                     method: 'POST',
@@ -1192,6 +1273,16 @@
             } catch (error) {
                 console.error('Auto-categorize error:', error);
             }
+        }
+
+        // Setup custom dropdown for add form
+        const merchantDropdown = document.getElementById('merchant-dropdown');
+        setupMerchantDropdown(merchantInput, merchantDropdown, function(value) {
+            doAutoCategorize(value, true);
+        });
+
+        merchantInput.addEventListener('blur', function() {
+            doAutoCategorize(this.value.trim());
         });
 
         // When expense type changes, update split and hide auto-detected badge
@@ -1236,6 +1327,33 @@
 
     function closeEditModal() {
         document.getElementById('edit-modal').classList.add('hidden');
+    }
+
+    // Setup custom dropdown for edit modal merchant
+    const editMerchantInput = document.getElementById('edit-merchant');
+    const editMerchantDropdown = document.getElementById('edit-merchant-dropdown');
+    if (editMerchantInput && editMerchantDropdown) {
+        setupMerchantDropdown(editMerchantInput, editMerchantDropdown, function(value) {
+            // Auto-categorize for edit modal (always force since user picked a suggestion)
+            const editExpType = document.getElementById('edit-expense-type');
+            if (!editExpType) return;
+            fetch('/api/auto-categorize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ merchant: value })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.expense_type) {
+                    editExpType.value = data.expense_type.id;
+                    updateSplitBasedOnBudget('edit-expense-type', 'edit-paid-by', 'edit-category', null);
+                }
+            })
+            .catch(err => console.error('Auto-categorize error:', err));
+        });
     }
 
     // Edit modal - auto-default split based on expense type and paid_by

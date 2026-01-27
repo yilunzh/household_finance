@@ -5,7 +5,7 @@ from datetime import datetime
 from flask import render_template, request, jsonify
 
 from extensions import db
-from models import Transaction, Settlement, ExpenseType, BudgetRule
+from models import Transaction, Settlement, ExpenseType, BudgetRule, AutoCategoryRule
 from decorators import household_required
 from household_context import get_current_household_id, get_current_household_members
 from utils import calculate_reconciliation, build_split_rules_lookup
@@ -76,6 +76,20 @@ def index():
     ).all()
     budget_rules_json = [r.to_dict() for r in budget_rules]
 
+    # Build combined merchant suggestions from rules + past transactions
+    rule_keywords = [r.keyword for r in AutoCategoryRule.query.filter_by(
+        household_id=household_id).all()]
+    txn_merchants = [m[0] for m in db.session.query(Transaction.merchant).filter(
+        Transaction.household_id == household_id).distinct().all() if m[0]]
+    # Deduplicate case-insensitively, prefer rule keyword casing
+    seen = {}
+    for m in rule_keywords:
+        seen[m.lower()] = m
+    for m in txn_merchants:
+        if m.lower() not in seen:
+            seen[m.lower()] = m
+    merchant_suggestions = sorted(seen.values(), key=str.lower)
+
     return render_template(
         'index.html',
         transactions=transactions,
@@ -86,7 +100,8 @@ def index():
         household_members=household_members,
         expense_types=expense_types,
         budget_rules_json=budget_rules_json,
-        split_display_info=split_display_info
+        split_display_info=split_display_info,
+        merchant_suggestions=merchant_suggestions
     )
 
 
