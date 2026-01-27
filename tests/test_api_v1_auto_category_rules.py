@@ -282,8 +282,9 @@ class TestListAutoCategoryRules:
         )
         assert response.status_code == 401
 
-    def test_list_cross_household_isolation(self, app, db, api_client, test_user,
-                                              test_user2, test_household, test_household2):
+    def test_list_cross_household_isolation(
+            self, app, db, api_client, test_user,
+            test_user2, test_household, test_household2):
         """Rules from other households are not visible."""
         from models import AutoCategoryRule
         with app.app_context():
@@ -552,8 +553,9 @@ class TestUpdateAutoCategoryRule:
         )
         assert response.status_code == 404
 
-    def test_update_cross_household_isolation(self, api_client, test_user, test_user2,
-                                               test_household, test_household2):
+    def test_update_cross_household_isolation(
+            self, api_client, test_user, test_user2,
+            test_household, test_household2):
         """Cannot update rules in another household."""
         # Create rule in household 1
         token1 = get_auth_token(api_client, test_user['email'], test_user['password'])
@@ -634,8 +636,9 @@ class TestDeleteAutoCategoryRule:
         )
         assert response.status_code == 404
 
-    def test_delete_cross_household_isolation(self, api_client, test_user, test_user2,
-                                               test_household, test_household2):
+    def test_delete_cross_household_isolation(
+            self, api_client, test_user, test_user2,
+            test_household, test_household2):
         """Cannot delete rules from another household."""
         # Create rule in household 1
         token1 = get_auth_token(api_client, test_user['email'], test_user['password'])
