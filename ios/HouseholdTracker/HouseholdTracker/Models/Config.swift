@@ -145,12 +145,10 @@ struct AutoCategoryRuleInfo: Codable, Sendable {
     let id: Int
     let keyword: String
     let expenseTypeId: Int
-    let priority: Int
 
     enum CodingKeys: String, CodingKey {
         case id, keyword
         case expenseTypeId = "expense_type_id"
-        case priority
     }
 }
 
@@ -161,11 +159,9 @@ struct AutoCategoryRule: Codable, Identifiable, Sendable, Hashable {
     let keyword: String
     let expenseTypeId: Int
     let expenseTypeName: String?
-    let category: String?
-    let priority: Int
 
     enum CodingKeys: String, CodingKey {
-        case id, keyword, category, priority
+        case id, keyword
         case expenseTypeId = "expense_type_id"
         case expenseTypeName = "expense_type_name"
     }
@@ -182,11 +178,9 @@ struct AutoCategoryRuleResponse: Codable, Sendable {
 struct AutoCategoryRuleRequest: Codable, Sendable {
     let keyword: String?
     let expenseTypeId: Int?
-    let category: String?
-    let priority: Int?
 
     enum CodingKeys: String, CodingKey {
-        case keyword, category, priority
+        case keyword
         case expenseTypeId = "expense_type_id"
     }
 }

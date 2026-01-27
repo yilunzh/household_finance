@@ -135,24 +135,21 @@ def test_household_with_rules(app, db, test_user, test_user2):
         rule1 = AutoCategoryRule(
             household_id=household.id,
             keyword='whole foods',
-            expense_type_id=grocery_type.id,
-            priority=10
+            expense_type_id=grocery_type.id
         )
         db.session.add(rule1)
 
         rule2 = AutoCategoryRule(
             household_id=household.id,
             keyword='trader joe',
-            expense_type_id=grocery_type.id,
-            priority=5
+            expense_type_id=grocery_type.id
         )
         db.session.add(rule2)
 
         rule3 = AutoCategoryRule(
             household_id=household.id,
             keyword='starbucks',
-            expense_type_id=coffee_type.id,
-            priority=10
+            expense_type_id=coffee_type.id
         )
         db.session.add(rule3)
 

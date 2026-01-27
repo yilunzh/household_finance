@@ -216,8 +216,7 @@ class TestListAutoCategoryRules:
             rule = AutoCategoryRule(
                 household_id=test_household['id'],
                 keyword='whole foods',
-                expense_type_id=test_household['grocery_type_id'],
-                priority=10
+                expense_type_id=test_household['grocery_type_id']
             )
             db.session.add(rule)
             db.session.commit()
@@ -232,29 +231,25 @@ class TestListAutoCategoryRules:
         assert len(data['rules']) == 1
         assert data['rules'][0]['keyword'] == 'whole foods'
         assert data['rules'][0]['expense_type_name'] == 'Grocery'
-        assert data['rules'][0]['priority'] == 10
 
-    def test_list_ordered_by_priority(self, app, db, api_client, test_user, test_household):
-        """Rules ordered by priority desc, then keyword asc."""
+    def test_list_ordered_by_keyword(self, app, db, api_client, test_user, test_household):
+        """Rules ordered alphabetically by keyword."""
         from models import AutoCategoryRule
         with app.app_context():
             db.session.add(AutoCategoryRule(
                 household_id=test_household['id'],
                 keyword='beta store',
-                expense_type_id=test_household['grocery_type_id'],
-                priority=5
+                expense_type_id=test_household['grocery_type_id']
             ))
             db.session.add(AutoCategoryRule(
                 household_id=test_household['id'],
                 keyword='alpha store',
-                expense_type_id=test_household['grocery_type_id'],
-                priority=10
+                expense_type_id=test_household['grocery_type_id']
             ))
             db.session.add(AutoCategoryRule(
                 household_id=test_household['id'],
                 keyword='gamma store',
-                expense_type_id=test_household['coffee_type_id'],
-                priority=5
+                expense_type_id=test_household['coffee_type_id']
             ))
             db.session.commit()
 
@@ -266,13 +261,9 @@ class TestListAutoCategoryRules:
         assert response.status_code == 200
         rules = response.get_json()['rules']
         assert len(rules) == 3
-        # Priority 10 first, then priority 5 alphabetically
         assert rules[0]['keyword'] == 'alpha store'
-        assert rules[0]['priority'] == 10
         assert rules[1]['keyword'] == 'beta store'
-        assert rules[1]['priority'] == 5
         assert rules[2]['keyword'] == 'gamma store'
-        assert rules[2]['priority'] == 5
 
     def test_list_requires_auth(self, api_client, test_household):
         """Requires JWT authentication."""
@@ -292,8 +283,7 @@ class TestListAutoCategoryRules:
             rule = AutoCategoryRule(
                 household_id=test_household2['id'],
                 keyword='other household rule',
-                expense_type_id=test_household2['dining_type_id'],
-                priority=5
+                expense_type_id=test_household2['dining_type_id']
             )
             db.session.add(rule)
             db.session.commit()
@@ -327,26 +317,6 @@ class TestCreateAutoCategoryRule:
         assert rule['keyword'] == 'Whole Foods'
         assert rule['expense_type_id'] == test_household['grocery_type_id']
         assert rule['expense_type_name'] == 'Grocery'
-        assert rule['priority'] == 0
-        assert rule['category'] is None
-
-    def test_create_with_category_and_priority(self, api_client, test_user, test_household):
-        """Create rule with optional category and priority."""
-        token = get_auth_token(api_client, test_user['email'], test_user['password'])
-        response = api_client.post(
-            '/api/v1/auto-category-rules',
-            headers=auth_headers(token, test_household['id']),
-            json={
-                'keyword': 'Starbucks',
-                'expense_type_id': test_household['coffee_type_id'],
-                'category': 'PERSONAL_ME',
-                'priority': 15
-            }
-        )
-        assert response.status_code == 201
-        rule = response.get_json()['rule']
-        assert rule['category'] == 'PERSONAL_ME'
-        assert rule['priority'] == 15
 
     def test_create_missing_keyword(self, api_client, test_user, test_household):
         """Keyword is required."""
@@ -425,33 +395,17 @@ class TestCreateAutoCategoryRule:
         assert response.status_code == 400
         assert 'already exists' in response.get_json()['error'].lower()
 
-    def test_create_default_priority(self, api_client, test_user, test_household):
-        """Priority defaults to 0."""
-        token = get_auth_token(api_client, test_user['email'], test_user['password'])
-        response = api_client.post(
-            '/api/v1/auto-category-rules',
-            headers=auth_headers(token, test_household['id']),
-            json={
-                'keyword': 'Target',
-                'expense_type_id': test_household['grocery_type_id']
-            }
-        )
-        assert response.status_code == 201
-        assert response.get_json()['rule']['priority'] == 0
-
-
 class TestUpdateAutoCategoryRule:
     """Tests for PUT /api/v1/auto-category-rules/<id>"""
 
-    def _create_rule(self, client, token, household_id, keyword, expense_type_id, priority=0):
+    def _create_rule(self, client, token, household_id, keyword, expense_type_id):
         """Helper to create a rule and return it."""
         response = client.post(
             '/api/v1/auto-category-rules',
             headers=auth_headers(token, household_id),
             json={
                 'keyword': keyword,
-                'expense_type_id': expense_type_id,
-                'priority': priority
+                'expense_type_id': expense_type_id
             }
         )
         return response.get_json()['rule']
@@ -488,60 +442,6 @@ class TestUpdateAutoCategoryRule:
         assert response.status_code == 200
         assert response.get_json()['rule']['expense_type_id'] == test_household['coffee_type_id']
         assert response.get_json()['rule']['expense_type_name'] == 'Coffee'
-
-    def test_update_priority(self, api_client, test_user, test_household):
-        """Update priority."""
-        token = get_auth_token(api_client, test_user['email'], test_user['password'])
-        rule = self._create_rule(
-            api_client, token, test_household['id'],
-            'Priority Test', test_household['grocery_type_id']
-        )
-
-        response = api_client.put(
-            f'/api/v1/auto-category-rules/{rule["id"]}',
-            headers=auth_headers(token, test_household['id']),
-            json={'priority': 50}
-        )
-        assert response.status_code == 200
-        assert response.get_json()['rule']['priority'] == 50
-
-    def test_update_category(self, api_client, test_user, test_household):
-        """Update category."""
-        token = get_auth_token(api_client, test_user['email'], test_user['password'])
-        rule = self._create_rule(
-            api_client, token, test_household['id'],
-            'Category Test', test_household['grocery_type_id']
-        )
-
-        response = api_client.put(
-            f'/api/v1/auto-category-rules/{rule["id"]}',
-            headers=auth_headers(token, test_household['id']),
-            json={'category': 'SHARED'}
-        )
-        assert response.status_code == 200
-        assert response.get_json()['rule']['category'] == 'SHARED'
-
-    def test_update_category_to_null(self, api_client, test_user, test_household):
-        """Set category to null."""
-        token = get_auth_token(api_client, test_user['email'], test_user['password'])
-        rule = self._create_rule(
-            api_client, token, test_household['id'],
-            'Null Cat Test', test_household['grocery_type_id']
-        )
-        # Set category
-        api_client.put(
-            f'/api/v1/auto-category-rules/{rule["id"]}',
-            headers=auth_headers(token, test_household['id']),
-            json={'category': 'SHARED'}
-        )
-        # Clear category
-        response = api_client.put(
-            f'/api/v1/auto-category-rules/{rule["id"]}',
-            headers=auth_headers(token, test_household['id']),
-            json={'category': None}
-        )
-        assert response.status_code == 200
-        assert response.get_json()['rule']['category'] is None
 
     def test_update_not_found(self, api_client, test_user, test_household):
         """Non-existent rule returns 404."""

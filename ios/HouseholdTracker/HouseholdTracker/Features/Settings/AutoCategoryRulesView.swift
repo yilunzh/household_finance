@@ -28,7 +28,9 @@ struct AutoCategoryRulesView: View {
                 List {
                     ForEach(viewModel.rules) { rule in
                         AutoCategoryRuleRow(rule: rule)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            .contentShape(Rectangle())
+                            .onTapGesture { editingRule = rule }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
                                     Task {
                                         await viewModel.deleteRule(rule.id)
@@ -36,12 +38,6 @@ struct AutoCategoryRulesView: View {
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
-                                Button {
-                                    editingRule = rule
-                                } label: {
-                                    Label("Edit", systemImage: "pencil")
-                                }
-                                .tint(.blue)
                             }
                     }
                 }
@@ -97,53 +93,26 @@ struct AutoCategoryRuleRow: View {
     let rule: AutoCategoryRule
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 8) {
-                Text(rule.keyword)
-                    .font(.body)
-                    .fontWeight(.medium)
+        HStack(spacing: 8) {
+            Text(rule.keyword)
+                .font(.body)
+                .fontWeight(.medium)
 
-                Image(systemName: "arrow.right")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            Image(systemName: "arrow.right")
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
-                Text(rule.expenseTypeName ?? "Unknown")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
+            Text(rule.expenseTypeName ?? "Unknown")
+                .font(.body)
+                .foregroundStyle(.secondary)
 
-                Spacer()
-            }
+            Spacer()
 
-            HStack(spacing: 8) {
-                if rule.priority > 0 {
-                    Text("Priority: \(rule.priority)")
-                        .font(.caption)
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.blue.opacity(0.7))
-                        .cornerRadius(4)
-                }
-
-                if let category = rule.category {
-                    Text(categoryLabel(for: category))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 4)
-    }
-
-    private func categoryLabel(for code: String) -> String {
-        switch code {
-        case "SHARED": return "Shared"
-        case "I_PAY_FOR_WIFE": return "For Partner (by me)"
-        case "WIFE_PAYS_FOR_ME": return "For Me (by partner)"
-        case "PERSONAL_ME": return "Personal"
-        case "PERSONAL_WIFE": return "Personal (partner)"
-        default: return code
-        }
     }
 }
 
@@ -156,19 +125,8 @@ struct AutoCategoryRuleEditSheet: View {
 
     @State private var keyword: String = ""
     @State private var selectedExpenseTypeId: Int?
-    @State private var selectedCategory: String = ""
-    @State private var priority: Int = 0
 
     private var isEditing: Bool { rule != nil }
-
-    private let categoryOptions: [(code: String, label: String)] = [
-        ("", "None"),
-        ("SHARED", "Shared"),
-        ("I_PAY_FOR_WIFE", "For Partner (by me)"),
-        ("WIFE_PAYS_FOR_ME", "For Me (by partner)"),
-        ("PERSONAL_ME", "Personal"),
-        ("PERSONAL_WIFE", "Personal (partner)")
-    ]
 
     private var canSave: Bool {
         !keyword.trimmingCharacters(in: .whitespaces).isEmpty
@@ -192,22 +150,6 @@ struct AutoCategoryRuleEditSheet: View {
                         }
                     }
                 }
-
-                Section("Category") {
-                    Picker("Category", selection: $selectedCategory) {
-                        ForEach(categoryOptions, id: \.code) { option in
-                            Text(option.label).tag(option.code)
-                        }
-                    }
-                }
-
-                Section {
-                    Stepper("Priority: \(priority)", value: $priority, in: 0...100)
-                } header: {
-                    Text("Priority")
-                } footer: {
-                    Text("Higher priority rules are checked first when multiple rules could match.")
-                }
             }
             .navigationTitle(isEditing ? "Edit Rule" : "New Rule")
             .navigationBarTitleDisplayMode(.inline)
@@ -230,8 +172,6 @@ struct AutoCategoryRuleEditSheet: View {
                 if let rule = rule {
                     keyword = rule.keyword
                     selectedExpenseTypeId = rule.expenseTypeId
-                    selectedCategory = rule.category ?? ""
-                    priority = rule.priority
                 }
             }
         }
@@ -241,23 +181,17 @@ struct AutoCategoryRuleEditSheet: View {
         let trimmedKeyword = keyword.trimmingCharacters(in: .whitespaces)
         guard !trimmedKeyword.isEmpty, let expenseTypeId = selectedExpenseTypeId else { return }
 
-        let category: String? = selectedCategory.isEmpty ? nil : selectedCategory
-
         let success: Bool
         if let rule = rule {
             success = await viewModel.updateRule(
                 rule.id,
                 keyword: trimmedKeyword,
-                expenseTypeId: expenseTypeId,
-                category: category,
-                priority: priority
+                expenseTypeId: expenseTypeId
             )
         } else {
             success = await viewModel.createRule(
                 keyword: trimmedKeyword,
-                expenseTypeId: expenseTypeId,
-                category: category,
-                priority: priority
+                expenseTypeId: expenseTypeId
             )
         }
 
@@ -312,7 +246,7 @@ class AutoCategoryRulesViewModel {
         }
     }
 
-    func createRule(keyword: String, expenseTypeId: Int, category: String?, priority: Int) async -> Bool {
+    func createRule(keyword: String, expenseTypeId: Int) async -> Bool {
         isSaving = true
         defer { isSaving = false }
 
@@ -322,9 +256,7 @@ class AutoCategoryRulesViewModel {
                 method: .post,
                 body: AutoCategoryRuleRequest(
                     keyword: keyword,
-                    expenseTypeId: expenseTypeId,
-                    category: category,
-                    priority: priority
+                    expenseTypeId: expenseTypeId
                 ),
                 requiresAuth: true,
                 requiresHousehold: true
@@ -341,7 +273,7 @@ class AutoCategoryRulesViewModel {
         }
     }
 
-    func updateRule(_ id: Int, keyword: String, expenseTypeId: Int, category: String?, priority: Int) async -> Bool {
+    func updateRule(_ id: Int, keyword: String, expenseTypeId: Int) async -> Bool {
         isSaving = true
         defer { isSaving = false }
 
@@ -351,9 +283,7 @@ class AutoCategoryRulesViewModel {
                 method: .put,
                 body: AutoCategoryRuleRequest(
                     keyword: keyword,
-                    expenseTypeId: expenseTypeId,
-                    category: category,
-                    priority: priority
+                    expenseTypeId: expenseTypeId
                 ),
                 requiresAuth: true,
                 requiresHousehold: true
@@ -394,12 +324,7 @@ class AutoCategoryRulesViewModel {
     }
 
     private func sortRules() {
-        rules.sort { a, b in
-            if a.priority != b.priority {
-                return a.priority > b.priority
-            }
-            return a.keyword < b.keyword
-        }
+        rules.sort { $0.keyword < $1.keyword }
     }
 }
 

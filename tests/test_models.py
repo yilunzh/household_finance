@@ -125,7 +125,7 @@ class TestSchema:
             inspector = inspect(db.engine)
             columns = {col['name'] for col in inspector.get_columns('auto_category_rules')}
 
-            expected = {'id', 'household_id', 'expense_type_id', 'keyword', 'priority', 'created_at'}
+            expected = {'id', 'household_id', 'expense_type_id', 'keyword', 'created_at'}
             missing = expected - columns
             assert not missing, f"Missing auto_category_rule columns: {missing}"
 
