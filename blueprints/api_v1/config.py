@@ -8,6 +8,11 @@ Endpoints:
 - DELETE /api/v1/expense-types/<id> - Delete expense type (soft delete)
 - GET /api/v1/split-rules - List split rules
 - GET /api/v1/categories - List transaction categories
+- POST /api/v1/auto-categorize - Auto-categorize a transaction
+- GET /api/v1/auto-category-rules - List auto-category rules
+- POST /api/v1/auto-category-rules - Create auto-category rule
+- PUT /api/v1/auto-category-rules/<id> - Update auto-category rule
+- DELETE /api/v1/auto-category-rules/<id> - Delete auto-category rule
 """
 from flask import jsonify, g, request
 
@@ -435,3 +440,183 @@ def _compute_budget_category(household_id, expense_type_id, paid_by_user_id):
         return 'WIFE_PAYS_FOR_ME' if receiver_id == member1_id else 'I_PAY_FOR_WIFE'
 
     return None
+
+
+# ============================================================================
+# Auto-Category Rules CRUD
+# ============================================================================
+
+@api_v1_bp.route('/auto-category-rules', methods=['GET'])
+@jwt_required
+@api_household_required
+def api_get_auto_category_rules():
+    """List all auto-category rules for the current household.
+
+    Returns:
+        {"rules": [{"id": 1, "keyword": "whole foods", "expense_type_id": 1, ...}, ...]}
+    """
+    household_id = g.household_id
+
+    rules = AutoCategoryRule.query.filter_by(
+        household_id=household_id
+    ).order_by(AutoCategoryRule.priority.desc(), AutoCategoryRule.keyword).all()
+
+    return jsonify({
+        'rules': [rule.to_dict() for rule in rules]
+    })
+
+
+@api_v1_bp.route('/auto-category-rules', methods=['POST'])
+@jwt_required
+@api_household_required
+def api_create_auto_category_rule():
+    """Create a new auto-category rule.
+
+    Request body:
+        {
+            "keyword": "whole foods",
+            "expense_type_id": 1,
+            "category": "SHARED",   // optional
+            "priority": 10          // optional, defaults to 0
+        }
+
+    Returns:
+        {"rule": {...}}
+    """
+    household_id = g.household_id
+    data = request.get_json() or {}
+
+    keyword = data.get('keyword', '').strip() if data.get('keyword') else ''
+    if not keyword:
+        return jsonify({'error': 'Keyword is required'}), 400
+
+    if len(keyword) > 100:
+        return jsonify({'error': 'Keyword must be 100 characters or less'}), 400
+
+    expense_type_id = data.get('expense_type_id')
+    if not expense_type_id:
+        return jsonify({'error': 'Expense type is required'}), 400
+
+    # Validate expense type exists in household and is active
+    expense_type = ExpenseType.query.filter_by(
+        id=expense_type_id,
+        household_id=household_id,
+        is_active=True
+    ).first()
+    if not expense_type:
+        return jsonify({'error': 'Expense type not found'}), 400
+
+    # Check for duplicate keyword in household
+    existing = AutoCategoryRule.query.filter(
+        AutoCategoryRule.household_id == household_id,
+        db.func.lower(AutoCategoryRule.keyword) == keyword.lower()
+    ).first()
+    if existing:
+        return jsonify({'error': 'A rule with this keyword already exists'}), 400
+
+    rule = AutoCategoryRule(
+        household_id=household_id,
+        keyword=keyword,
+        expense_type_id=expense_type_id,
+        category=data.get('category'),
+        priority=data.get('priority', 0)
+    )
+
+    db.session.add(rule)
+    db.session.commit()
+
+    return jsonify({'rule': rule.to_dict()}), 201
+
+
+@api_v1_bp.route('/auto-category-rules/<int:rule_id>', methods=['PUT'])
+@jwt_required
+@api_household_required
+def api_update_auto_category_rule(rule_id):
+    """Update an auto-category rule.
+
+    Request body (all optional):
+        {
+            "keyword": "trader joe",
+            "expense_type_id": 2,
+            "category": "PERSONAL_ME",
+            "priority": 5
+        }
+
+    Returns:
+        {"rule": {...}}
+    """
+    household_id = g.household_id
+
+    rule = AutoCategoryRule.query.filter_by(
+        id=rule_id,
+        household_id=household_id
+    ).first()
+
+    if not rule:
+        return jsonify({'error': 'Rule not found'}), 404
+
+    data = request.get_json() or {}
+
+    if 'keyword' in data:
+        keyword = data['keyword'].strip() if data['keyword'] else ''
+        if not keyword:
+            return jsonify({'error': 'Keyword cannot be empty'}), 400
+        if len(keyword) > 100:
+            return jsonify({'error': 'Keyword must be 100 characters or less'}), 400
+
+        # Check for duplicate keyword (excluding self)
+        existing = AutoCategoryRule.query.filter(
+            AutoCategoryRule.household_id == household_id,
+            db.func.lower(AutoCategoryRule.keyword) == keyword.lower(),
+            AutoCategoryRule.id != rule_id
+        ).first()
+        if existing:
+            return jsonify({'error': 'A rule with this keyword already exists'}), 400
+
+        rule.keyword = keyword
+
+    if 'expense_type_id' in data:
+        expense_type_id = data['expense_type_id']
+        expense_type = ExpenseType.query.filter_by(
+            id=expense_type_id,
+            household_id=household_id,
+            is_active=True
+        ).first()
+        if not expense_type:
+            return jsonify({'error': 'Expense type not found'}), 400
+        rule.expense_type_id = expense_type_id
+
+    if 'category' in data:
+        rule.category = data['category']
+
+    if 'priority' in data:
+        rule.priority = data['priority']
+
+    db.session.commit()
+
+    return jsonify({'rule': rule.to_dict()})
+
+
+@api_v1_bp.route('/auto-category-rules/<int:rule_id>', methods=['DELETE'])
+@jwt_required
+@api_household_required
+def api_delete_auto_category_rule(rule_id):
+    """Delete an auto-category rule (hard delete).
+
+    Returns:
+        {"success": true}
+    """
+    household_id = g.household_id
+
+    rule = AutoCategoryRule.query.filter_by(
+        id=rule_id,
+        household_id=household_id
+    ).first()
+
+    if not rule:
+        return jsonify({'error': 'Rule not found'}), 404
+
+    db.session.delete(rule)
+    db.session.commit()
+
+    return jsonify({'success': True})

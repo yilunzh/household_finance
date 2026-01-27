@@ -182,6 +182,19 @@ struct SettingsView: View {
                                 .buttonStyle(.plain)
                             }
 
+                            SectionRow {
+                                NavigationLink {
+                                    AutoCategoryRulesView()
+                                } label: {
+                                    SettingsRowContent(
+                                        icon: .lightbulb,
+                                        title: "Auto-Category Rules",
+                                        showChevron: true
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+
                             SectionRow(showDivider: false) {
                                 NavigationLink {
                                     ExportView()
