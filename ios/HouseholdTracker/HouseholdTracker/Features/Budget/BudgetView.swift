@@ -449,7 +449,9 @@ class BudgetViewModel {
         } catch let apiError as APIError {
             error = apiError.errorDescription
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
         }
     }
 
@@ -469,7 +471,9 @@ class BudgetViewModel {
         } catch let apiError as APIError {
             error = apiError.errorDescription
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
         }
     }
 
@@ -485,7 +489,9 @@ class BudgetViewModel {
         } catch let apiError as APIError {
             error = apiError.errorDescription
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
         }
     }
 
@@ -534,7 +540,9 @@ class BudgetViewModel {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -563,7 +571,9 @@ class BudgetViewModel {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -580,7 +590,9 @@ class BudgetViewModel {
         } catch let apiError as APIError {
             error = apiError.errorDescription
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
         }
     }
 
@@ -612,7 +624,9 @@ class BudgetViewModel {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -645,7 +659,9 @@ class BudgetViewModel {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -662,7 +678,9 @@ class BudgetViewModel {
         } catch let apiError as APIError {
             error = apiError.errorDescription
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
         }
     }
 

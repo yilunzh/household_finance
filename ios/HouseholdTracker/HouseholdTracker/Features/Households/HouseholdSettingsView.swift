@@ -201,7 +201,9 @@ class HouseholdSettingsViewModel {
         } catch let apiError as APIError {
             error = apiError.errorDescription
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
         }
     }
 
@@ -225,7 +227,9 @@ class HouseholdSettingsViewModel {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -254,7 +258,9 @@ class HouseholdSettingsViewModel {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -279,7 +285,9 @@ class HouseholdSettingsViewModel {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -301,7 +309,9 @@ class HouseholdSettingsViewModel {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }

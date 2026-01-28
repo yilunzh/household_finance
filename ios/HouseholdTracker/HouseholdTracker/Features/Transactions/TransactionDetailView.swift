@@ -568,8 +568,10 @@ struct TransactionDetailView: View {
             error = apiError.errorDescription
             HapticManager.error()
         } catch {
-            self.error = error.localizedDescription
-            HapticManager.error()
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+                HapticManager.error()
+            }
         }
     }
 
@@ -587,8 +589,10 @@ struct TransactionDetailView: View {
             error = apiError.errorDescription
             HapticManager.error()
         } catch {
-            self.error = error.localizedDescription
-            HapticManager.error()
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+                HapticManager.error()
+            }
         }
     }
 

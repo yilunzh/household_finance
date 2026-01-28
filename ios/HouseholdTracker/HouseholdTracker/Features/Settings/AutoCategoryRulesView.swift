@@ -242,7 +242,9 @@ class AutoCategoryRulesViewModel {
         } catch let apiError as APIError {
             error = apiError.errorDescription
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
         }
     }
 
@@ -268,7 +270,9 @@ class AutoCategoryRulesViewModel {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -298,7 +302,9 @@ class AutoCategoryRulesViewModel {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -315,7 +321,9 @@ class AutoCategoryRulesViewModel {
         } catch let apiError as APIError {
             error = apiError.errorDescription
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
         }
     }
 

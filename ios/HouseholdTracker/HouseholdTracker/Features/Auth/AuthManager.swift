@@ -73,7 +73,9 @@ final class AuthManager: Sendable {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -96,7 +98,9 @@ final class AuthManager: Sendable {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -174,7 +178,9 @@ final class AuthManager: Sendable {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -205,7 +211,9 @@ final class AuthManager: Sendable {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -232,7 +240,9 @@ final class AuthManager: Sendable {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -259,7 +269,9 @@ final class AuthManager: Sendable {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -281,7 +293,9 @@ final class AuthManager: Sendable {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -314,7 +328,9 @@ final class AuthManager: Sendable {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -360,7 +376,9 @@ final class AuthManager: Sendable {
             error = apiError.errorDescription
             return nil
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return nil
         }
     }
@@ -395,7 +413,9 @@ final class AuthManager: Sendable {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -454,7 +474,9 @@ final class AuthManager: Sendable {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
