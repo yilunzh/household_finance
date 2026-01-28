@@ -329,7 +329,9 @@ class ExpenseTypesViewModel {
         } catch let apiError as APIError {
             error = apiError.errorDescription
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
         }
     }
 
@@ -352,7 +354,9 @@ class ExpenseTypesViewModel {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -379,7 +383,9 @@ class ExpenseTypesViewModel {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -396,7 +402,9 @@ class ExpenseTypesViewModel {
         } catch let apiError as APIError {
             error = apiError.errorDescription
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
         }
     }
 

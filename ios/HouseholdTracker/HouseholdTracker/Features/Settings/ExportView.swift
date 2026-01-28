@@ -167,7 +167,9 @@ class ExportViewModel {
             error = apiError.errorDescription
             return nil
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return nil
         }
     }
@@ -196,7 +198,9 @@ class ExportViewModel {
             error = apiError.errorDescription
             return nil
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return nil
         }
     }

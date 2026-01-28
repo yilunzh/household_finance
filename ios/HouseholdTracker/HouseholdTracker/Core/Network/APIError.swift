@@ -32,6 +32,13 @@ enum APIError: Error, LocalizedError {
     }
 }
 
+extension Error {
+    var isCancellation: Bool {
+        self is CancellationError ||
+        (self as? URLError)?.code == .cancelled
+    }
+}
+
 struct APIErrorResponse: Codable {
     let error: String
 }

@@ -34,7 +34,9 @@ final class ReconciliationViewModel: Sendable {
         } catch let apiError as APIError {
             error = apiError.errorDescription
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
         }
     }
 
@@ -105,7 +107,9 @@ final class ReconciliationViewModel: Sendable {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
@@ -131,7 +135,9 @@ final class ReconciliationViewModel: Sendable {
             error = apiError.errorDescription
             return false
         } catch {
-            self.error = error.localizedDescription
+            if !error.isCancellation {
+                self.error = error.localizedDescription
+            }
             return false
         }
     }
