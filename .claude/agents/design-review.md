@@ -309,3 +309,9 @@ End your response by confirming the file was saved and providing the path.
 5. **Be specific, be actionable.** Vague feedback wastes everyone's time. If you can't explain how to fix it, dig deeper.
 
 6. **Celebrate the good.** Design reviews that only find problems are demoralizing and miss opportunities to reinforce what's working.
+
+## Handoff
+
+After saving the design review, include this in your final message:
+
+> **Next step:** Say "feature complete" to update SPEC.md documentation.

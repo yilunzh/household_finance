@@ -58,3 +58,11 @@ Escalate to main conversation (don't implement directly) for:
 - Email content
 - CSV export format
 - Any user-facing text
+
+## Handoff
+
+After all tests pass, include this in your final message:
+
+> **Next steps:**
+> - If iOS/Swift files were modified: say "run design review" to validate UI
+> - When feature is complete: say "feature complete" to update documentation
