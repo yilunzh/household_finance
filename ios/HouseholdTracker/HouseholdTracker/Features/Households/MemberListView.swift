@@ -30,6 +30,7 @@ struct MemberListView: View {
         }
         .navigationTitle("Members")
         .navigationBarTitleDisplayMode(.inline)
+        .accessibleBackButton("back-members")
         .sheet(isPresented: $showEditDisplayName) {
             if let member = selectedMember {
                 EditMemberSheet(

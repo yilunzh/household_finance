@@ -5,6 +5,20 @@ struct HouseholdTrackerApp: App {
     @State private var authManager = AuthManager()
     @State private var pendingInviteToken: String?
 
+    init() {
+        // Detect if running in test mode
+        // Maestro passes arguments as launch arguments
+        // Check multiple formats since Maestro's exact format may vary
+        let args = ProcessInfo.processInfo.arguments
+        let isTestMode = args.contains("-MAESTRO_TEST") ||
+                         args.contains("--MAESTRO_TEST") ||
+                         args.contains("MAESTRO_TEST") ||
+                         args.joined(separator: " ").contains("MAESTRO_TEST")
+        if isTestMode {
+            AuthManager.isTestMode = true
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()

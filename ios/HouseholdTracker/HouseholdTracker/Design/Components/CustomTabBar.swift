@@ -33,6 +33,15 @@ struct CustomTabBar: View {
             case .settings: return "Settings"
             }
         }
+
+        var accessibilityId: String {
+            switch self {
+            case .transactions: return "tab-transactions"
+            case .reconciliation: return "tab-summary"
+            case .budget: return "tab-budget"
+            case .settings: return "tab-settings"
+            }
+        }
     }
 
     var body: some View {
@@ -112,6 +121,7 @@ struct TabBarItem: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(tab.accessibilityId)
     }
 
     private var selectedBackground: Color {
@@ -206,4 +216,50 @@ struct TabBarContainer<Content: View>: View {
     }
 
     return PreviewWrapper()
+}
+
+// MARK: - Accessible Back Button
+
+/// A back button with accessibility identifier for UI testing.
+/// Use this in place of the default back button when accessibility testing is needed.
+struct AccessibleBackButton: View {
+    @Environment(\.dismiss) private var dismiss
+    let accessibilityId: String
+
+    init(_ accessibilityId: String = "back-button") {
+        self.accessibilityId = accessibilityId
+    }
+
+    var body: some View {
+        Button {
+            dismiss()
+        } label: {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(.terracotta500)
+        }
+        .accessibilityIdentifier(accessibilityId)
+    }
+}
+
+/// View modifier to replace default back button with accessible one.
+struct AccessibleBackButtonModifier: ViewModifier {
+    let accessibilityId: String
+
+    func body(content: Content) -> some View {
+        content
+            .navigationBarBackButtonHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    AccessibleBackButton(accessibilityId)
+                }
+            }
+    }
+}
+
+extension View {
+    /// Replaces the default back button with one that has an accessibility identifier.
+    func accessibleBackButton(_ id: String = "back-button") -> some View {
+        modifier(AccessibleBackButtonModifier(accessibilityId: id))
+    }
 }

@@ -5,15 +5,14 @@ appId: com.householdtracker.app
 
 - launchApp:
     clearState: true
-    clearKeychain: true
+    arguments:
+      MAESTRO_TEST: true
 
-# Login
+# Test mode auto-login handles authentication
+# Wait for Transactions screen to appear
 - extendedWaitUntil:
-    visible: "Lucky Ledger"
-    timeout: 5000
-
-- runFlow:
-    file: helpers/do-login.yaml
+    visible: "Transactions"
+    timeout: 10000
 
 # Small gesture to ensure UI is responsive
 - swipe:

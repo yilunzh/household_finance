@@ -3,17 +3,14 @@ appId: com.householdtracker.app
 # Add Transaction E2E Test
 - launchApp:
     clearState: true
+    arguments:
+      MAESTRO_TEST: true
 
-# Check if already logged in (might have keychain tokens)
-- runFlow:
-    when:
-      visible: "Transactions"
-    file: helpers/logout-helper.yaml
-
-# Login using helper
-- assertVisible: "Lucky Ledger"
-- runFlow:
-    file: helpers/do-login.yaml
+# Test mode auto-login handles authentication
+# Wait for Transactions screen to appear
+- extendedWaitUntil:
+    visible: "Transactions"
+    timeout: 10000
 
 # Small gesture to ensure UI is responsive
 - swipe:

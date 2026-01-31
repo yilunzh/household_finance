@@ -5,17 +5,14 @@ appId: com.householdtracker.app
 
 - launchApp:
     clearState: true
+    arguments:
+      MAESTRO_TEST: true
 
-# Check if already logged in (might have keychain tokens)
-- runFlow:
-    when:
-      visible: "Transactions"
-    file: helpers/logout-helper.yaml
-
-# Login using helper
-- assertVisible: "Lucky Ledger"
-- runFlow:
-    file: helpers/do-login.yaml
+# Test mode auto-login handles authentication
+# Wait for Transactions screen to appear
+- extendedWaitUntil:
+    visible: "Transactions"
+    timeout: 10000
 
 # Small gesture to ensure UI is responsive
 - swipe:
@@ -53,8 +50,12 @@ appId: com.householdtracker.app
     commands:
       - assertVisible: "Add Receipt Photo"
 
-# Close the detail view
-- tapOn: "Done"
+# Close the detail view (swipe down to dismiss sheet)
+- swipe:
+    direction: DOWN
+    duration: 500
 
 # Verify we're back on transactions list
-- assertVisible: "Transactions"
+- extendedWaitUntil:
+    visible: "Transactions"
+    timeout: 3000
