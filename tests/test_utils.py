@@ -348,6 +348,109 @@ class TestCalculateReconciliation:
 
             assert result['member_names'] == {1: 'Alice', 2: 'Bob'}
 
+    def test_budget_data_does_not_affect_settlement(self, app):
+        """Budget data is informational only - should not change settlement amounts.
+
+        This test prevents regression of the double-counting bug where budget
+        reimbursements were incorrectly added to user balances.
+        """
+        from utils import calculate_reconciliation
+
+        with app.app_context():
+            class MockMember:
+                def __init__(self, user_id, display_name, role='member'):
+                    self.user_id = user_id
+                    self.display_name = display_name
+                    self.role = role
+
+            class MockTransaction:
+                def __init__(self, amount_in_usd, paid_by_user_id, category):
+                    self.amount_in_usd = amount_in_usd
+                    self.paid_by_user_id = paid_by_user_id
+                    self.category = category
+                    self.expense_type_id = None
+
+            members = [
+                MockMember(1, 'Alice', 'owner'),
+                MockMember(2, 'Bob', 'member')
+            ]
+
+            # Alice pays $100 shared expense
+            transactions = [
+                MockTransaction(Decimal('100.00'), 1, 'SHARED')
+            ]
+
+            # Calculate without budget data
+            result_no_budget = calculate_reconciliation(transactions, members)
+
+            # Calculate with budget data (simulating a budget rule)
+            budget_data = [{
+                'giver_user_id': 1,
+                'receiver_user_id': 2,
+                'status': {'giver_reimbursement': 50.0},
+                'expense_type_names': ['Grocery']
+            }]
+            result_with_budget = calculate_reconciliation(
+                transactions, members, budget_data
+            )
+
+            # Settlement should be identical - budget data is informational only
+            assert result_no_budget['user_balances'] == result_with_budget['user_balances']
+            assert result_no_budget['settlement'] == result_with_budget['settlement']
+
+            # Verify the actual values are correct
+            # Alice paid $100, owes $50 (50% of shared), balance = +$50
+            assert result_with_budget['user_balances'][1] == 50.0
+            assert result_with_budget['user_balances'][2] == -50.0
+
+    def test_budget_data_parameter_ignored_for_balances(self, app):
+        """Verify budget_data doesn't modify user_balances even with large reimbursements.
+
+        This test ensures that even extreme budget reimbursement values don't
+        affect the settlement calculation, preventing any accidental coupling.
+        """
+        from utils import calculate_reconciliation
+
+        with app.app_context():
+            class MockMember:
+                def __init__(self, user_id, display_name, role='member'):
+                    self.user_id = user_id
+                    self.display_name = display_name
+                    self.role = role
+
+            class MockTransaction:
+                def __init__(self, amount_in_usd, paid_by_user_id, category):
+                    self.amount_in_usd = amount_in_usd
+                    self.paid_by_user_id = paid_by_user_id
+                    self.category = category
+                    self.expense_type_id = None
+
+            members = [
+                MockMember(1, 'Alice', 'owner'),
+                MockMember(2, 'Bob', 'member')
+            ]
+
+            # Alice pays $200 shared expense
+            transactions = [
+                MockTransaction(Decimal('200.00'), 1, 'SHARED')
+            ]
+
+            # Budget data with extremely large reimbursement value
+            budget_data = [{
+                'giver_user_id': 1,
+                'receiver_user_id': 2,
+                'status': {'giver_reimbursement': 1000.0},  # Large amount
+                'expense_type_names': ['Grocery']
+            }]
+
+            result = calculate_reconciliation(transactions, members, budget_data)
+
+            # Balance should be: Alice paid $200, owes $100 (50%), balance = +$100
+            # Budget reimbursement should NOT affect this
+            assert result['user_balances'][1] == 100.0
+            assert result['user_balances'][2] == -100.0
+            assert 'Bob owes Alice $100.00' in result['settlement']
+
 
 class TestFormatSettlementDynamic:
     """Tests for format_settlement_dynamic function."""
