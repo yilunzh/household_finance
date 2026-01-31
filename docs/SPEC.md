@@ -321,6 +321,7 @@ CREATE TABLE split_rule_expense_types (
 - **Budget rules**: Giver provides budget to receiver for specific expense types
 - **Auto-categorization**: Merchant keywords auto-detect expense types
 - **Split rules**: Custom percentages (e.g., 60/40) with default + per-expense-type overrides
+- **Cascade delete**: All household-owned models (expense_types, auto_category_rules, budget_rules, split_rules) cascade delete when household is deleted
 
 ### 3.2 Transaction Categories
 
@@ -638,6 +639,8 @@ def get_exchange_rate(from_curr, to_curr, date):
 - Store in memory (dict) for session-based caching
 
 ### 5.4 Budget Tracking Logic
+
+**Important**: Budget tracking is purely informational and does NOT affect settlement calculations. Settlement is calculated solely from transaction categories and split rules.
 
 **Budget Rule Model**: "Giver provides Receiver $X/month for [expense types]"
 
@@ -990,11 +993,13 @@ household_tracker/
 │   ├── index.html           # Main transaction page (+ expense type dropdown)
 │   └── reconciliation.html  # Monthly summary
 │
-├── tests/                   # Test suite
+├── tests/                   # Test suite (88 unit tests)
 │   ├── conftest.py          # Pytest fixtures
 │   ├── test_models.py       # Model unit tests
-│   ├── test_utils.py        # Utility function tests
-│   └── test_budget.py       # Budget feature tests
+│   ├── test_utils.py        # Utility function tests (incl. budget/reconciliation regression tests)
+│   ├── test_budget.py       # Budget feature tests
+│   ├── test_profile.py      # User profile tests
+│   └── test_search.py       # Transaction search tests
 │
 ├── instance/
 │   └── database.db          # SQLite database (development)
@@ -1764,9 +1769,10 @@ def format_settlement(me_balance, wife_balance):
 | 3.0 | Jan 2026 | iOS mobile app with full feature parity, security fixes |
 | 3.1 | Jan 2026 | iOS UI improvements: expense type icons, text contrast, brand colors |
 | 3.2 | Jan 2026 | iOS auto-categorization, fix auto_category_rules schema (add household_id, category, priority columns) |
+| 3.3 | Jan 2026 | Fix reconciliation double-counting bug, add cascade delete for budget models, regression test coverage |
 
 ---
 
-**Document Version**: 3.2
-**Last Updated**: January 25, 2026
+**Document Version**: 3.3
+**Last Updated**: January 31, 2026
 **GitHub Repository**: https://github.com/yilunzh/household_finance
