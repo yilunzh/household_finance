@@ -49,7 +49,11 @@ struct ExpenseTypesView: View {
             }
         }
         .navigationTitle("Expense Types")
+        .navigationBarBackButtonHidden(true)
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                AccessibleBackButton("back-expense-types")
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showAddExpenseType = true

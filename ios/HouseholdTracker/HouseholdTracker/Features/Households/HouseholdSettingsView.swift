@@ -73,6 +73,7 @@ struct HouseholdSettingsView: View {
         }
         .navigationTitle("Household Settings")
         .navigationBarTitleDisplayMode(.inline)
+        .accessibleBackButton("back-household-settings")
         .task {
             if let householdId = authManager.currentHouseholdId {
                 await viewModel.loadHousehold(householdId: householdId)

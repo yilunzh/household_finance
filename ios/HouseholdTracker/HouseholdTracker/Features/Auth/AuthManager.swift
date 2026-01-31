@@ -3,6 +3,13 @@ import Observation
 
 @Observable
 final class AuthManager: Sendable {
+    // Test mode flag - set by HouseholdTrackerApp when MAESTRO_TEST env var is detected
+    nonisolated(unsafe) static var isTestMode = false
+    private static let testCredentials = (
+        email: "demo_alice@example.com",
+        password: "password123"
+    )
+
     private(set) var isAuthenticated = false
     private(set) var currentUser: User?
     private(set) var households: [UserHousehold] = []
@@ -19,6 +26,15 @@ final class AuthManager: Sendable {
     func checkAuthStatus() async {
         isLoading = true
         defer { isLoading = false }
+
+        // TEST MODE: Auto-login with test credentials when running Maestro tests
+        if Self.isTestMode && !isAuthenticated {
+            _ = await login(
+                email: Self.testCredentials.email,
+                password: Self.testCredentials.password
+            )
+            return
+        }
 
         let hasSession = await network.hasValidSession()
         if hasSession {
