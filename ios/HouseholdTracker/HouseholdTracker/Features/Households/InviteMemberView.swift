@@ -2,64 +2,54 @@ import SwiftUI
 
 struct InviteMemberView: View {
     @Environment(AuthManager.self) private var authManager
-    @Environment(\.dismiss) private var dismiss
 
     @State private var email = ""
     @State private var showingResult = false
     @State private var inviteResult: SendInvitationResult?
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField("Email address", text: $email)
-                        .textContentType(.emailAddress)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                        .autocorrectionDisabled()
-                } footer: {
-                    Text("Enter the email address of the person you want to invite to your household.")
-                }
+        Form {
+            Section {
+                TextField("Email address", text: $email)
+                    .textContentType(.emailAddress)
+                    .keyboardType(.emailAddress)
+                    .autocapitalization(.none)
+                    .autocorrectionDisabled()
+            } footer: {
+                Text("Enter the email address of the person you want to invite to your household.")
+            }
 
-                if let error = authManager.error {
-                    Section {
-                        Text(error)
-                            .foregroundStyle(.red)
-                    }
-                }
-
+            if let error = authManager.error {
                 Section {
-                    Button {
-                        Task {
-                            await sendInvitation()
-                        }
-                    } label: {
-                        HStack {
-                            Spacer()
-                            if authManager.isLoading {
-                                ProgressView()
-                            } else {
-                                Text("Send Invitation")
-                            }
-                            Spacer()
-                        }
-                    }
-                    .disabled(!isValidEmail || authManager.isLoading)
+                    Text(error)
+                        .foregroundStyle(.red)
                 }
             }
-            .navigationTitle("Invite Member")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
+
+            Section {
+                Button {
+                    Task {
+                        await sendInvitation()
+                    }
+                } label: {
+                    HStack {
+                        Spacer()
+                        if authManager.isLoading {
+                            ProgressView()
+                        } else {
+                            Text("Send Invitation")
+                        }
+                        Spacer()
                     }
                 }
+                .disabled(!isValidEmail || authManager.isLoading)
             }
-            .sheet(isPresented: $showingResult) {
-                if let result = inviteResult {
-                    InvitationSentSheet(result: result)
-                }
+        }
+        .navigationTitle("Invite Member")
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingResult) {
+            if let result = inviteResult {
+                InvitationSentSheet(result: result)
             }
         }
     }

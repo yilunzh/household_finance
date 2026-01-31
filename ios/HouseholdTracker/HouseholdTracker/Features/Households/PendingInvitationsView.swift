@@ -2,66 +2,67 @@ import SwiftUI
 
 struct PendingInvitationsView: View {
     @Environment(AuthManager.self) private var authManager
-    @Environment(\.dismiss) private var dismiss
 
     @State private var invitations: [Invitation] = []
     @State private var isLoading = false
     @State private var showingInviteSheet = false
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if isLoading {
-                    ProgressView("Loading...")
-                } else if invitations.isEmpty {
-                    ContentUnavailableView {
-                        Label("No Pending Invitations", systemImage: "envelope.badge")
-                    } description: {
-                        Text("Invite someone to join your household.")
-                    } actions: {
-                        Button("Send Invitation") {
-                            showingInviteSheet = true
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                } else {
-                    List {
-                        ForEach(invitations) { invitation in
-                            InvitationRow(
-                                invitation: invitation,
-                                onCancel: {
-                                    await cancelInvitation(invitation)
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-            .navigationTitle("Pending Invitations")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
+        Group {
+            if isLoading {
+                ProgressView("Loading...")
+            } else if invitations.isEmpty {
+                ContentUnavailableView {
+                    Label("No Pending Invitations", systemImage: "envelope.badge")
+                } description: {
+                    Text("Invite someone to join your household.")
+                } actions: {
+                    Button("Send Invitation") {
                         showingInviteSheet = true
-                    } label: {
-                        Image(systemName: "plus")
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            } else {
+                List {
+                    ForEach(invitations) { invitation in
+                        InvitationRow(
+                            invitation: invitation,
+                            onCancel: {
+                                await cancelInvitation(invitation)
+                            }
+                        )
                     }
                 }
             }
-            .sheet(isPresented: $showingInviteSheet) {
+        }
+        .navigationTitle("Pending Invitations")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showingInviteSheet = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+            }
+        }
+        .sheet(isPresented: $showingInviteSheet) {
+            NavigationStack {
                 InviteMemberView()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancel") {
+                                showingInviteSheet = false
+                            }
+                        }
+                    }
             }
-            .task {
-                await loadInvitations()
-            }
-            .refreshable {
-                await loadInvitations()
-            }
+        }
+        .task {
+            await loadInvitations()
+        }
+        .refreshable {
+            await loadInvitations()
         }
     }
 
