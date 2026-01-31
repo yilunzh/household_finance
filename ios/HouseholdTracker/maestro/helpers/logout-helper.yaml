@@ -9,10 +9,7 @@ appId: com.householdtracker.app
     direction: DOWN
     timeout: 5000
 
-# Tap Log Out button
-- tapOn: "Log Out"
-
-# Tap confirmation dialog Log Out
+# Tap Log Out button (logs out immediately, no confirmation dialog)
 - tapOn: "Log Out"
 
 # Wait for login screen

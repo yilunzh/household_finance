@@ -154,6 +154,21 @@ What we're trying to accomplish
 
 See global `~/.claude/CLAUDE.md` for full context management details.
 
+### Major Feature Workflow
+
+For features involving new functionality + UI changes:
+
+1. **Plan** - Enter plan mode, identify scope (backend/iOS/web)
+2. **TDD** - Say "implement [feature]" to invoke test-first agent
+   - Agent writes failing tests first
+   - Then implements minimal code to pass
+3. **Design** - Say "run design review" for UI validation (if iOS/web UI changed)
+4. **Document** - Say "feature complete" to trigger SPEC.md update
+
+**Agents Required** (include in plan):
+- [ ] test-first: [describe test scope]
+- [ ] design-review: [list screens affected] (if UI changes)
+
 ### Phase 4: VERIFY (Before Claiming Done)
 
 Before saying "done":
