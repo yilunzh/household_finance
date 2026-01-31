@@ -60,6 +60,11 @@ class Household(db.Model):
     transactions = db.relationship('Transaction', back_populates='household', cascade='all, delete-orphan')
     settlements = db.relationship('Settlement', back_populates='household', cascade='all, delete-orphan')
     invitations = db.relationship('Invitation', back_populates='household', cascade='all, delete-orphan')
+    # Budget-related relationships with cascade delete
+    expense_types = db.relationship('ExpenseType', back_populates='household', cascade='all, delete-orphan')
+    auto_category_rules = db.relationship('AutoCategoryRule', back_populates='household', cascade='all, delete-orphan')
+    budget_rules = db.relationship('BudgetRule', back_populates='household', cascade='all, delete-orphan')
+    split_rules = db.relationship('SplitRule', back_populates='household', cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<Household {self.id}: {self.name}>'
@@ -281,7 +286,7 @@ class ExpenseType(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships
-    household = db.relationship('Household', backref='expense_types')
+    household = db.relationship('Household', back_populates='expense_types')
 
     def __repr__(self):
         return f'<ExpenseType {self.id}: {self.name}>'
@@ -313,7 +318,7 @@ class AutoCategoryRule(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships
-    household = db.relationship('Household', backref='auto_category_rules')
+    household = db.relationship('Household', back_populates='auto_category_rules')
     expense_type = db.relationship('ExpenseType', backref='auto_rules')
 
     def __repr__(self):
@@ -345,7 +350,7 @@ class BudgetRule(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    household = db.relationship('Household', backref='budget_rules')
+    household = db.relationship('Household', back_populates='budget_rules')
     giver = db.relationship('User', foreign_keys=[giver_user_id])
     receiver = db.relationship('User', foreign_keys=[receiver_user_id])
     expense_types = db.relationship('BudgetRuleExpenseType', back_populates='budget_rule', cascade='all, delete-orphan')
@@ -474,7 +479,7 @@ class SplitRule(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    household = db.relationship('Household', backref='split_rules')
+    household = db.relationship('Household', back_populates='split_rules')
     expense_types = db.relationship('SplitRuleExpenseType', back_populates='split_rule', cascade='all, delete-orphan')
 
     def __repr__(self):
