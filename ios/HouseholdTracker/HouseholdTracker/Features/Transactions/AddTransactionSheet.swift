@@ -15,8 +15,8 @@ struct AddTransactionSheet: View {
     @State private var notes = ""
     @State private var currency = "USD"
 
-    // Focus state for merchant auto-focus
-    @FocusState private var isMerchantFocused: Bool
+    // Focus state for amount auto-focus
+    @FocusState private var isAmountFocused: Bool
 
     // DatePicker auto-close state
     @State private var datePickerID = UUID()
@@ -79,6 +79,7 @@ struct AddTransactionSheet: View {
                                 .font(.amountLarge)
                                 .foregroundColor(textColor)
                                 .multilineTextAlignment(.trailing)
+                                .focused($isAmountFocused)
                                 .onChange(of: amount) { _, newValue in
                                     let sanitized = sanitizeAmountInput(newValue)
                                     if sanitized != newValue {
@@ -108,7 +109,6 @@ struct AddTransactionSheet: View {
                                     TextField("Where did you spend?", text: $merchant)
                                         .font(.bodyLarge)
                                         .foregroundColor(textColor)
-                                        .focused($isMerchantFocused)
                                         .onChange(of: merchant) { _, _ in
                                             showSuggestions = true
                                             triggerAutoCategorize(merchant: merchant)
@@ -414,8 +414,10 @@ struct AddTransactionSheet: View {
             // Default category to SHARED
             selectedCategory = viewModel.categories.first { $0.code == "SHARED" }
 
-            // Auto-focus merchant field
-            isMerchantFocused = true
+            // Auto-focus amount field (delay for SwiftUI layout to complete)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                isAmountFocused = true
+            }
         }
         .onChange(of: viewModel.members) { _, newMembers in
             // Members may load after sheet appears — set default paid-by when they arrive
