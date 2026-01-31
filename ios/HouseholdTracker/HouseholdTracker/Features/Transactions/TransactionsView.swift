@@ -7,6 +7,7 @@ struct TransactionsView: View {
     @State private var showAddSheet = false
     @State private var showFilterSheet = false
     @State private var selectedTransaction: Transaction?
+    @State private var showSaveSuccess = false
 
     var body: some View {
         NavigationStack {
@@ -156,6 +157,7 @@ struct TransactionsView: View {
                     viewModel: viewModel,
                     onUpdate: { updatedTransaction in
                         viewModel.updateTransactionInList(updatedTransaction)
+                        showSaveSuccess = true
                     }
                 )
             }
@@ -174,6 +176,25 @@ struct TransactionsView: View {
             } message: {
                 Text(viewModel.error ?? "")
             }
+            .overlay(alignment: .top) {
+                if showSaveSuccess {
+                    Text("Transaction saved")
+                        .font(.labelMedium)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, Spacing.md)
+                        .padding(.vertical, Spacing.sm)
+                        .background(Color.success)
+                        .clipShape(Capsule())
+                        .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
+                        .padding(.top, Spacing.sm)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .task {
+                            try? await Task.sleep(nanoseconds: 2_000_000_000)
+                            withAnimation { showSaveSuccess = false }
+                        }
+                }
+            }
+            .animation(.easeInOut(duration: 0.3), value: showSaveSuccess)
         }
     }
 

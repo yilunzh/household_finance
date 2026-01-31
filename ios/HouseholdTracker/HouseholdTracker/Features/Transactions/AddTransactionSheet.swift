@@ -15,6 +15,12 @@ struct AddTransactionSheet: View {
     @State private var notes = ""
     @State private var currency = "USD"
 
+    // Focus state for merchant auto-focus
+    @FocusState private var isMerchantFocused: Bool
+
+    // DatePicker auto-close state
+    @State private var datePickerID = UUID()
+
     // Auto-categorization state
     @State private var isAutoDetected = false
     @State private var isCategoryAutoDetected = false
@@ -102,6 +108,7 @@ struct AddTransactionSheet: View {
                                     TextField("Where did you spend?", text: $merchant)
                                         .font(.bodyLarge)
                                         .foregroundColor(textColor)
+                                        .focused($isMerchantFocused)
                                         .onChange(of: merchant) { _, _ in
                                             showSuggestions = true
                                             triggerAutoCategorize(merchant: merchant)
@@ -166,54 +173,11 @@ struct AddTransactionSheet: View {
                                         DatePicker("", selection: $selectedDate, displayedComponents: .date)
                                             .labelsHidden()
                                             .tint(.brandPrimary)
+                                            .id(datePickerID)
+                                            .onChange(of: selectedDate) { _, _ in
+                                                datePickerID = UUID()
+                                            }
                                         Spacer()
-                                    }
-                                }
-                            )
-
-                            Divider().background(Color.warm200)
-
-                            // Category
-                            StyledFormField(
-                                icon: .highfive,
-                                label: "Category",
-                                content: {
-                                    Menu {
-                                        ForEach(viewModel.categories) { category in
-                                            Button {
-                                                HapticManager.selection()
-                                                selectedCategory = category
-                                                isCategoryAutoDetected = false
-                                            } label: {
-                                                HStack {
-                                                    Text(category.name)
-                                                    if selectedCategory?.id == category.id {
-                                                        Image(systemName: "checkmark")
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    } label: {
-                                        HStack {
-                                            Text(selectedCategory?.name ?? "Select...")
-                                                .font(.bodyLarge)
-                                                .foregroundColor(selectedCategory == nil ? .textTertiary : textColor)
-
-                                            if isCategoryAutoDetected && selectedCategory != nil {
-                                                Text("Auto")
-                                                    .font(.labelSmall)
-                                                    .foregroundColor(.success)
-                                                    .padding(.horizontal, Spacing.xs)
-                                                    .padding(.vertical, Spacing.xxxs)
-                                                    .background(Color.successLight)
-                                                    .cornerRadius(CornerRadius.small)
-                                            }
-
-                                            Spacer()
-                                            Image(systemName: "chevron.up.chevron.down")
-                                                .font(.system(size: 12))
-                                                .foregroundColor(.warm400)
-                                        }
                                     }
                                 }
                             )
@@ -282,6 +246,53 @@ struct AddTransactionSheet: View {
                                     }
                                 )
                             }
+
+                            Divider().background(Color.warm200)
+
+                            // Category
+                            StyledFormField(
+                                icon: .highfive,
+                                label: "Category",
+                                content: {
+                                    Menu {
+                                        ForEach(viewModel.categories) { category in
+                                            Button {
+                                                HapticManager.selection()
+                                                selectedCategory = category
+                                                isCategoryAutoDetected = false
+                                            } label: {
+                                                HStack {
+                                                    Text(category.name)
+                                                    if selectedCategory?.id == category.id {
+                                                        Image(systemName: "checkmark")
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } label: {
+                                        HStack {
+                                            Text(selectedCategory?.name ?? "Select...")
+                                                .font(.bodyLarge)
+                                                .foregroundColor(selectedCategory == nil ? .textTertiary : textColor)
+
+                                            if isCategoryAutoDetected && selectedCategory != nil {
+                                                Text("Auto")
+                                                    .font(.labelSmall)
+                                                    .foregroundColor(.success)
+                                                    .padding(.horizontal, Spacing.xs)
+                                                    .padding(.vertical, Spacing.xxxs)
+                                                    .background(Color.successLight)
+                                                    .cornerRadius(CornerRadius.small)
+                                            }
+
+                                            Spacer()
+                                            Image(systemName: "chevron.up.chevron.down")
+                                                .font(.system(size: 12))
+                                                .foregroundColor(.warm400)
+                                        }
+                                    }
+                                }
+                            )
 
                             Divider().background(Color.warm200)
 
@@ -402,6 +413,9 @@ struct AddTransactionSheet: View {
 
             // Default category to SHARED
             selectedCategory = viewModel.categories.first { $0.code == "SHARED" }
+
+            // Auto-focus merchant field
+            isMerchantFocused = true
         }
         .onChange(of: viewModel.members) { _, newMembers in
             // Members may load after sheet appears — set default paid-by when they arrive

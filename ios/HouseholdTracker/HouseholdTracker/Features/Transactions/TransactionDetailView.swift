@@ -28,6 +28,9 @@ struct TransactionDetailView: View {
     @State private var editPaidBy: HouseholdMember?
     @State private var editNotes: String = ""
 
+    // DatePicker auto-close state
+    @State private var datePickerID = UUID()
+
     private let network = NetworkManager.shared
     private let currencies = ["USD", "CAD"]
 
@@ -69,7 +72,7 @@ struct TransactionDetailView: View {
             .navigationTitle(isEditing ? "Edit Transaction" : "Transaction")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
-            .interactiveDismissDisabled(isEditing || isSaving)
+            .interactiveDismissDisabled(isSaving)
             .onChange(of: selectedPhotoItem) { _, newValue in
                 if let newValue {
                     Task { await uploadReceipt(from: newValue) }
@@ -182,8 +185,8 @@ struct TransactionDetailView: View {
         Divider().background(Color.warm200)
         dateField
         Divider().background(Color.warm200)
-        categoryField
         expenseTypeField
+        categoryField
         Divider().background(Color.warm200)
         paidByField
     }
@@ -200,9 +203,16 @@ struct TransactionDetailView: View {
     @ViewBuilder
     private var dateField: some View {
         DetailFormField(icon: .calendar, label: "Date") {
-            DatePicker("", selection: $editDate, displayedComponents: .date)
-                .labelsHidden()
-                .tint(.brandPrimary)
+            HStack {
+                DatePicker("", selection: $editDate, displayedComponents: .date)
+                    .labelsHidden()
+                    .tint(.brandPrimary)
+                    .id(datePickerID)
+                    .onChange(of: editDate) { _, _ in
+                        datePickerID = UUID()
+                    }
+                Spacer()
+            }
         }
     }
 
@@ -321,12 +331,12 @@ struct TransactionDetailView: View {
         DetailRow(icon: .calendar, label: "Date", value: currentTransaction.date)
         Divider().background(Color.warm200)
         DetailRow(icon: .happy, label: "Paid By", value: currentTransaction.paidByName ?? "Unknown")
-        Divider().background(Color.warm200)
-        DetailRow(icon: .highfive, label: "Category", value: categoryDisplayName)
         if let expenseType = currentTransaction.expenseTypeName {
             Divider().background(Color.warm200)
             DetailRow(icon: .clipboard, label: "Expense Type", value: expenseType)
         }
+        Divider().background(Color.warm200)
+        DetailRow(icon: .highfive, label: "Category", value: categoryDisplayName)
     }
 
     @ViewBuilder
@@ -510,22 +520,12 @@ struct TransactionDetailView: View {
 
         ToolbarItem(placement: .primaryAction) {
             if !isEditing {
-                HStack(alignment: .center, spacing: Spacing.sm) {
-                    Button {
-                        HapticManager.buttonTap()
-                        startEditing()
-                    } label: {
-                        CatIcon(name: .pencil, size: .sm, color: .brandPrimary)
-                            .frame(minWidth: 44, minHeight: 44)
-                    }
-                    Button {
-                        HapticManager.buttonTap()
-                        dismiss()
-                    } label: {
-                        Text("Done")
-                            .foregroundColor(.brandPrimary)
-                            .frame(minHeight: 44)
-                    }
+                Button {
+                    HapticManager.buttonTap()
+                    startEditing()
+                } label: {
+                    Text("Edit")
+                        .foregroundColor(.brandPrimary)
                 }
             }
         }
@@ -678,6 +678,7 @@ struct TransactionDetailView: View {
                 onUpdate(currentTransaction)
             }
             isEditing = false
+            dismiss()
         } else {
             HapticManager.error()
             error = viewModel.error

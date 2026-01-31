@@ -666,6 +666,84 @@ For Claude-driven autonomous testing, use the orchestration script:
 3. Auto-fix the appropriate file (test YAML or Swift code)
 4. Re-run tests until passing
 
+### iOS UI Change Verification (IMPORTANT)
+
+There are **two types of verification** for iOS changes:
+
+| Type | Purpose | What it catches |
+|------|---------|-----------------|
+| **Regression tests** | "Did I break existing functionality?" | Broken flows, crashes, missing elements |
+| **Change verification** | "Did my change produce the intended result?" | Wrong field order, missing UI elements, incorrect text |
+
+**Running regression tests alone is NOT sufficient for UI changes.** A test like `add-transaction.yaml` will pass even if fields are in the wrong order—it only tests that the flow works, not that it looks correct.
+
+#### Step 1: Map files to regression tests
+
+Run the relevant regression test(s) to ensure nothing broke:
+
+| iOS File Changed | Regression Test(s) |
+|-----------------|-------------------|
+| `AddTransactionSheet.swift` | `add-transaction.yaml` |
+| `TransactionDetailView.swift` | `receipt-flow.yaml` |
+| `TransactionsView.swift` | `add-transaction.yaml`, `receipt-flow.yaml` |
+| `LoginView.swift` | `login-flow.yaml` |
+| `ReconciliationView.swift` | `reconciliation.yaml` |
+| `BudgetView.swift` | *(no dedicated test yet)* |
+| `SettingsView.swift` | *(no dedicated test yet)* |
+
+```bash
+# Example: Changed AddTransactionSheet.swift
+./scripts/ios-test.sh --test add-transaction
+```
+
+#### Step 2: Verify the intended change
+
+Create a temporary Maestro flow or use manual inspection to verify the specific change:
+
+```yaml
+# Example: verify-field-order.yaml
+appId: com.householdtracker.app
+---
+- tapOn:
+    text: "Add Transaction"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Where did you spend?"
+    timeout: 3000
+- takeScreenshot: verify-field-order
+```
+
+Then run and inspect:
+```bash
+./scripts/ios-test.sh --test verify-field-order
+# Screenshot saved to ios/HouseholdTracker/maestro/verify-field-order.png
+```
+
+**Visually confirm** the change matches intent, then delete the temporary test file.
+
+#### Step 3: For behavioral changes (not just visual)
+
+If the change affects behavior (e.g., "sheet dismisses after save", "toast appears"), add assertions:
+
+```yaml
+# Verify toast appears after save
+- tapOn: "Save Changes"
+- extendedWaitUntil:
+    visible: "Transaction saved"
+    timeout: 3000
+- takeScreenshot: save-toast-visible
+```
+
+#### Quick checklist for iOS UI changes
+
+Before claiming done:
+- [ ] Build compiles (`xcodebuild ... build`)
+- [ ] App rebuilt and installed on simulator
+- [ ] Regression test(s) pass for affected files
+- [ ] Screenshot taken of the specific UI change
+- [ ] Visual inspection confirms change matches intent
+- [ ] Temporary verification files cleaned up
+
 ### Design Review Workflow
 
 For comprehensive UI/UX quality assurance, use the design-review workflow:

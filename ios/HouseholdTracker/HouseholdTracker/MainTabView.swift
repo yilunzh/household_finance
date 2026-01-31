@@ -27,11 +27,7 @@ struct SettingsView: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(\.colorScheme) private var colorScheme
     @State private var showingEditName = false
-    @State private var showingChangePassword = false
-    @State private var showingChangeEmail = false
     @State private var showingDeleteAccount = false
-    @State private var showingInviteMember = false
-    @State private var showingPendingInvitations = false
     @State private var membersViewModel = HouseholdSettingsViewModel()
 
     var body: some View {
@@ -138,13 +134,13 @@ struct SettingsView: View {
                         // Invitations Section
                         SectionCard(title: "Invitations") {
                             SectionRow {
-                                Button {
-                                    showingInviteMember = true
+                                NavigationLink {
+                                    InviteMemberView()
                                 } label: {
                                     SettingsRowContent(
                                         icon: .envelope,
                                         title: "Invite Member",
-                                        showChevron: false,
+                                        showChevron: true,
                                         iconTint: .terracotta500
                                     )
                                 }
@@ -152,13 +148,13 @@ struct SettingsView: View {
                             }
 
                             SectionRow(showDivider: false) {
-                                Button {
-                                    showingPendingInvitations = true
+                                NavigationLink {
+                                    PendingInvitationsView()
                                 } label: {
                                     SettingsRowContent(
                                         icon: .clock,
                                         title: "Pending Invitations",
-                                        showChevron: false,
+                                        showChevron: true,
                                         iconTint: .terracotta500
                                     )
                                 }
@@ -176,7 +172,8 @@ struct SettingsView: View {
                                     SettingsRowContent(
                                         icon: .folder,
                                         title: "Expense Types",
-                                        showChevron: true
+                                        showChevron: true,
+                                        iconTint: .terracotta500
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -189,7 +186,8 @@ struct SettingsView: View {
                                     SettingsRowContent(
                                         icon: .lightbulb,
                                         title: "Auto-Category Rules",
-                                        showChevron: true
+                                        showChevron: true,
+                                        iconTint: .terracotta500
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -202,7 +200,8 @@ struct SettingsView: View {
                                     SettingsRowContent(
                                         icon: .download,
                                         title: "Export Data",
-                                        showChevron: true
+                                        showChevron: true,
+                                        iconTint: .terracotta500
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -214,26 +213,28 @@ struct SettingsView: View {
                     // Security Section
                     SectionCard(title: "Security") {
                         SectionRow {
-                            Button {
-                                showingChangePassword = true
+                            NavigationLink {
+                                ChangePasswordView()
                             } label: {
                                 SettingsRowContent(
                                     icon: .lock,
                                     title: "Change Password",
-                                    showChevron: false
+                                    showChevron: true,
+                                    iconTint: .terracotta500
                                 )
                             }
                             .buttonStyle(.plain)
                         }
 
                         SectionRow(showDivider: false) {
-                            Button {
-                                showingChangeEmail = true
+                            NavigationLink {
+                                ChangeEmailView()
                             } label: {
                                 SettingsRowContent(
                                     icon: .envelope,
                                     title: "Change Email",
-                                    showChevron: false
+                                    showChevron: true,
+                                    iconTint: .terracotta500
                                 )
                             }
                             .buttonStyle(.plain)
@@ -288,20 +289,8 @@ struct SettingsView: View {
             .sheet(isPresented: $showingEditName) {
                 EditNameSheet()
             }
-            .sheet(isPresented: $showingChangePassword) {
-                ChangePasswordSheet()
-            }
-            .sheet(isPresented: $showingChangeEmail) {
-                ChangeEmailSheet()
-            }
             .sheet(isPresented: $showingDeleteAccount) {
                 DeleteAccountSheet()
-            }
-            .sheet(isPresented: $showingInviteMember) {
-                InviteMemberView()
-            }
-            .sheet(isPresented: $showingPendingInvitations) {
-                PendingInvitationsView()
             }
         }
     }
@@ -344,11 +333,79 @@ struct SettingsRowContent: View {
     }
 }
 
-// MARK: - Placeholder Views for Navigation
+// MARK: - Create Household View
 struct CreateHouseholdView: View {
+    @Environment(AuthManager.self) private var authManager
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+
+    @State private var name = ""
+    @State private var isCreating = false
+
     var body: some View {
-        Text("Create Household")
-            .navigationTitle("New Household")
+        ScrollView {
+            VStack(spacing: Spacing.lg) {
+                // Icon
+                CatIcon(name: .sparkle, size: .xl, color: .terracotta500)
+                    .padding(.top, Spacing.lg)
+
+                // Form
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    FormField(label: "Household Name", isRequired: true) {
+                        StyledTextField(
+                            placeholder: "e.g., Smith Family",
+                            text: $name,
+                            icon: .house
+                        )
+                    }
+
+                    Text("Give your household a name, like \"Home\" or \"Smith Family\"")
+                        .font(.caption)
+                        .foregroundColor(.textTertiary)
+                }
+                .padding(.horizontal, Spacing.lg)
+
+                Spacer(minLength: Spacing.xxl)
+
+                // Action Button
+                PrimaryButton(
+                    title: isCreating ? "Creating..." : "Create Household",
+                    icon: .sparkle,
+                    action: createHousehold,
+                    isDisabled: name.trimmingCharacters(in: .whitespaces).isEmpty || isCreating
+                )
+                .padding(.horizontal, Spacing.lg)
+                .padding(.bottom, Spacing.lg)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .background(backgroundColor.ignoresSafeArea())
+        .navigationTitle("New Household")
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("Error", isPresented: .constant(authManager.error != nil)) {
+            Button("OK") {
+                authManager.clearError()
+            }
+        } message: {
+            Text(authManager.error ?? "")
+        }
+    }
+
+    private func createHousehold() {
+        Task {
+            isCreating = true
+            if await authManager.createHousehold(name: name) {
+                HapticManager.success()
+                dismiss()
+            } else {
+                HapticManager.error()
+            }
+            isCreating = false
+        }
+    }
+
+    private var backgroundColor: Color {
+        colorScheme == .dark ? .backgroundPrimaryDark : .backgroundPrimary
     }
 }
 
@@ -406,9 +463,9 @@ struct EditNameSheet: View {
     }
 }
 
-// MARK: - Change Password Sheet
+// MARK: - Change Password View
 
-struct ChangePasswordSheet: View {
+struct ChangePasswordView: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(\.dismiss) private var dismiss
     @State private var currentPassword = ""
@@ -424,67 +481,69 @@ struct ChangePasswordSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    SecureField("Current Password", text: $currentPassword)
-                        .textContentType(.password)
-                }
+        Form {
+            Section {
+                SecureField("Current Password", text: $currentPassword)
+                    .textContentType(.password)
+            }
 
-                Section {
-                    SecureField("New Password", text: $newPassword)
-                        .textContentType(.newPassword)
-                    SecureField("Confirm New Password", text: $confirmPassword)
-                        .textContentType(.newPassword)
-                } footer: {
-                    Text("Password must be at least 8 characters.")
-                }
+            Section {
+                SecureField("New Password", text: $newPassword)
+                    .textContentType(.newPassword)
+                SecureField("Confirm New Password", text: $confirmPassword)
+                    .textContentType(.newPassword)
+            } footer: {
+                Text("Password must be at least 8 characters.")
             }
-            .navigationTitle("Change Password")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        Task {
-                            isSaving = true
-                            if await authManager.changePassword(
-                                currentPassword: currentPassword,
-                                newPassword: newPassword
-                            ) {
-                                showSuccess = true
-                            }
-                            isSaving = false
+
+            Section {
+                Button {
+                    Task {
+                        isSaving = true
+                        if await authManager.changePassword(
+                            currentPassword: currentPassword,
+                            newPassword: newPassword
+                        ) {
+                            showSuccess = true
                         }
+                        isSaving = false
                     }
-                    .disabled(!canSave || isSaving)
+                } label: {
+                    HStack {
+                        Spacer()
+                        if isSaving {
+                            ProgressView()
+                        } else {
+                            Text("Save")
+                        }
+                        Spacer()
+                    }
                 }
+                .disabled(!canSave || isSaving)
             }
-            .alert("Error", isPresented: .constant(authManager.error != nil)) {
-                Button("OK") {
-                    authManager.clearError()
-                }
-            } message: {
-                Text(authManager.error ?? "")
+        }
+        .navigationTitle("Change Password")
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("Error", isPresented: .constant(authManager.error != nil)) {
+            Button("OK") {
+                authManager.clearError()
             }
-            .alert("Success", isPresented: $showSuccess) {
-                Button("OK") {
-                    dismiss()
-                }
-            } message: {
-                Text("Your password has been changed.")
+        } message: {
+            Text(authManager.error ?? "")
+        }
+        .alert("Success", isPresented: $showSuccess) {
+            Button("OK") {
+                dismiss()
             }
+        } message: {
+            Text("Your password has been changed.")
         }
     }
 }
 
-// MARK: - Change Email Sheet
+// MARK: - Change Email View
 
-struct ChangeEmailSheet: View {
+struct ChangeEmailView: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(\.dismiss) private var dismiss
     @State private var newEmail = ""
@@ -499,63 +558,65 @@ struct ChangeEmailSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField("New Email", text: $newEmail)
-                        .textContentType(.emailAddress)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                        .autocorrectionDisabled()
-                } footer: {
-                    Text("A verification email will be sent to this address.")
-                }
+        Form {
+            Section {
+                TextField("New Email", text: $newEmail)
+                    .textContentType(.emailAddress)
+                    .keyboardType(.emailAddress)
+                    .autocapitalization(.none)
+                    .autocorrectionDisabled()
+            } footer: {
+                Text("A verification email will be sent to this address.")
+            }
 
-                Section {
-                    SecureField("Current Password", text: $password)
-                        .textContentType(.password)
-                } footer: {
-                    Text("Enter your current password to confirm this change.")
-                }
+            Section {
+                SecureField("Current Password", text: $password)
+                    .textContentType(.password)
+            } footer: {
+                Text("Enter your current password to confirm this change.")
             }
-            .navigationTitle("Change Email")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Send Verification") {
-                        Task {
-                            isSaving = true
-                            if await authManager.requestEmailChange(
-                                newEmail: newEmail,
-                                password: password
-                            ) {
-                                showSuccess = true
-                            }
-                            isSaving = false
+
+            Section {
+                Button {
+                    Task {
+                        isSaving = true
+                        if await authManager.requestEmailChange(
+                            newEmail: newEmail,
+                            password: password
+                        ) {
+                            showSuccess = true
                         }
+                        isSaving = false
                     }
-                    .disabled(!canSave || isSaving)
+                } label: {
+                    HStack {
+                        Spacer()
+                        if isSaving {
+                            ProgressView()
+                        } else {
+                            Text("Send Verification")
+                        }
+                        Spacer()
+                    }
                 }
+                .disabled(!canSave || isSaving)
             }
-            .alert("Error", isPresented: .constant(authManager.error != nil)) {
-                Button("OK") {
-                    authManager.clearError()
-                }
-            } message: {
-                Text(authManager.error ?? "")
+        }
+        .navigationTitle("Change Email")
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("Error", isPresented: .constant(authManager.error != nil)) {
+            Button("OK") {
+                authManager.clearError()
             }
-            .alert("Verification Sent", isPresented: $showSuccess) {
-                Button("OK") {
-                    dismiss()
-                }
-            } message: {
-                Text("Please check your email and click the verification link to complete the change.")
+        } message: {
+            Text(authManager.error ?? "")
+        }
+        .alert("Verification Sent", isPresented: $showSuccess) {
+            Button("OK") {
+                dismiss()
             }
+        } message: {
+            Text("Please check your email and click the verification link to complete the change.")
         }
     }
 }
