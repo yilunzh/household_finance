@@ -4,9 +4,8 @@ Tests for bank import functionality.
 import json
 import pytest
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal
-from io import BytesIO
 
 from models import (
     ImportSession, ExtractedTransaction, ImportSettings, ImportAuditLog,

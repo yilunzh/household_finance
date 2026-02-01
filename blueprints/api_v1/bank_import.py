@@ -16,12 +16,11 @@ Endpoints:
 - GET /api/v1/import/settings - Get user's import settings
 - PUT /api/v1/import/settings - Update import settings
 """
-import json
 from concurrent.futures import ThreadPoolExecutor
 from flask import request, jsonify, g
 
 from extensions import db
-from models import ImportSession, ExtractedTransaction, ImportSettings, AutoCategoryRule, ExpenseType
+from models import ImportSession, ImportSettings, AutoCategoryRule, ExpenseType
 from api_decorators import jwt_required, api_household_required
 from services.import_service import ImportService
 from blueprints.api_v1 import api_v1_bp
@@ -68,6 +67,7 @@ def api_create_import_session():
 
         # Start background processing
         from app import app
+
         def process_with_context(session_id):
             with app.app_context():
                 ImportService.process_session(session_id)

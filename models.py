@@ -748,11 +748,11 @@ class ExtractedTransaction(db.Model):
         import json
         flags = json.loads(self.flags) if self.flags else {}
         return (
-            flags.get('needs_review', False) or
-            flags.get('ocr_uncertain', False) or
-            flags.get('low_confidence', False) or
-            flags.get('duplicate_of') is not None or
-            self.confidence < 0.7
+            flags.get('needs_review', False)
+            or flags.get('ocr_uncertain', False)
+            or flags.get('low_confidence', False)
+            or flags.get('duplicate_of') is not None
+            or self.confidence < 0.7
         )
 
     def set_flag(self, key, value):

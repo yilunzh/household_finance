@@ -670,7 +670,7 @@ class ImportService:
                 paid_by_user_id=user_id,
                 category=ext_txn.split_category,
                 expense_type_id=ext_txn.expense_type_id,
-                notes=f"Imported from bank statement",
+                notes="Imported from bank statement",
                 month_year=month_year
             )
             db.session.add(txn)
