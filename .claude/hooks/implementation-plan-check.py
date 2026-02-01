@@ -16,6 +16,29 @@ import subprocess
 from pathlib import Path
 
 
+def get_current_branch():
+    """Get current git branch name."""
+    result = subprocess.run(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+        capture_output=True,
+        text=True,
+        cwd=os.environ.get("CLAUDE_PROJECT_DIR", "."),
+    )
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def get_matching_feature(branch, features_with_plans):
+    """Find ideation feature that matches current branch.
+
+    Matches if the feature name appears anywhere in the branch name.
+    Example: "bank-import" matches "feature/bank-import"
+    """
+    for feature in features_with_plans:
+        if feature in branch:
+            return feature
+    return None
+
+
 def get_all_ideation_features(project_dir):
     """Get all features that have implementation plans in ideation folders."""
     ideation_dir = Path(project_dir) / ".claude" / "ideation"
@@ -118,8 +141,15 @@ def main():
     # Check which plans were updated
     updated_plans = get_updated_plans(files)
 
-    # Find plans that weren't updated
-    plans_needing_update = [f for f in features_with_plans if f not in updated_plans]
+    # Only remind about the feature matching the current branch
+    current_branch = get_current_branch()
+    current_feature = get_matching_feature(current_branch, features_with_plans)
+
+    # If no matching feature or the plan was already updated, no reminder needed
+    if current_feature and current_feature not in updated_plans:
+        plans_needing_update = [current_feature]
+    else:
+        plans_needing_update = []
 
     if plans_needing_update:
         plan_list = "\n".join(
@@ -128,11 +158,14 @@ def main():
         )
         return {
             "continue": True,  # Advisory - don't block
-            "message": f"You have implementation plans that may need updating:\n{plan_list}\n\n"
-                       f"If this work relates to these features, consider:\n"
-                       f"  - Mark completed stories with [x]\n"
-                       f"  - Update Progress Summary table\n"
-                       f"  - Update 'Last Updated' date"
+            "message": f"ACTION REQUIRED: Update the implementation plan before committing.\n\n"
+                       f"Plan to update:\n{plan_list}\n\n"
+                       f"You MUST:\n"
+                       f"1. Read the implementation plan\n"
+                       f"2. Mark completed stories/tasks with [x]\n"
+                       f"3. Update the Progress Summary table status\n"
+                       f"4. Update the 'Last Updated' date to today\n"
+                       f"5. Stage the updated plan file with the commit"
         }
 
     return {"continue": True}
