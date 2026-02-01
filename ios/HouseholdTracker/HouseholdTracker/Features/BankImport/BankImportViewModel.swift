@@ -172,10 +172,11 @@ class BankImportViewModel {
         // Process photos
         for (index, item) in selectedPhotos.enumerated() {
             if let data = try? await item.loadTransferable(type: Data.self) {
+                let format = detectImageFormat(from: data)
                 files.append((
                     data: data,
-                    filename: "photo_\(index + 1).jpg",
-                    mimeType: "image/jpeg"
+                    filename: "photo_\(index + 1).\(format.extension)",
+                    mimeType: format.mimeType
                 ))
             }
         }
@@ -389,6 +390,41 @@ class BankImportViewModel {
     }
 
     // MARK: - Helpers
+
+    /// Detect image format from data magic bytes
+    private func detectImageFormat(from data: Data) -> (extension: String, mimeType: String) {
+        guard data.count >= 12 else {
+            return ("jpg", "image/jpeg")  // Default fallback
+        }
+
+        let bytes = [UInt8](data.prefix(12))
+
+        // Check for JPEG: starts with FF D8 FF
+        if bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF {
+            return ("jpg", "image/jpeg")
+        }
+
+        // Check for PNG: starts with 89 50 4E 47 0D 0A 1A 0A
+        if bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47 {
+            return ("png", "image/png")
+        }
+
+        // Check for HEIC: "ftyp" at offset 4, then heic/mif1/msf1/heix
+        if data.count >= 12 {
+            let ftypRange = data[4..<8]
+            if let ftypStr = String(data: ftypRange, encoding: .ascii), ftypStr == "ftyp" {
+                let brandRange = data[8..<12]
+                if let brand = String(data: brandRange, encoding: .ascii) {
+                    if ["heic", "mif1", "msf1", "heix"].contains(brand) {
+                        return ("heic", "image/heic")
+                    }
+                }
+            }
+        }
+
+        // Default to JPEG
+        return ("jpg", "image/jpeg")
+    }
 
     func clearError() {
         error = nil
