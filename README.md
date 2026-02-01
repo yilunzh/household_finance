@@ -1,14 +1,19 @@
-# Zhang Estate Expense Tracker
+# Household Expense Tracker
 
-A simple web application for tracking and reconciling household expenses between two people.
+A web application for tracking and reconciling shared expenses between household members.
 
 ## Features
 
-- Quick transaction entry
-- Multi-currency support (USD/CAD)
-- Automatic currency conversion
-- Monthly reconciliation calculations
-- CSV export
+- **Multi-user authentication** with secure login
+- **Multi-household support** - users can belong to multiple households
+- **Quick transaction entry** with receipt photo uploads
+- **Multi-currency support** (USD/CAD) with automatic conversion
+- **Monthly reconciliation** with settlement locking
+- **Budget tracking** with custom expense types and split rules
+- **Transaction search/filter** with collapsible sidebar
+- **Email invitations** for adding household members
+- **REST API** for mobile app integration
+- **CSV export** for external analysis
 
 ## Setup
 
@@ -63,26 +68,36 @@ Then open your browser to `http://localhost:5001`
 
 1. Fill in the quick add form at the top of the page
 2. Select the date, merchant, amount, currency, who paid, and category
-3. Click "Add Transaction"
+3. Optionally attach a receipt photo
+4. Click "Add Transaction"
 
 ### Viewing Reconciliation
 
-1. Click "View Reconciliation" to see who owes what
-2. See breakdown by category
-3. Export to CSV if needed
+1. Click "View Reconciliation" to see monthly summaries
+2. See breakdown by category and who owes whom
+3. Lock months as settled when payments are made
+4. Export to CSV if needed
 
-### Categories
+### Split Categories
 
-- **Shared 50/50**: Expenses split equally
-- **I pay for wife**: Wife owes 100%
-- **Wife pays for me**: I owe 100%
-- **Personal (Me)**: My personal expense
-- **Personal (Wife)**: Wife's personal expense
+- **Shared**: Expenses split according to household split rules (default 50/50)
+- **Member A pays for Member B**: Member B owes 100%
+- **Personal**: Individual expenses, not shared
 
 ## Development
 
 See `docs/SPEC.md` for detailed technical specification.
 
+### Running Tests
+
+```bash
+pytest tests/
+```
+
 ## Deployment
 
 See `docs/DEPLOYMENT.md` for step-by-step deployment instructions.
+
+## License
+
+MIT
