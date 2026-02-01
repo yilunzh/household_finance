@@ -377,8 +377,12 @@ Important:
             from pdf2image import convert_from_path
             import io
 
-            # Convert PDF to images (limit to first 10 pages to prevent DoS)
-            images = convert_from_path(pdf_path, dpi=150, first_page=1, last_page=10)
+            # Convert PDF to images with DoS protections:
+            # - Limit to first 10 pages
+            # - Limit output size to max 2000px width (prevents memory exhaustion)
+            images = convert_from_path(
+                pdf_path, dpi=150, first_page=1, last_page=10, size=(2000, None)
+            )
 
             base64_images = []
             for img in images:
@@ -470,14 +474,11 @@ Important:
 
             except Exception as e:
                 delay = self.BASE_DELAY * (2 ** attempt)
-                # Sanitize error message to avoid leaking sensitive API details
-                error_msg = str(e)
-                sensitive_terms = ['api_key', 'api-key', 'token', 'secret', 'password']
-                if any(term in error_msg.lower() for term in sensitive_terms):
-                    error_msg = 'API error (details redacted for security)'
+                # Log only exception type to avoid leaking sensitive API details
+                # Full exception may contain API keys or sensitive error info
                 logger.warning(
                     f"GPT-4V API call failed (attempt {attempt + 1}/{self.MAX_RETRIES}): "
-                    f"{error_msg}"
+                    f"{type(e).__name__}"
                 )
                 if attempt < self.MAX_RETRIES - 1:
                     logger.info(f"Retrying in {delay} seconds...")
@@ -504,8 +505,8 @@ Important:
             if json_match:
                 json_str = json_match.group(1)
             else:
-                # Try to find JSON array directly
-                json_match = re.search(r'\[[\s\S]*\]', content)
+                # Try to find JSON array directly (non-greedy to prevent ReDoS)
+                json_match = re.search(r'\[[\s\S]*?\]', content)
                 if json_match:
                     json_str = json_match.group(0)
                 else:

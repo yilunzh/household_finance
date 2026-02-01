@@ -265,8 +265,10 @@ def init_db():
 
 
 @app.cli.command('cleanup')
-@click.option('--sessions', default=0, help='Days after which to cleanup expired sessions (0 to skip)')
-@click.option('--audit-logs', default=0, help='Days after which to cleanup old audit logs (0 to skip)')
+@click.option('--sessions', default=0, type=click.IntRange(0, 365),
+              help='Days after which to cleanup expired sessions (0 to skip, max 365)')
+@click.option('--audit-logs', default=0, type=click.IntRange(0, 730),
+              help='Days after which to cleanup old audit logs (0 to skip, max 730)')
 @click.option('--all', 'run_all', is_flag=True, help='Run all cleanup tasks with default settings')
 def cleanup_command(sessions, audit_logs, run_all):
     """Run cleanup tasks for expired import sessions and old audit logs.
