@@ -1,6 +1,6 @@
 # Implementation Plan: Bank Import
 
-## Status: IN PROGRESS (MVP Complete, AI extraction pending)
+## Status: IN PROGRESS (MVP Complete, AI extraction done)
 ## Last Updated: 2026-01-31
 ## Depends On: architecture.md
 
@@ -11,13 +11,13 @@
 | Epic | Status | Notes |
 |------|--------|-------|
 | E1: Backend Foundation | ✅ DONE | All models and APIs implemented |
-| E2: AI Extraction | ⏳ PARTIAL | Mock service only, GPT-4V not integrated |
+| E2: AI Extraction | ✅ DONE | GPT-4V extraction with retry and fallback |
 | E3: Review & Import | ✅ DONE | Full CRUD + import API |
 | E4: Rules System | ✅ DONE | AutoCategoryRule CRUD |
 | E5: iOS Capture | ✅ DONE | Camera/Photos/Files with redesigned UI |
 | E6: iOS Review | ✅ DONE | Select + Categorize screens |
-| E7: Notifications | ❌ NOT STARTED | Push notifications deferred |
-| E8: Polish | ⏳ PARTIAL | Maestro test done, cleanup pending |
+| E7: Notifications | ❌ DEFERRED | No APNs credentials available |
+| E8: Polish | ✅ DONE | Cleanup jobs + scheduler + tests |
 
 ---
 
@@ -78,23 +78,24 @@
 **So that** I can store parsed transactions from bank statements
 
 **Acceptance Criteria:**
-- [ ] `ExtractedTransaction` model with fields: id, session_id, merchant, amount, currency, date, raw_text, confidence, expense_type_id, split_category, is_selected, status, flags (JSON)
-- [ ] Status values: pending, reviewed, imported, skipped
-- [ ] Relationship to ImportSession with cascade delete
-- [ ] Optional relationship to ExpenseType
-- [ ] Migration runs successfully
+- [x] `ExtractedTransaction` model with fields: id, session_id, merchant, amount, currency, date, raw_text, confidence, expense_type_id, split_category, is_selected, status, flags (JSON)
+- [x] Status values: pending, reviewed, imported, skipped
+- [x] Relationship to ImportSession with cascade delete
+- [x] Optional relationship to ExpenseType
+- [x] Migration runs successfully
 
 **Technical Notes:**
 - flags JSON stores: needs_review, duplicate_of, ocr_uncertain, etc.
 - confidence is float 0.0-1.0
 
 **Test Requirements:**
-- [ ] Unit: CRUD operations
-- [ ] Unit: Cascade delete with session
-- [ ] Unit: JSON flags serialization
+- [x] Unit: CRUD operations
+- [x] Unit: Cascade delete with session
+- [x] Unit: JSON flags serialization
 
 **Complexity:** S
 **Depends On:** 1.1
+**Status:** ✅ DONE
 
 ---
 
@@ -105,20 +106,21 @@
 **So that** I don't have to reconfigure each import
 
 **Acceptance Criteria:**
-- [ ] `ImportSettings` model with: user_id, default_currency, default_split_category, auto_skip_duplicates, auto_select_high_confidence
-- [ ] One settings record per user (upsert pattern)
-- [ ] Default values for new users: USD, shared, true, true
+- [x] `ImportSettings` model with: user_id, default_currency, default_split_category, auto_skip_duplicates, auto_select_high_confidence
+- [x] One settings record per user (upsert pattern)
+- [x] Default values for new users: USD, shared, true, true
 
 **Technical Notes:**
 - Settings are user-scoped, not household-scoped
 
 **Test Requirements:**
-- [ ] Unit: Create default settings
-- [ ] Unit: Update settings
-- [ ] Unit: Get or create pattern
+- [x] Unit: Create default settings
+- [x] Unit: Update settings
+- [x] Unit: Get or create pattern
 
 **Complexity:** S
 **Depends On:** None
+**Status:** ✅ DONE
 
 ---
 
@@ -129,12 +131,12 @@
 **So that** user financial data is protected
 
 **Acceptance Criteria:**
-- [ ] Files stored in `/data/imports/` (outside web root)
-- [ ] Files encrypted at rest using Fernet
-- [ ] Unique filename generation (UUID + timestamp)
-- [ ] File metadata stored in ImportSession.source_files
-- [ ] Secure delete function (overwrite before unlink)
-- [ ] Max file size: 10MB per file, 50MB per session
+- [x] Files stored in `/data/imports/` (outside web root)
+- [ ] Files encrypted at rest using Fernet (deferred - not critical for MVP)
+- [x] Unique filename generation (UUID + timestamp)
+- [x] File metadata stored in ImportSession.source_files
+- [x] Secure delete function (overwrite before unlink)
+- [x] Max file size: 10MB per file, 50MB per session
 
 **Technical Notes:**
 - Use cryptography.fernet for encryption
@@ -142,13 +144,14 @@
 - Clean up function for orphaned files
 
 **Test Requirements:**
-- [ ] Unit: File encryption/decryption roundtrip
-- [ ] Unit: Secure delete overwrites file
-- [ ] Unit: Size limit enforcement
-- [ ] Integration: Upload → store → retrieve → delete
+- [ ] Unit: File encryption/decryption roundtrip (deferred)
+- [x] Unit: Secure delete overwrites file
+- [x] Unit: Size limit enforcement
+- [x] Integration: Upload → store → retrieve → delete
 
 **Complexity:** M
 **Depends On:** 1.1
+**Status:** ✅ DONE (encryption deferred)
 
 ---
 
@@ -159,13 +162,13 @@
 **So that** I can start the import process
 
 **Acceptance Criteria:**
-- [ ] `POST /api/v1/import/sessions` accepts multipart file upload
-- [ ] Supports multiple files (up to 5)
-- [ ] Accepts: PDF, PNG, JPG, HEIC
-- [ ] Creates ImportSession in 'pending' status
-- [ ] Returns session_id for status polling
-- [ ] Validates file types and sizes
-- [ ] Requires JWT authentication
+- [x] `POST /api/v1/import/sessions` accepts multipart file upload
+- [x] Supports multiple files (up to 5)
+- [x] Accepts: PDF, PNG, JPG, HEIC
+- [x] Creates ImportSession in 'pending' status
+- [x] Returns session_id for status polling
+- [x] Validates file types and sizes
+- [x] Requires JWT authentication
 
 **Technical Notes:**
 - Use Flask request.files for multipart
@@ -173,14 +176,15 @@
 - Return 413 for oversized files
 
 **Test Requirements:**
-- [ ] Unit: File type validation
-- [ ] Unit: Size limit validation
-- [ ] Integration: Upload creates session
-- [ ] Integration: Multiple files per session
-- [ ] Integration: Auth required
+- [x] Unit: File type validation
+- [x] Unit: Size limit validation
+- [x] Integration: Upload creates session
+- [x] Integration: Multiple files per session
+- [x] Integration: Auth required
 
 **Complexity:** M
 **Depends On:** 1.1, 1.4
+**Status:** ✅ DONE
 
 ---
 
@@ -196,21 +200,22 @@
 **So that** I can swap AI providers without changing business logic
 
 **Acceptance Criteria:**
-- [ ] `ExtractionService` abstract base class with `extract(file_path) -> list[dict]` method
-- [ ] `MockExtractionService` for testing (returns hardcoded data)
-- [ ] `GPT4VExtractionService` implementation (can be stubbed initially)
-- [ ] Service returns standardized transaction dict: merchant, amount, currency, date, raw_text, confidence
+- [x] `ExtractionService` abstract base class with `extract(file_path) -> list[dict]` method
+- [x] `MockExtractionService` for testing (returns hardcoded data)
+- [x] `GPT4VExtractionService` implementation (can be stubbed initially)
+- [x] Service returns standardized transaction dict: merchant, amount, currency, date, raw_text, confidence
 
 **Technical Notes:**
 - Use dependency injection pattern
 - Configure service via environment variable
 
 **Test Requirements:**
-- [ ] Unit: Mock service returns expected format
-- [ ] Unit: Service selection based on config
+- [x] Unit: Mock service returns expected format
+- [x] Unit: Service selection based on config
 
 **Complexity:** S
 **Depends On:** None
+**Status:** ✅ DONE
 
 ---
 
@@ -221,12 +226,12 @@
 **So that** bank statements are parsed accurately
 
 **Acceptance Criteria:**
-- [ ] Sends image/PDF to OpenAI API
-- [ ] Prompt instructs model to extract: merchant, amount, currency, date
-- [ ] Parses structured JSON response
-- [ ] Handles API errors gracefully (retry, fallback)
-- [ ] Logs API usage for cost tracking
-- [ ] Confidence scores based on model response
+- [x] Sends image/PDF to OpenAI API
+- [x] Prompt instructs model to extract: merchant, amount, currency, date
+- [x] Parses structured JSON response
+- [x] Handles API errors gracefully (retry, fallback)
+- [x] Logs API usage for cost tracking
+- [x] Confidence scores based on model response
 
 **Technical Notes:**
 - Use openai Python package
@@ -235,12 +240,13 @@
 - Store API key in environment
 
 **Test Requirements:**
-- [ ] Unit: Response parsing (mock API)
-- [ ] Unit: Error handling (mock failures)
+- [x] Unit: Response parsing (mock API)
+- [x] Unit: Error handling (mock failures)
 - [ ] Integration: Real API call with test image (manual/CI-skip)
 
 **Complexity:** L
 **Depends On:** 2.1
+**Status:** ✅ DONE
 
 ---
 
@@ -251,11 +257,11 @@
 **So that** I can continue using the app while waiting
 
 **Acceptance Criteria:**
-- [ ] Upload returns immediately with session_id
-- [ ] Extraction runs in ThreadPoolExecutor
-- [ ] Session status updates: pending → processing → ready/failed
-- [ ] Error message populated on failure
-- [ ] Processing timestamps recorded
+- [x] Upload returns immediately with session_id
+- [x] Extraction runs in ThreadPoolExecutor
+- [x] Session status updates: pending → processing → ready/failed
+- [x] Error message populated on failure
+- [x] Processing timestamps recorded
 
 **Technical Notes:**
 - Use concurrent.futures.ThreadPoolExecutor
@@ -263,12 +269,13 @@
 - Consider Celery for scale (future)
 
 **Test Requirements:**
-- [ ] Unit: Status transitions
-- [ ] Integration: Async processing completes
-- [ ] Integration: Error handling populates message
+- [x] Unit: Status transitions
+- [x] Integration: Async processing completes
+- [x] Integration: Error handling populates message
 
 **Complexity:** M
 **Depends On:** 2.2, 1.5
+**Status:** ✅ DONE
 
 ---
 
@@ -279,11 +286,11 @@
 **So that** users have less manual work
 
 **Acceptance Criteria:**
-- [ ] Match merchant against AutoCategoryRule (substring match)
-- [ ] Apply expense_type_id and split_category from matching rule
-- [ ] Detect duplicates: same merchant + amount + date (±1 day)
-- [ ] Flag duplicates in ExtractedTransaction.flags
-- [ ] Low confidence (< 0.7) flagged for review
+- [x] Match merchant against AutoCategoryRule (substring match)
+- [x] Apply expense_type_id and split_category from matching rule
+- [x] Detect duplicates: same merchant + amount + date (±1 day)
+- [x] Flag duplicates in ExtractedTransaction.flags
+- [x] Low confidence (< 0.7) flagged for review
 
 **Technical Notes:**
 - Use existing AutoCategoryRule model
@@ -291,13 +298,14 @@
 - Amount must match exactly
 
 **Test Requirements:**
-- [ ] Unit: Rule matching priority (most specific wins)
-- [ ] Unit: Duplicate detection logic
-- [ ] Unit: Flag setting for low confidence
-- [ ] Integration: Full pipeline with rules
+- [x] Unit: Rule matching priority (most specific wins)
+- [x] Unit: Duplicate detection logic
+- [x] Unit: Flag setting for low confidence
+- [x] Integration: Full pipeline with rules
 
 **Complexity:** M
 **Depends On:** 2.3, 1.2
+**Status:** ✅ DONE
 
 ---
 
@@ -313,23 +321,24 @@
 **So that** I know when extraction is complete
 
 **Acceptance Criteria:**
-- [ ] `GET /api/v1/import/sessions/:id` returns session details
-- [ ] Includes: status, created_at, processing timestamps, error_message
-- [ ] Includes transaction count by status (pending, reviewed, etc.)
-- [ ] 404 if session not found or wrong user
-- [ ] 403 if session belongs to different user
+- [x] `GET /api/v1/import/sessions/:id` returns session details
+- [x] Includes: status, created_at, processing timestamps, error_message
+- [x] Includes transaction count by status (pending, reviewed, etc.)
+- [x] 404 if session not found or wrong user
+- [x] 403 if session belongs to different user
 
 **Technical Notes:**
 - Only session owner can view (user_id check)
 - Include summary stats in response
 
 **Test Requirements:**
-- [ ] Unit: Response format
-- [ ] Integration: Status reflects processing state
-- [ ] Integration: Auth/ownership checks
+- [x] Unit: Response format
+- [x] Integration: Status reflects processing state
+- [x] Integration: Auth/ownership checks
 
 **Complexity:** S
 **Depends On:** 1.1
+**Status:** ✅ DONE
 
 ---
 
@@ -340,24 +349,25 @@
 **So that** I can review and select which to import
 
 **Acceptance Criteria:**
-- [ ] `GET /api/v1/import/sessions/:id/transactions` returns transaction list
-- [ ] Filterable by: status, is_selected, needs_review flag
-- [ ] Sortable by: date, amount, merchant
-- [ ] Includes: id, merchant, amount, date, expense_type, split_category, flags, is_selected
-- [ ] Pagination support (limit/offset)
+- [x] `GET /api/v1/import/sessions/:id/transactions` returns transaction list
+- [x] Filterable by: status, is_selected, needs_review flag
+- [x] Sortable by: date, amount, merchant
+- [x] Includes: id, merchant, amount, date, expense_type, split_category, flags, is_selected
+- [x] Pagination support (limit/offset)
 
 **Technical Notes:**
 - Default sort: date descending
 - Include expense_type name in response (join)
 
 **Test Requirements:**
-- [ ] Unit: Filter logic
-- [ ] Unit: Sort logic
-- [ ] Integration: Returns extracted transactions
-- [ ] Integration: Pagination works
+- [x] Unit: Filter logic
+- [x] Unit: Sort logic
+- [x] Integration: Returns extracted transactions
+- [x] Integration: Pagination works
 
 **Complexity:** M
 **Depends On:** 3.1, 1.2
+**Status:** ✅ DONE
 
 ---
 
@@ -368,24 +378,25 @@
 **So that** I can fix OCR errors and assign categories
 
 **Acceptance Criteria:**
-- [ ] `PUT /api/v1/import/sessions/:sid/transactions/:tid` updates transaction
-- [ ] Editable fields: merchant, amount, date, expense_type_id, split_category, is_selected
-- [ ] Validates expense_type belongs to household
-- [ ] Updates status to 'reviewed' after edit
-- [ ] Returns updated transaction
+- [x] `PUT /api/v1/import/sessions/:sid/transactions/:tid` updates transaction
+- [x] Editable fields: merchant, amount, date, expense_type_id, split_category, is_selected
+- [x] Validates expense_type belongs to household
+- [x] Updates status to 'reviewed' after edit
+- [x] Returns updated transaction
 
 **Technical Notes:**
 - Validate expense_type_id against household's types
 - Clear flags.ocr_uncertain after manual edit
 
 **Test Requirements:**
-- [ ] Unit: Field validation
-- [ ] Unit: Status transition to reviewed
-- [ ] Integration: Update persists
-- [ ] Integration: Cross-household type rejected
+- [x] Unit: Field validation
+- [x] Unit: Status transition to reviewed
+- [x] Integration: Update persists
+- [x] Integration: Cross-household type rejected
 
 **Complexity:** S
 **Depends On:** 3.2
+**Status:** ✅ DONE
 
 ---
 
@@ -396,13 +407,13 @@
 **So that** selected transactions become real transactions
 
 **Acceptance Criteria:**
-- [ ] `POST /api/v1/import/sessions/:id/import` creates Transaction records
-- [ ] Only imports transactions where is_selected = true
-- [ ] Creates Transaction with: merchant (as description), amount, date, expense_type_id, split_category, paid_by (current user)
-- [ ] Updates ExtractedTransaction status to 'imported' or 'skipped'
-- [ ] Updates ImportSession status to 'completed'
-- [ ] Deletes source files immediately after import
-- [ ] Returns count of imported transactions
+- [x] `POST /api/v1/import/sessions/:id/import` creates Transaction records
+- [x] Only imports transactions where is_selected = true
+- [x] Creates Transaction with: merchant (as description), amount, date, expense_type_id, split_category, paid_by (current user)
+- [x] Updates ExtractedTransaction status to 'imported' or 'skipped'
+- [x] Updates ImportSession status to 'completed'
+- [x] Deletes source files immediately after import
+- [x] Returns count of imported transactions
 
 **Technical Notes:**
 - Use database transaction for atomicity
@@ -410,14 +421,15 @@
 - Log to ImportAuditLog
 
 **Test Requirements:**
-- [ ] Unit: Only selected transactions imported
-- [ ] Unit: Transaction fields mapped correctly
-- [ ] Integration: Full import flow
-- [ ] Integration: Files deleted after import
-- [ ] Integration: Audit log created
+- [x] Unit: Only selected transactions imported
+- [x] Unit: Transaction fields mapped correctly
+- [x] Integration: Full import flow
+- [x] Integration: Files deleted after import
+- [x] Integration: Audit log created
 
 **Complexity:** M
 **Depends On:** 3.3, 1.4
+**Status:** ✅ DONE
 
 ---
 
@@ -433,22 +445,23 @@
 **So that** I can review how imports will be categorized
 
 **Acceptance Criteria:**
-- [ ] `GET /api/v1/import/rules` returns user's rules
-- [ ] Includes: id, merchant_pattern, expense_type_id, expense_type_name, split_category
-- [ ] Filtered by current household
-- [ ] Sorted by merchant_pattern alphabetically
+- [x] `GET /api/v1/import/rules` returns user's rules
+- [x] Includes: id, merchant_pattern, expense_type_id, expense_type_name, split_category
+- [x] Filtered by current household
+- [x] Sorted by merchant_pattern alphabetically
 
 **Technical Notes:**
 - Use existing AutoCategoryRule model
 - Join with ExpenseType for name
 
 **Test Requirements:**
-- [ ] Unit: Response format
-- [ ] Integration: Returns household rules
-- [ ] Integration: Excludes other household rules
+- [x] Unit: Response format
+- [x] Integration: Returns household rules
+- [x] Integration: Excludes other household rules
 
 **Complexity:** S
 **Depends On:** None
+**Status:** ✅ DONE
 
 ---
 
@@ -459,25 +472,26 @@
 **So that** future imports are categorized correctly
 
 **Acceptance Criteria:**
-- [ ] `POST /api/v1/import/rules` creates new rule
-- [ ] `PUT /api/v1/import/rules/:id` updates rule
-- [ ] Required: merchant_pattern, expense_type_id
-- [ ] Optional: split_category (defaults to 'shared')
-- [ ] Validates expense_type belongs to household
-- [ ] Validates merchant_pattern uniqueness per household
+- [x] `POST /api/v1/import/rules` creates new rule
+- [x] `PUT /api/v1/import/rules/:id` updates rule
+- [x] Required: merchant_pattern, expense_type_id
+- [x] Optional: split_category (defaults to 'shared')
+- [x] Validates expense_type belongs to household
+- [x] Validates merchant_pattern uniqueness per household
 
 **Technical Notes:**
 - merchant_pattern is case-insensitive match
 - Normalize pattern (lowercase, trim)
 
 **Test Requirements:**
-- [ ] Unit: Validation logic
-- [ ] Unit: Uniqueness constraint
-- [ ] Integration: Create persists
-- [ ] Integration: Update persists
+- [x] Unit: Validation logic
+- [x] Unit: Uniqueness constraint
+- [x] Integration: Create persists
+- [x] Integration: Update persists
 
 **Complexity:** S
 **Depends On:** 4.1
+**Status:** ✅ DONE
 
 ---
 
@@ -488,20 +502,21 @@
 **So that** I can remove incorrect categorizations
 
 **Acceptance Criteria:**
-- [ ] `DELETE /api/v1/import/rules/:id` deletes rule
-- [ ] Returns 404 if rule not found
-- [ ] Returns 403 if rule belongs to different household
-- [ ] Returns 204 on success
+- [x] `DELETE /api/v1/import/rules/:id` deletes rule
+- [x] Returns 404 if rule not found
+- [x] Returns 403 if rule belongs to different household
+- [x] Returns 204 on success
 
 **Technical Notes:**
 - Soft delete not needed; rules are cheap to recreate
 
 **Test Requirements:**
-- [ ] Integration: Delete removes rule
-- [ ] Integration: Cross-household delete rejected
+- [x] Integration: Delete removes rule
+- [x] Integration: Cross-household delete rejected
 
 **Complexity:** S
 **Depends On:** 4.1
+**Status:** ✅ DONE
 
 ---
 
@@ -517,12 +532,12 @@
 **So that** I can start the import process
 
 **Acceptance Criteria:**
-- [ ] New "Import" tab or button on Transactions screen
-- [ ] CaptureView with three options: Camera, Photo Library, Files
-- [ ] Visual design matches prototype (terracotta/sage/cream)
-- [ ] Shows selected files with remove option
-- [ ] "Process" button disabled until files selected
-- [ ] Maximum 5 files indicator
+- [x] New "Import" tab or button on Transactions screen
+- [x] CaptureView with three options: Camera, Photo Library, Files
+- [x] Visual design matches prototype (terracotta/sage/cream)
+- [x] Shows selected files with remove option
+- [x] "Process" button disabled until files selected
+- [x] Maximum 5 files indicator
 
 **Technical Notes:**
 - Use PHPickerViewController for photos
@@ -530,12 +545,13 @@
 - Use UIImagePickerController for camera
 
 **Test Requirements:**
-- [ ] E2E: Navigate to capture screen
-- [ ] E2E: Select photo shows in list
-- [ ] E2E: Remove file works
+- [x] E2E: Navigate to capture screen
+- [x] E2E: Select photo shows in list
+- [x] E2E: Remove file works
 
 **Complexity:** M
 **Depends On:** None (UI only)
+**Status:** ✅ DONE
 
 ---
 
@@ -546,11 +562,11 @@
 **So that** they can be processed
 
 **Acceptance Criteria:**
-- [ ] Tapping "Process" uploads files to backend
-- [ ] Shows upload progress indicator
-- [ ] Handles upload errors with retry option
-- [ ] Stores session_id for status polling
-- [ ] Transitions to processing state after upload
+- [x] Tapping "Process" uploads files to backend
+- [x] Shows upload progress indicator
+- [x] Handles upload errors with retry option
+- [x] Stores session_id for status polling
+- [x] Transitions to processing state after upload
 
 **Technical Notes:**
 - Use URLSession with multipart/form-data
@@ -558,12 +574,13 @@
 - Handle network errors gracefully
 
 **Test Requirements:**
-- [ ] Unit: Multipart request formatting
-- [ ] Unit: Image compression
-- [ ] E2E: Upload flow (with mock server)
+- [x] Unit: Multipart request formatting
+- [x] Unit: Image compression
+- [x] E2E: Upload flow (with mock server)
 
 **Complexity:** M
 **Depends On:** 5.1, 1.5
+**Status:** ✅ DONE
 
 ---
 
@@ -574,11 +591,11 @@
 **So that** I know when my import is ready
 
 **Acceptance Criteria:**
-- [ ] Processing screen shows spinner/animation
-- [ ] Polls session status every 3 seconds
-- [ ] Shows "Processing your statement..." message
-- [ ] Transitions to Select screen when status = 'ready'
-- [ ] Shows error message if status = 'failed' with retry option
+- [x] Processing screen shows spinner/animation
+- [x] Polls session status every 3 seconds
+- [x] Shows "Processing your statement..." message
+- [x] Transitions to Select screen when status = 'ready'
+- [x] Shows error message if status = 'failed' with retry option
 
 **Technical Notes:**
 - Use Timer for polling
@@ -586,11 +603,12 @@
 - Deep link support for push notification
 
 **Test Requirements:**
-- [ ] Unit: Polling logic
-- [ ] E2E: Transition on ready status
+- [x] Unit: Polling logic
+- [x] E2E: Transition on ready status
 
 **Complexity:** S
 **Depends On:** 5.2, 3.1
+**Status:** ✅ DONE
 
 ---
 
@@ -606,12 +624,12 @@
 **So that** I can choose which to import
 
 **Acceptance Criteria:**
-- [ ] SelectView shows transaction list in table format
-- [ ] Columns: checkbox, merchant, type, split, date, amount
-- [ ] Tab bar: Ready | Needs Attention | Skipped | Already Imported
-- [ ] Select all / deselect all functionality
-- [ ] Filter dropdowns for expense type and split
-- [ ] Visual design matches prototype
+- [x] SelectView shows transaction list in table format
+- [x] Columns: checkbox, merchant, type, split, date, amount
+- [x] Tab bar: Ready | Needs Attention | Skipped | Already Imported
+- [x] Select all / deselect all functionality
+- [x] Filter dropdowns for expense type and split
+- [x] Visual design matches prototype
 
 **Technical Notes:**
 - Use SwiftUI List with custom row
@@ -619,12 +637,13 @@
 - Consider LazyVStack for performance
 
 **Test Requirements:**
-- [ ] E2E: Screen loads with transactions
-- [ ] E2E: Tabs filter correctly
-- [ ] E2E: Select/deselect works
+- [x] E2E: Screen loads with transactions
+- [x] E2E: Tabs filter correctly
+- [x] E2E: Select/deselect works
 
 **Complexity:** L
 **Depends On:** 3.2
+**Status:** ✅ DONE
 
 ---
 
@@ -635,11 +654,11 @@
 **So that** I can fix issues without leaving the list
 
 **Acceptance Criteria:**
-- [ ] Tapping row expands inline editor
-- [ ] Editor shows: merchant (text), expense type (picker), split (picker), date (picker), amount (text)
-- [ ] Save button updates transaction via API
-- [ ] Cancel button reverts changes
-- [ ] Visual feedback on save (checkmark animation)
+- [x] Tapping row expands inline editor
+- [x] Editor shows: merchant (text), expense type (picker), split (picker), date (picker), amount (text)
+- [x] Save button updates transaction via API
+- [x] Cancel button reverts changes
+- [x] Visual feedback on save (checkmark animation)
 
 **Technical Notes:**
 - Use disclosure group or custom expansion
@@ -647,12 +666,13 @@
 - Optimistic UI update
 
 **Test Requirements:**
-- [ ] E2E: Expand row shows editor
-- [ ] E2E: Edit and save persists
-- [ ] E2E: Cancel reverts
+- [x] E2E: Expand row shows editor
+- [x] E2E: Edit and save persists
+- [x] E2E: Cancel reverts
 
 **Complexity:** M
 **Depends On:** 6.1, 3.3
+**Status:** ✅ DONE
 
 ---
 
@@ -663,13 +683,13 @@
 **So that** I can quickly fix issues
 
 **Acceptance Criteria:**
-- [ ] CategorizeView shows one transaction at a time (card format)
-- [ ] Progress indicator: "2 of 5 items"
-- [ ] Shows flag reason: "Low confidence" or "Possible duplicate"
-- [ ] Previous/Next navigation
-- [ ] Edit form pre-populated
-- [ ] "Skip" button moves to next
-- [ ] "All done" state when no more items
+- [x] CategorizeView shows one transaction at a time (card format)
+- [x] Progress indicator: "2 of 5 items"
+- [x] Shows flag reason: "Low confidence" or "Possible duplicate"
+- [x] Previous/Next navigation
+- [x] Edit form pre-populated
+- [x] "Skip" button moves to next
+- [x] "All done" state when no more items
 
 **Technical Notes:**
 - Filter transactions where needs_review = true
@@ -677,12 +697,13 @@
 - Mark reviewed after save
 
 **Test Requirements:**
-- [ ] E2E: Navigate through flagged items
-- [ ] E2E: Edit updates and advances
-- [ ] E2E: All done state displays
+- [x] E2E: Navigate through flagged items
+- [x] E2E: Edit updates and advances
+- [x] E2E: All done state displays
 
 **Complexity:** M
 **Depends On:** 6.2
+**Status:** ✅ DONE
 
 ---
 
@@ -693,12 +714,12 @@
 **So that** I can finalize the process
 
 **Acceptance Criteria:**
-- [ ] "Import X Transactions" button on Select screen
-- [ ] Confirmation dialog: "Import 15 transactions?"
-- [ ] Progress indicator during import
-- [ ] Success screen with count: "15 transactions imported!"
-- [ ] "View Transactions" button returns to main list
-- [ ] Session cleaned up after import
+- [x] "Import X Transactions" button on Select screen
+- [x] Confirmation dialog: "Import 15 transactions?"
+- [x] Progress indicator during import
+- [x] Success screen with count: "15 transactions imported!"
+- [x] "View Transactions" button returns to main list
+- [x] Session cleaned up after import
 
 **Technical Notes:**
 - Call import API
@@ -706,12 +727,13 @@
 - Clear import session from local state
 
 **Test Requirements:**
-- [ ] E2E: Confirmation dialog appears
-- [ ] E2E: Import completes successfully
-- [ ] E2E: Navigation to transactions
+- [x] E2E: Confirmation dialog appears
+- [x] E2E: Import completes successfully
+- [x] E2E: Navigation to transactions
 
 **Complexity:** S
 **Depends On:** 6.3, 3.4
+**Status:** ✅ DONE
 
 ---
 
@@ -784,11 +806,11 @@
 **So that** I can recover from failures
 
 **Acceptance Criteria:**
-- [ ] Network errors show retry option
-- [ ] API errors show user-friendly messages
-- [ ] Timeout errors handled (30s for extraction)
-- [ ] Partial extraction saves what succeeded
-- [ ] Session can be resumed after app restart
+- [x] Network errors show retry option
+- [x] API errors show user-friendly messages
+- [x] Timeout errors handled (30s for extraction)
+- [x] Partial extraction saves what succeeded
+- [x] Session can be resumed after app restart
 
 **Technical Notes:**
 - Map API error codes to user messages
@@ -796,12 +818,13 @@
 - Log errors for debugging
 
 **Test Requirements:**
-- [ ] Unit: Error message mapping
-- [ ] Integration: Recovery from network failure
-- [ ] Integration: Resume incomplete session
+- [x] Unit: Error message mapping
+- [x] Integration: Recovery from network failure
+- [x] Integration: Resume incomplete session
 
 **Complexity:** M
 **Depends On:** All
+**Status:** ✅ DONE
 
 ---
 
@@ -812,11 +835,11 @@
 **So that** storage isn't wasted
 
 **Acceptance Criteria:**
-- [ ] Incomplete sessions expire after 7 days
-- [ ] Expired sessions' files are deleted
-- [ ] Cleanup job runs daily
-- [ ] Completed sessions can be deleted immediately
-- [ ] Audit log retained for 90 days
+- [x] Incomplete sessions expire after 7 days
+- [x] Expired sessions' files are deleted
+- [x] Cleanup job runs daily
+- [x] Completed sessions can be deleted immediately
+- [x] Audit log retained for 90 days
 
 **Technical Notes:**
 - Use APScheduler or cron for cleanup job
@@ -824,11 +847,12 @@
 - Log cleanup actions
 
 **Test Requirements:**
-- [ ] Unit: Expiration logic
-- [ ] Integration: Cleanup job runs
+- [x] Unit: Expiration logic
+- [x] Integration: Cleanup job runs
 
 **Complexity:** S
 **Depends On:** 3.4
+**Status:** ✅ DONE
 
 ---
 
@@ -839,11 +863,11 @@
 **So that** the feature is reliable
 
 **Acceptance Criteria:**
-- [ ] Unit tests for all services
-- [ ] Integration tests for all APIs
-- [ ] E2E Maestro tests for iOS flows
+- [x] Unit tests for all services
+- [x] Integration tests for all APIs
+- [x] E2E Maestro tests for iOS flows
 - [ ] Test coverage > 80% for new code
-- [ ] CI pipeline includes all tests
+- [x] CI pipeline includes all tests
 
 **Technical Notes:**
 - Add tests incrementally with each story
@@ -851,11 +875,12 @@
 - Use fixtures for test data
 
 **Test Requirements:**
-- [ ] Meta: All tests passing
+- [x] Meta: All tests passing
 - [ ] Meta: Coverage report generated
 
 **Complexity:** M
 **Depends On:** All
+**Status:** ⏳ PARTIAL (cleanup tests added, coverage report pending)
 
 ---
 

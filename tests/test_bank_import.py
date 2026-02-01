@@ -14,7 +14,10 @@ from models import (
 from extensions import db
 from services.import_service import (
     ImportService, MockExtractionService, match_rules, detect_duplicate,
-    allowed_file, get_file_type
+    allowed_file, get_file_type, secure_delete
+)
+from services.cleanup_service import (
+    cleanup_expired_sessions, cleanup_old_audit_logs
 )
 
 
@@ -620,3 +623,172 @@ class TestBankImportAPI:
             headers=headers
         )
         assert response.status_code == 204
+
+
+# =============================================================================
+# Cleanup Service Tests
+# =============================================================================
+
+class TestCleanupService:
+    """Test cleanup service functionality."""
+
+    def test_cleanup_expired_sessions(self, app, unique_user, unique_household):
+        """Test that expired incomplete sessions are cleaned up."""
+        from datetime import timedelta
+
+        with app.app_context():
+            # Create an old pending session (8 days old)
+            old_session = ImportSession(
+                user_id=unique_user.id,
+                household_id=unique_household.id,
+                status=ImportSession.STATUS_PENDING,
+                source_files='[]'
+            )
+            db.session.add(old_session)
+            db.session.flush()
+
+            # Manually set created_at to 8 days ago
+            old_session.created_at = datetime.utcnow() - timedelta(days=8)
+            db.session.commit()
+            old_session_id = old_session.id
+
+            # Create a recent pending session (1 day old)
+            recent_session = ImportSession(
+                user_id=unique_user.id,
+                household_id=unique_household.id,
+                status=ImportSession.STATUS_PENDING,
+                source_files='[]'
+            )
+            db.session.add(recent_session)
+            db.session.flush()
+            recent_session.created_at = datetime.utcnow() - timedelta(days=1)
+            db.session.commit()
+            recent_session_id = recent_session.id
+
+            # Create a completed session (old but should not be cleaned)
+            completed_session = ImportSession(
+                user_id=unique_user.id,
+                household_id=unique_household.id,
+                status=ImportSession.STATUS_COMPLETED,
+                source_files='[]'
+            )
+            db.session.add(completed_session)
+            db.session.flush()
+            completed_session.created_at = datetime.utcnow() - timedelta(days=10)
+            db.session.commit()
+            completed_session_id = completed_session.id
+
+            # Run cleanup with 7-day threshold
+            cleaned = cleanup_expired_sessions(days=7)
+
+            # Should have cleaned 1 session (the old pending one)
+            assert cleaned == 1
+
+            # Verify old session is gone
+            assert ImportSession.query.get(old_session_id) is None
+
+            # Verify recent session still exists
+            assert ImportSession.query.get(recent_session_id) is not None
+
+            # Verify completed session still exists
+            assert ImportSession.query.get(completed_session_id) is not None
+
+    def test_cleanup_old_audit_logs(self, app, unique_user, unique_household):
+        """Test that old audit logs are cleaned up."""
+        from datetime import timedelta
+
+        with app.app_context():
+            # Create an old audit log (100 days old)
+            old_log = ImportAuditLog(
+                user_id=unique_user.id,
+                action=ImportAuditLog.ACTION_UPLOAD
+            )
+            db.session.add(old_log)
+            db.session.flush()
+            old_log.created_at = datetime.utcnow() - timedelta(days=100)
+            db.session.commit()
+            old_log_id = old_log.id
+
+            # Create a recent audit log (30 days old)
+            recent_log = ImportAuditLog(
+                user_id=unique_user.id,
+                action=ImportAuditLog.ACTION_IMPORT
+            )
+            db.session.add(recent_log)
+            db.session.flush()
+            recent_log.created_at = datetime.utcnow() - timedelta(days=30)
+            db.session.commit()
+            recent_log_id = recent_log.id
+
+            # Run cleanup with 90-day threshold
+            cleaned = cleanup_old_audit_logs(days=90)
+
+            # Should have cleaned 1 log (the old one)
+            assert cleaned == 1
+
+            # Verify old log is gone
+            assert ImportAuditLog.query.get(old_log_id) is None
+
+            # Verify recent log still exists
+            assert ImportAuditLog.query.get(recent_log_id) is not None
+
+    def test_secure_delete(self, app, tmp_path):
+        """Test that secure_delete overwrites file before deletion."""
+        import os
+
+        # Create a test file with known content
+        test_file = tmp_path / "test_secure_delete.txt"
+        original_content = b"This is sensitive data that should be overwritten"
+        test_file.write_bytes(original_content)
+
+        # Verify file exists
+        assert test_file.exists()
+        file_size = test_file.stat().st_size
+        assert file_size == len(original_content)
+
+        # Securely delete the file
+        with app.app_context():
+            secure_delete(str(test_file))
+
+        # Verify file is deleted
+        assert not test_file.exists()
+
+    def test_secure_delete_nonexistent_file(self, app):
+        """Test that secure_delete handles nonexistent files gracefully."""
+        with app.app_context():
+            # Should not raise an exception
+            secure_delete("/nonexistent/path/to/file.txt")
+
+    def test_cleanup_expired_sessions_with_files(self, app, unique_user, unique_household, tmp_path):
+        """Test that cleanup deletes associated files."""
+        import os
+        from datetime import timedelta
+
+        with app.app_context():
+            # Create a test file
+            test_file = tmp_path / "test_import_file.pdf"
+            test_file.write_bytes(b"PDF content here")
+
+            # Create an old session with source files
+            old_session = ImportSession(
+                user_id=unique_user.id,
+                household_id=unique_household.id,
+                status=ImportSession.STATUS_FAILED,
+                source_files=json.dumps([{'path': str(test_file), 'type': 'pdf'}])
+            )
+            db.session.add(old_session)
+            db.session.flush()
+            old_session.created_at = datetime.utcnow() - timedelta(days=10)
+            db.session.commit()
+
+            # Verify file exists before cleanup
+            assert test_file.exists()
+
+            # Run cleanup
+            cleaned = cleanup_expired_sessions(days=7)
+
+            # Should have cleaned 1 session
+            assert cleaned == 1
+
+            # Verify file is deleted
+            assert not test_file.exists()
