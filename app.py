@@ -3,6 +3,7 @@ Main Flask application for household expense tracker.
 """
 import os
 import logging
+import click
 from flask import Flask, request, redirect
 
 from extensions import db, csrf, limiter, login_manager, migrate
@@ -206,6 +207,49 @@ def verify_schema_completeness():
 init_db()
 
 
+# ============================================================================
+# Background Scheduler for Cleanup Tasks
+# ============================================================================
+
+def init_scheduler():
+    """Initialize APScheduler for background cleanup tasks.
+
+    Only runs in production mode to avoid duplicate jobs during development.
+    Passes the app explicitly to ensure proper Flask context in background threads.
+    """
+    if app.debug or os.environ.get('FLASK_ENV') == 'testing':
+        logger.info("Scheduler disabled in debug/testing mode")
+        return None
+
+    try:
+        from apscheduler.schedulers.background import BackgroundScheduler
+        from services.cleanup_service import run_cleanup_with_app
+
+        scheduler = BackgroundScheduler()
+
+        # Run cleanup at 2 AM UTC daily
+        # Pass app explicitly to ensure proper context in background thread
+        scheduler.add_job(
+            func=lambda: run_cleanup_with_app(app, run_all=True),
+            trigger='cron',
+            hour=2,
+            minute=0,
+            id='daily_cleanup',
+            replace_existing=True
+        )
+
+        scheduler.start()
+        logger.info("Background scheduler started for cleanup tasks")
+        return scheduler
+    except Exception as e:
+        logger.warning(f"Failed to initialize scheduler: {e}")
+        return None
+
+
+# Initialize scheduler in production
+_scheduler = init_scheduler()
+
+
 # Context processor to make current_household available in all templates
 @app.context_processor
 def inject_current_household():
@@ -218,6 +262,46 @@ def init_db():
     """Initialize the database."""
     db.create_all()
     print('Database initialized!')
+
+
+@app.cli.command('cleanup')
+@click.option('--sessions', default=0, type=click.IntRange(0, 365),
+              help='Days after which to cleanup expired sessions (0 to skip, max 365)')
+@click.option('--audit-logs', default=0, type=click.IntRange(0, 730),
+              help='Days after which to cleanup old audit logs (0 to skip, max 730)')
+@click.option('--all', 'run_all', is_flag=True, help='Run all cleanup tasks with default settings')
+def cleanup_command(sessions, audit_logs, run_all):
+    """Run cleanup tasks for expired import sessions and old audit logs.
+
+    Examples:
+        flask cleanup --all                  # Run all cleanup with defaults
+        flask cleanup --sessions 7           # Cleanup sessions older than 7 days
+        flask cleanup --audit-logs 90        # Cleanup audit logs older than 90 days
+        flask cleanup --sessions 7 --audit-logs 90  # Run both
+    """
+    from services.cleanup_service import cleanup_expired_sessions, cleanup_old_audit_logs
+
+    if not run_all and sessions == 0 and audit_logs == 0:
+        print("No cleanup task specified. Use --all or specify --sessions/--audit-logs.")
+        print("Run 'flask cleanup --help' for more information.")
+        return
+
+    total_sessions = 0
+    total_logs = 0
+
+    if run_all or sessions > 0:
+        days = sessions if sessions > 0 else 7
+        print(f"Cleaning up import sessions older than {days} days...")
+        total_sessions = cleanup_expired_sessions(days=days)
+        print(f"  Cleaned up {total_sessions} expired sessions")
+
+    if run_all or audit_logs > 0:
+        days = audit_logs if audit_logs > 0 else 90
+        print(f"Cleaning up audit logs older than {days} days...")
+        total_logs = cleanup_old_audit_logs(days=days)
+        print(f"  Cleaned up {total_logs} old audit logs")
+
+    print(f"\nCleanup complete: {total_sessions} sessions, {total_logs} audit logs")
 
 
 if __name__ == '__main__':

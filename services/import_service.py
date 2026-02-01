@@ -4,6 +4,10 @@ Bank Import Service - handles file storage, extraction, and import logic.
 import os
 import uuid
 import json
+import base64
+import time
+import logging
+import re
 from datetime import datetime, timedelta
 from decimal import Decimal
 from abc import ABC, abstractmethod
@@ -16,6 +20,8 @@ from models import (
     ImportSession, ExtractedTransaction, ImportSettings, ImportAuditLog,
     Transaction, AutoCategoryRule, ExpenseType
 )
+
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -112,7 +118,13 @@ def generate_secure_filename(original_filename, session_id):
 
 
 def secure_delete(file_path):
-    """Securely delete a file by overwriting with random data before removal."""
+    """Securely delete a file by overwriting with random data before removal.
+
+    Note: This provides defense-in-depth but is NOT cryptographically secure
+    erasure on modern filesystems. Journaling, copy-on-write (ZFS, APFS), and
+    SSD wear-leveling may retain original data. For sensitive data, use
+    filesystem-level encryption (e.g., LUKS, FileVault).
+    """
     if not os.path.exists(file_path):
         return
 
@@ -153,6 +165,11 @@ def delete_session_files(session):
 # =============================================================================
 # Extraction Service Interface
 # =============================================================================
+
+class ExtractionError(Exception):
+    """Raised when document extraction fails."""
+    pass
+
 
 class ExtractionService(ABC):
     """Abstract base class for document extraction services."""
@@ -230,23 +247,349 @@ class MockExtractionService(ExtractionService):
 
 
 class GPT4VExtractionService(ExtractionService):
-    """GPT-4V based extraction service."""
+    """GPT-4V based extraction service for bank statement extraction."""
+
+    # Prompt for GPT-4V to extract transactions
+    EXTRACTION_PROMPT = """Analyze this bank statement image and extract all transactions.
+
+For each transaction, extract:
+- merchant: The merchant/payee name (clean up abbreviated names if possible)
+- amount: The transaction amount as a positive number (ignore signs)
+- currency: Currency code (USD, CAD, etc.) - default to USD if not visible
+- date: Transaction date in YYYY-MM-DD format
+- confidence: Your confidence in the extraction (0.0 to 1.0)
+
+Return a JSON array of transactions. Example format:
+[
+  {"merchant": "Whole Foods Market", "amount": 85.43, "currency": "USD", "date": "2024-01-15", "confidence": 0.95},
+  {"merchant": "Amazon.com", "amount": 29.99, "currency": "USD", "date": "2024-01-14", "confidence": 0.92}
+]
+
+Important:
+- Extract ALL visible transactions
+- For unclear text, provide lower confidence (0.5-0.7)
+- Ignore balance information, only extract transactions
+- If you cannot extract any transactions, return an empty array []
+- Only return the JSON array, no other text"""
+
+    # Maximum retries for API calls
+    MAX_RETRIES = 3
+    # Base delay for exponential backoff (seconds)
+    BASE_DELAY = 1.0
 
     def __init__(self, api_key=None):
         self.api_key = api_key or os.environ.get('OPENAI_API_KEY')
+        # Basic format validation - OpenAI keys typically start with 'sk-'
+        if self.api_key and not self.api_key.startswith('sk-'):
+            logger.warning(
+                "OpenAI API key does not match expected format (should start with 'sk-')"
+            )
+        self._client = None
+
+    @property
+    def client(self):
+        """Lazy initialization of OpenAI client."""
+        if self._client is None and self.api_key:
+            try:
+                from openai import OpenAI
+                self._client = OpenAI(api_key=self.api_key)
+            except ImportError:
+                logger.error("OpenAI package not installed")
+                return None
+        return self._client
 
     def extract(self, file_path, file_type):
         """Extract transactions using GPT-4V.
 
-        For now, falls back to mock service if API not configured.
+        Args:
+            file_path: Path to the file (PDF or image)
+            file_type: 'pdf' or 'image'
+
+        Returns:
+            List of transaction dicts with keys:
+            merchant, amount, currency, date, raw_text, confidence
         """
         if not self.api_key:
-            current_app.logger.warning("OpenAI API key not configured, using mock extraction")
-            return MockExtractionService().extract(file_path, file_type)
+            logger.error("OpenAI API key not configured for GPT-4V extraction")
+            raise ExtractionError(
+                "OpenAI API key not configured. Please enter transactions manually."
+            )
 
-        # TODO: Implement actual GPT-4V extraction
-        # For now, use mock
-        return MockExtractionService().extract(file_path, file_type)
+        if not self.client:
+            logger.error("Failed to initialize OpenAI client")
+            raise ExtractionError(
+                "Failed to initialize AI service. Please enter transactions manually."
+            )
+
+        # Convert file to images
+        images = self._prepare_images(file_path, file_type)
+        if not images:
+            logger.error("Failed to prepare images for extraction")
+            raise ExtractionError(
+                "Failed to process document. Please enter transactions manually."
+            )
+
+        try:
+            # Extract transactions from each image
+            all_transactions = []
+            for image_data in images:
+                transactions = self._extract_from_image(image_data)
+                all_transactions.extend(transactions)
+
+            logger.info(f"Extracted {len(all_transactions)} transactions via GPT-4V")
+            return all_transactions
+
+        except Exception as e:
+            logger.error(f"GPT-4V extraction failed: {e}")
+            raise ExtractionError(
+                "AI extraction temporarily unavailable. Please enter transactions manually."
+            )
+
+    def _prepare_images(self, file_path, file_type):
+        """Convert file to base64-encoded images.
+
+        Args:
+            file_path: Path to the file
+            file_type: 'pdf' or 'image'
+
+        Returns:
+            List of base64-encoded image strings
+        """
+        try:
+            if file_type == 'pdf':
+                return self._pdf_to_images(file_path)
+            else:
+                return [self._image_to_base64(file_path)]
+        except Exception as e:
+            logger.error(f"Failed to prepare images: {e}")
+            return []
+
+    def _pdf_to_images(self, pdf_path):
+        """Convert PDF pages to base64-encoded images.
+
+        Args:
+            pdf_path: Path to PDF file
+
+        Returns:
+            List of base64-encoded image strings
+        """
+        try:
+            from pdf2image import convert_from_path
+            import io
+
+            # Convert PDF to images with DoS protections:
+            # - Limit to first 10 pages
+            # - Limit output size to max 2000px width (prevents memory exhaustion)
+            images = convert_from_path(
+                pdf_path, dpi=150, first_page=1, last_page=10, size=(2000, None)
+            )
+
+            base64_images = []
+            for img in images:
+                # Convert to JPEG for smaller size
+                buffer = io.BytesIO()
+                img.save(buffer, format='JPEG', quality=85)
+                buffer.seek(0)
+                base64_data = base64.b64encode(buffer.read()).decode('utf-8')
+                base64_images.append(f"data:image/jpeg;base64,{base64_data}")
+
+            return base64_images
+
+        except ImportError:
+            logger.error("pdf2image not installed, cannot process PDFs")
+            return []
+        except Exception as e:
+            logger.error(f"Failed to convert PDF to images: {e}")
+            return []
+
+    def _image_to_base64(self, image_path):
+        """Convert image file to base64-encoded string.
+
+        Args:
+            image_path: Path to image file
+
+        Returns:
+            Base64-encoded image string with data URI prefix
+        """
+        try:
+            from PIL import Image
+            import io
+
+            # Open and potentially resize large images
+            with Image.open(image_path) as img:
+                # Convert HEIC or other formats to RGB
+                if img.mode in ('RGBA', 'P'):
+                    img = img.convert('RGB')
+
+                # Resize if too large (max 2000px on longest side)
+                max_size = 2000
+                if max(img.size) > max_size:
+                    ratio = max_size / max(img.size)
+                    new_size = (int(img.size[0] * ratio), int(img.size[1] * ratio))
+                    img = img.resize(new_size, Image.Resampling.LANCZOS)
+
+                # Convert to JPEG
+                buffer = io.BytesIO()
+                img.save(buffer, format='JPEG', quality=85)
+                buffer.seek(0)
+                base64_data = base64.b64encode(buffer.read()).decode('utf-8')
+                return f"data:image/jpeg;base64,{base64_data}"
+
+        except Exception as e:
+            logger.error(f"Failed to convert image to base64: {e}")
+            return None
+
+    def _extract_from_image(self, image_data):
+        """Extract transactions from a single image using GPT-4V.
+
+        Args:
+            image_data: Base64-encoded image string with data URI
+
+        Returns:
+            List of transaction dicts
+        """
+        for attempt in range(self.MAX_RETRIES):
+            try:
+                response = self.client.chat.completions.create(
+                    model="gpt-4o",  # gpt-4o has vision capabilities
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": self.EXTRACTION_PROMPT},
+                                {
+                                    "type": "image_url",
+                                    "image_url": {"url": image_data}
+                                }
+                            ]
+                        }
+                    ],
+                    max_tokens=4096,
+                    temperature=0.1  # Low temperature for consistent extraction
+                )
+
+                # Parse the response
+                content = response.choices[0].message.content
+                return self._parse_response(content)
+
+            except Exception as e:
+                delay = self.BASE_DELAY * (2 ** attempt)
+                # Log only exception type to avoid leaking sensitive API details
+                # Full exception may contain API keys or sensitive error info
+                logger.warning(
+                    f"GPT-4V API call failed (attempt {attempt + 1}/{self.MAX_RETRIES}): "
+                    f"{type(e).__name__}"
+                )
+                if attempt < self.MAX_RETRIES - 1:
+                    logger.info(f"Retrying in {delay} seconds...")
+                    time.sleep(delay)
+                else:
+                    logger.error("All retry attempts exhausted")
+                    raise
+
+        return []
+
+    def _parse_response(self, content):
+        """Parse GPT-4V response into transaction list.
+
+        Args:
+            content: Raw response content from GPT-4V
+
+        Returns:
+            List of normalized transaction dicts
+        """
+        try:
+            # Try to extract JSON from the response
+            # Sometimes GPT wraps JSON in markdown code blocks
+            json_match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', content)
+            if json_match:
+                json_str = json_match.group(1)
+            else:
+                # Try to find JSON array directly (non-greedy to prevent ReDoS)
+                json_match = re.search(r'\[[\s\S]*?\]', content)
+                if json_match:
+                    json_str = json_match.group(0)
+                else:
+                    logger.warning("No JSON array found in GPT-4V response")
+                    return []
+
+            transactions = json.loads(json_str)
+
+            # Normalize and validate each transaction
+            normalized = []
+            for txn in transactions:
+                try:
+                    normalized.append(self._normalize_transaction(txn))
+                except (ValueError, KeyError) as e:
+                    logger.warning(f"Skipping invalid transaction: {e}")
+                    continue
+
+            return normalized
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON response: {e}")
+            return []
+
+    def _normalize_transaction(self, txn):
+        """Normalize a transaction dict to standard format.
+
+        Args:
+            txn: Raw transaction dict from GPT-4V
+
+        Returns:
+            Normalized transaction dict
+
+        Raises:
+            ValueError: If required fields are missing or invalid
+        """
+        # Required fields
+        merchant = txn.get('merchant', '').strip()
+        if not merchant:
+            raise ValueError("Missing merchant")
+
+        amount = txn.get('amount')
+        if amount is None:
+            raise ValueError("Missing amount")
+        amount = abs(float(amount))  # Ensure positive
+
+        # Parse date
+        date_str = txn.get('date', '')
+        try:
+            if isinstance(date_str, str):
+                # Try various date formats
+                for fmt in ['%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y', '%Y/%m/%d']:
+                    try:
+                        date = datetime.strptime(date_str, fmt).date()
+                        break
+                    except ValueError:
+                        continue
+                else:
+                    # Default to today if parsing fails
+                    date = datetime.now().date()
+            else:
+                date = datetime.now().date()
+        except Exception:
+            date = datetime.now().date()
+
+        # Optional fields with defaults
+        currency = txn.get('currency', 'USD').upper()
+        if currency not in ['USD', 'CAD']:
+            currency = 'USD'
+
+        confidence = txn.get('confidence', 0.8)
+        confidence = max(0.0, min(1.0, float(confidence)))
+
+        # Build raw_text from available info
+        raw_text = f"{merchant} {amount}"
+
+        return {
+            'merchant': merchant,
+            'amount': amount,
+            'currency': currency,
+            'date': date,
+            'raw_text': raw_text,
+            'confidence': confidence
+        }
 
 
 def get_extraction_service():
