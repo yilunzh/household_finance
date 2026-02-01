@@ -7,7 +7,7 @@ struct ImportSession: Codable, Identifiable, Hashable {
     let householdId: Int
     let userId: Int
     let status: ImportStatus
-    let sourceFiles: [String]
+    let sourceFiles: [SourceFile]
     let errorMessage: String?
     let createdAt: String
     let processingStartedAt: String?
@@ -43,6 +43,20 @@ struct ImportSession: Codable, Identifiable, Hashable {
             case imported
             case skipped
         }
+    }
+}
+
+struct SourceFile: Codable, Hashable {
+    let path: String
+    let originalName: String?
+    let type: String
+    let size: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case path
+        case originalName = "original_name"
+        case type
+        case size
     }
 }
 
