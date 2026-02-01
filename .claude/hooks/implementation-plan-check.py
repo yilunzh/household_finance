@@ -3,10 +3,12 @@
 Check if implementation plan needs updating when working on features with ideation docs.
 
 Triggers:
-- Pre-commit: Advisory reminder if feature code changed but plan didn't
+- Pre-commit: Advisory reminder if code changed but no plan updated
 - Stop: Advisory reminder to update plan before ending session
 
 Advisory only - doesn't block commits.
+
+NOTE: Only applies to features that went through /ideate and have implementation plans.
 """
 import json
 import os
@@ -14,34 +16,17 @@ import subprocess
 from pathlib import Path
 
 
-def get_current_branch():
-    """Get the current git branch name."""
-    try:
-        result = subprocess.run(
-            ["git", "branch", "--show-current"],
-            capture_output=True,
-            text=True,
-            cwd=os.environ.get("CLAUDE_PROJECT_DIR", "."),
-        )
-        return result.stdout.strip()
-    except Exception:
-        return ""
+def get_all_ideation_features(project_dir):
+    """Get all features that have implementation plans in ideation folders."""
+    ideation_dir = Path(project_dir) / ".claude" / "ideation"
+    if not ideation_dir.exists():
+        return []
 
-
-def get_feature_name_from_branch(branch):
-    """Extract feature name from branch like 'feature/bank-import'."""
-    if branch.startswith("feature/"):
-        return branch.replace("feature/", "")
-    if branch.startswith("fix/"):
-        return branch.replace("fix/", "")
-    return None
-
-
-def has_ideation_folder(feature_name, project_dir):
-    """Check if feature has an ideation folder with implementation plan."""
-    ideation_path = Path(project_dir) / ".claude" / "ideation" / feature_name
-    plan_path = ideation_path / "implementation-plan.md"
-    return plan_path.exists()
+    features = []
+    for folder in ideation_dir.iterdir():
+        if folder.is_dir() and (folder / "implementation-plan.md").exists():
+            features.append(folder.name)
+    return features
 
 
 def get_staged_files():
@@ -77,75 +62,74 @@ def get_modified_files():
         return []
 
 
-def is_feature_code(file_path, feature_name):
-    """Check if file is related to the feature (not tests, not ideation docs)."""
-    # Skip ideation docs themselves
+def is_code_file(file_path):
+    """Check if file is a code file (not docs, not ideation)."""
+    # Skip ideation docs
     if ".claude/ideation" in file_path:
         return False
-    # Skip test files
-    if "test" in file_path.lower():
-        return False
-    # Skip docs
+    # Skip markdown docs (but not CLAUDE.md)
     if file_path.endswith(".md") and "CLAUDE" not in file_path:
         return False
 
-    # Check if file path contains feature name or is general code
-    feature_keywords = feature_name.replace("-", "_").split("_")
-
-    # For bank-import: check for bank, import in path
-    for keyword in feature_keywords:
-        if keyword in file_path.lower():
-            return True
-
-    # Also consider general code files that might be part of feature
-    code_extensions = [".py", ".swift", ".ts", ".js", ".yaml", ".yml"]
+    code_extensions = [".py", ".swift", ".ts", ".js", ".tsx", ".jsx", ".yaml", ".yml", ".json", ".html", ".css"]
     return any(file_path.endswith(ext) for ext in code_extensions)
 
 
-def check_implementation_plan_updated(feature_name, files):
-    """Check if implementation plan was updated along with feature code."""
-    plan_path = f".claude/ideation/{feature_name}/implementation-plan.md"
-
-    has_feature_code_changes = any(is_feature_code(f, feature_name) for f in files)
-    has_plan_changes = plan_path in files
-
-    return has_feature_code_changes, has_plan_changes
+def get_updated_plans(files):
+    """Get list of implementation plans that were updated."""
+    updated = []
+    for f in files:
+        if ".claude/ideation/" in f and "implementation-plan.md" in f:
+            # Extract feature name from path
+            parts = f.split("/")
+            try:
+                idx = parts.index("ideation")
+                if idx + 1 < len(parts):
+                    updated.append(parts[idx + 1])
+            except ValueError:
+                pass
+    return updated
 
 
 def main():
     project_dir = os.environ.get("CLAUDE_PROJECT_DIR", ".")
     hook_type = os.environ.get("CLAUDE_HOOK_TYPE", "")
 
-    branch = get_current_branch()
-    feature_name = get_feature_name_from_branch(branch)
+    # Get all features with implementation plans
+    features_with_plans = get_all_ideation_features(project_dir)
 
-    # Not on a feature branch
-    if not feature_name:
-        return {"continue": True}
-
-    # No ideation folder for this feature
-    if not has_ideation_folder(feature_name, project_dir):
+    if not features_with_plans:
         return {"continue": True}
 
     # Determine which files to check based on hook type
     if hook_type == "PreToolUse":
-        # Pre-commit: check staged files
         files = get_staged_files()
     else:
-        # Stop hook: check all modified files
         files = get_modified_files()
 
     if not files:
         return {"continue": True}
 
-    has_code_changes, has_plan_changes = check_implementation_plan_updated(feature_name, files)
+    # Check if any code files are being changed
+    has_code_changes = any(is_code_file(f) for f in files)
+    if not has_code_changes:
+        return {"continue": True}
 
-    if has_code_changes and not has_plan_changes:
-        plan_path = f".claude/ideation/{feature_name}/implementation-plan.md"
+    # Check which plans were updated
+    updated_plans = get_updated_plans(files)
+
+    # Find plans that weren't updated
+    plans_needing_update = [f for f in features_with_plans if f not in updated_plans]
+
+    if plans_needing_update:
+        plan_list = "\n".join(
+            f"  - .claude/ideation/{f}/implementation-plan.md"
+            for f in plans_needing_update
+        )
         return {
             "continue": True,  # Advisory - don't block
-            "message": f"Feature '{feature_name}' has an implementation plan. "
-                       f"Consider updating {plan_path} to reflect progress:\n"
+            "message": f"You have implementation plans that may need updating:\n{plan_list}\n\n"
+                       f"If this work relates to these features, consider:\n"
                        f"  - Mark completed stories with [x]\n"
                        f"  - Update Progress Summary table\n"
                        f"  - Update 'Last Updated' date"
