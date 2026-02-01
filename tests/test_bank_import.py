@@ -13,8 +13,8 @@ from models import (
 )
 from extensions import db
 from services.import_service import (
-    ImportService, MockExtractionService, match_rules, detect_duplicate,
-    allowed_file, get_file_type, secure_delete
+    ImportService, MockExtractionService, GPT4VExtractionService, ExtractionError,
+    match_rules, detect_duplicate, allowed_file, get_file_type, secure_delete
 )
 from services.cleanup_service import (
     cleanup_expired_sessions, cleanup_old_audit_logs
@@ -333,6 +333,39 @@ class TestMockExtractionService:
         assert all('amount' in t for t in transactions)
         assert all('date' in t for t in transactions)
         assert all('confidence' in t for t in transactions)
+
+
+class TestGPT4VExtractionService:
+    """Test GPT-4V extraction service explicit failure behavior."""
+
+    def test_extract_fails_without_api_key(self, monkeypatch):
+        """Test GPT-4V extraction raises ExtractionError when API key is missing."""
+        # Ensure no API key in environment
+        monkeypatch.delenv('OPENAI_API_KEY', raising=False)
+
+        # Create service without API key
+        service = GPT4VExtractionService(api_key=None)
+
+        with pytest.raises(ExtractionError) as exc_info:
+            service.extract('/tmp/test.pdf', 'pdf')
+
+        assert 'OpenAI API key not configured' in str(exc_info.value)
+        assert 'manually' in str(exc_info.value)
+
+    def test_extract_fails_with_invalid_client(self):
+        """Test GPT-4V extraction raises ExtractionError when client init fails."""
+        # Create service with a key so first check passes
+        service = GPT4VExtractionService(api_key='sk-test-key')
+
+        # Mock the client property to return None
+        original_client = GPT4VExtractionService.client
+        try:
+            GPT4VExtractionService.client = property(lambda self: None)
+            with pytest.raises(ExtractionError) as exc_info:
+                service.extract('/tmp/test.pdf', 'pdf')
+            assert 'Failed to initialize AI service' in str(exc_info.value)
+        finally:
+            GPT4VExtractionService.client = original_client
 
 
 # =============================================================================

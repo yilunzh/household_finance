@@ -166,6 +166,11 @@ def delete_session_files(session):
 # Extraction Service Interface
 # =============================================================================
 
+class ExtractionError(Exception):
+    """Raised when document extraction fails."""
+    pass
+
+
 class ExtractionService(ABC):
     """Abstract base class for document extraction services."""
 
@@ -305,20 +310,26 @@ Important:
             merchant, amount, currency, date, raw_text, confidence
         """
         if not self.api_key:
-            logger.warning("OpenAI API key not configured, using mock extraction")
-            return MockExtractionService().extract(file_path, file_type)
+            logger.error("OpenAI API key not configured for GPT-4V extraction")
+            raise ExtractionError(
+                "OpenAI API key not configured. Please enter transactions manually."
+            )
 
         if not self.client:
-            logger.error("Failed to initialize OpenAI client, using mock extraction")
-            return MockExtractionService().extract(file_path, file_type)
+            logger.error("Failed to initialize OpenAI client")
+            raise ExtractionError(
+                "Failed to initialize AI service. Please enter transactions manually."
+            )
+
+        # Convert file to images
+        images = self._prepare_images(file_path, file_type)
+        if not images:
+            logger.error(f"Failed to prepare images from {file_path}")
+            raise ExtractionError(
+                "Failed to process document. Please enter transactions manually."
+            )
 
         try:
-            # Convert file to images
-            images = self._prepare_images(file_path, file_type)
-            if not images:
-                logger.error(f"Failed to prepare images from {file_path}")
-                return MockExtractionService().extract(file_path, file_type)
-
             # Extract transactions from each image
             all_transactions = []
             for image_data in images:
@@ -329,8 +340,10 @@ Important:
             return all_transactions
 
         except Exception as e:
-            logger.error(f"GPT-4V extraction failed: {e}, falling back to mock")
-            return MockExtractionService().extract(file_path, file_type)
+            logger.error(f"GPT-4V extraction failed: {e}")
+            raise ExtractionError(
+                "AI extraction temporarily unavailable. Please enter transactions manually."
+            )
 
     def _prepare_images(self, file_path, file_type):
         """Convert file to base64-encoded images.
