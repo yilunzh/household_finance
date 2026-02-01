@@ -542,6 +542,7 @@ Custom hooks are in `.claude/hooks/`:
 - `session-handoff.py` - **Blocking**: Detects incomplete work via git/step count/todos
 - `spec-update-check.py` - Triggers SPEC.md updates on key phrases
 - `sync-structure.py` - Generates project tree for SPEC.md
+- `implementation-plan-check.py` - **Advisory**: Reminds to update implementation plan when feature code changes but plan doesn't (pre-commit + session end)
 
 ### Subagents
 Custom subagents are in `.claude/agents/`:
