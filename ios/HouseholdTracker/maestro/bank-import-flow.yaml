@@ -1,0 +1,70 @@
+appId: com.householdtracker.app
+---
+# Bank Import Flow Test
+# Tests the bank import feature navigation and UI
+
+# Start fresh with test mode auto-login
+- launchApp:
+    clearState: true
+    arguments:
+      MAESTRO_TEST: true
+
+# Test mode auto-login handles authentication
+# Wait for Transactions screen to appear
+- extendedWaitUntil:
+    visible: "Transactions"
+    timeout: 10000
+
+- takeScreenshot: bank-import-1-transactions
+
+# Navigate to Settings tab
+- tapOn:
+    text: "Settings"
+    retryTapIfNoChange: true
+
+# Wait for Settings screen
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 5000
+
+- takeScreenshot: bank-import-2-settings-top
+
+# Use swipe to scroll down (scrollUntilVisible doesn't work for this ScrollView)
+- swipe:
+    start: 50%, 70%
+    end: 50%, 30%
+
+- takeScreenshot: bank-import-3-settings-scrolled
+
+# Tap Bank Import
+- tapOn:
+    text: "Bank Import"
+    retryTapIfNoChange: true
+
+# Wait for Bank Import screen
+- extendedWaitUntil:
+    visible: "No Imports Yet"
+    timeout: 5000
+
+- takeScreenshot: bank-import-4-sessions-empty
+
+# Tap the add button (plus icon in nav bar)
+- tapOn:
+    id: "addImportButton"
+    retryTapIfNoChange: true
+
+# Wait for capture screen
+- extendedWaitUntil:
+    visible: "Add Statement"
+    timeout: 5000
+
+- takeScreenshot: bank-import-5-capture
+
+# Verify capture screen elements are present
+- assertVisible: "Import transactions from your bank"
+- assertVisible: "Drop files or tap to browse"
+- assertVisible: "Camera"
+- assertVisible: "Photos"
+- assertVisible: "Files"
+
+- takeScreenshot: bank-import-6-capture-complete

@@ -61,6 +61,7 @@ struct BankImportSessionsView: View {
                         Label("Import", systemImage: "plus")
                             .foregroundColor(.brandPrimary)
                     }
+                    .accessibilityIdentifier("addImportButton")
                 }
             }
             .sheet(isPresented: $showCapture) {
