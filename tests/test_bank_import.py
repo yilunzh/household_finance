@@ -734,8 +734,6 @@ class TestCleanupService:
 
     def test_secure_delete(self, app, tmp_path):
         """Test that secure_delete overwrites file before deletion."""
-        import os
-
         # Create a test file with known content
         test_file = tmp_path / "test_secure_delete.txt"
         original_content = b"This is sensitive data that should be overwritten"
@@ -761,7 +759,6 @@ class TestCleanupService:
 
     def test_cleanup_expired_sessions_with_files(self, app, unique_user, unique_household, tmp_path):
         """Test that cleanup deletes associated files."""
-        import os
         from datetime import timedelta
 
         with app.app_context():
