@@ -637,6 +637,17 @@ cd ios/HouseholdTracker
    - Do NOT install via `brew install maestro` (installs wrong app)
    - Use the curl command above for the mobile testing tool
 
+4. **`scrollUntilVisible` doesn't work for Settings ScrollView**
+   - `scrollUntilVisible` claims success but doesn't actually scroll
+   - **Solution**: Use direct `swipe` gestures instead:
+     ```yaml
+     # Instead of scrollUntilVisible, use swipe:
+     - swipe:
+         start: 50%, 70%
+         end: 50%, 30%
+     ```
+   - This applies to navigating to items in Settings like "Bank Import", "Log Out", etc.
+
 ### Debug Output
 
 Test artifacts (screenshots, logs) are saved to:
