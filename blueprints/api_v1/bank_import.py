@@ -16,14 +16,17 @@ Endpoints:
 - GET /api/v1/import/settings - Get user's import settings
 - PUT /api/v1/import/settings - Update import settings
 """
+import logging
 from concurrent.futures import ThreadPoolExecutor
 from flask import request, jsonify, g
 
-from extensions import db
+from extensions import db, limiter
 from models import ImportSession, ImportSettings, AutoCategoryRule, ExpenseType
 from api_decorators import jwt_required, api_household_required
 from services.import_service import ImportService
 from blueprints.api_v1 import api_v1_bp
+
+logger = logging.getLogger(__name__)
 
 # Thread pool for background processing
 executor = ThreadPoolExecutor(max_workers=2)
@@ -34,6 +37,7 @@ executor = ThreadPoolExecutor(max_workers=2)
 # =============================================================================
 
 @api_v1_bp.route('/import/sessions', methods=['POST'])
+@limiter.limit("10 per hour")
 @jwt_required
 @api_household_required
 def api_create_import_session():
@@ -82,7 +86,8 @@ def api_create_import_session():
     except ImportService.ValidationError as e:
         return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': f'Failed to create import session: {str(e)}'}), 500
+        logger.error(f'Failed to create import session: {str(e)}')
+        return jsonify({'error': 'Failed to create import session. Please try again.'}), 500
 
 
 @api_v1_bp.route('/import/sessions', methods=['GET'])
@@ -160,7 +165,8 @@ def api_delete_import_session(session_id):
     except ImportService.ValidationError as e:
         return jsonify({'error': str(e)}), 404
     except Exception as e:
-        return jsonify({'error': f'Failed to delete session: {str(e)}'}), 500
+        logger.error(f'Failed to delete session: {str(e)}')
+        return jsonify({'error': 'Failed to delete session. Please try again.'}), 500
 
 
 # =============================================================================
@@ -241,7 +247,8 @@ def api_update_session_transaction(session_id, transaction_id):
     except ImportService.ValidationError as e:
         return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': f'Failed to update transaction: {str(e)}'}), 500
+        logger.error(f'Failed to update transaction: {str(e)}')
+        return jsonify({'error': 'Failed to update transaction. Please try again.'}), 500
 
 
 @api_v1_bp.route('/import/sessions/<int:session_id>/import', methods=['POST'])
@@ -276,7 +283,8 @@ def api_import_session_transactions(session_id):
     except ImportService.ValidationError as e:
         return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': f'Failed to import transactions: {str(e)}'}), 500
+        logger.error(f'Failed to import transactions: {str(e)}')
+        return jsonify({'error': 'Failed to import transactions. Please try again.'}), 500
 
 
 # =============================================================================
@@ -328,6 +336,8 @@ def api_create_import_rule():
     # Validate required fields
     if not data.get('keyword'):
         return jsonify({'error': 'keyword is required'}), 400
+    if len(data['keyword'].strip()) > 200:
+        return jsonify({'error': 'keyword too long (max 200 characters)'}), 400
     if not data.get('expense_type_id'):
         return jsonify({'error': 'expense_type_id is required'}), 400
 

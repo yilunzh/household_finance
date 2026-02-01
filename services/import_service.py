@@ -59,6 +59,50 @@ def get_file_type(filename):
     return 'image'
 
 
+# Magic bytes for file type validation
+MAGIC_BYTES = {
+    'pdf': [b'%PDF'],
+    'jpg': [b'\xff\xd8\xff'],
+    'jpeg': [b'\xff\xd8\xff'],
+    'png': [b'\x89PNG\r\n\x1a\n'],
+    'heic': [b'ftypheic', b'ftypmif1', b'ftypmsf1', b'ftypheix'],
+}
+
+
+def validate_file_content(file, expected_ext):
+    """Validate file content matches expected type using magic bytes.
+
+    Args:
+        file: File object to validate
+        expected_ext: Expected file extension (pdf, jpg, png, etc.)
+
+    Returns:
+        True if valid, False otherwise
+    """
+    try:
+        file.seek(0)
+        header = file.read(12)  # Read first 12 bytes
+        file.seek(0)
+
+        if not header:
+            return False
+
+        expected_ext = expected_ext.lower()
+
+        # HEIC files have magic bytes at offset 4
+        if expected_ext == 'heic':
+            # Check bytes 4-12 for HEIC signatures
+            heic_header = header[4:12]
+            return any(sig in heic_header for sig in MAGIC_BYTES.get('heic', []))
+
+        # Check standard magic bytes at start of file
+        signatures = MAGIC_BYTES.get(expected_ext, [])
+        return any(header.startswith(sig) for sig in signatures)
+
+    except Exception:
+        return False
+
+
 def generate_secure_filename(original_filename, session_id):
     """Generate a secure unique filename."""
     ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else 'bin'
@@ -331,7 +375,10 @@ class ImportService:
             if not file or not file.filename:
                 continue
 
-            if not allowed_file(file.filename):
+            # Sanitize filename BEFORE validation to prevent path traversal
+            original_name = secure_filename(file.filename) if file.filename else ''
+
+            if not original_name or not allowed_file(original_name):
                 raise ImportService.ValidationError(
                     f"File type not allowed: {file.filename}. "
                     f"Allowed types: {', '.join(ALLOWED_EXTENSIONS)}"
@@ -353,10 +400,21 @@ class ImportService:
                     f"Total file size exceeds {MAX_SESSION_SIZE // (1024*1024)}MB limit"
                 )
 
+            # Validate file content matches extension (magic bytes check)
+            file_ext = original_name.rsplit('.', 1)[1].lower() if '.' in original_name else ''
+            if not validate_file_content(file, file_ext):
+                raise ImportService.ValidationError(
+                    f"File content does not match extension: {file.filename}"
+                )
+
             # Generate secure filename and save
-            original_name = secure_filename(file.filename)
             new_filename = generate_secure_filename(original_name, session.id)
             file_path = os.path.join(get_import_folder(), new_filename)
+
+            # Validate path doesn't escape import folder (defense in depth)
+            import_folder = os.path.abspath(get_import_folder())
+            if not os.path.abspath(file_path).startswith(import_folder):
+                raise ImportService.ValidationError("Invalid file path")
 
             file.save(file_path)
 
