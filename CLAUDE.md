@@ -154,6 +154,32 @@ What we're trying to accomplish
 
 See global `~/.claude/CLAUDE.md` for full context management details.
 
+### Implementation Plan Updates (Features with Ideation Docs)
+
+When working on features that have an implementation plan in `.claude/ideation/<feature>/implementation-plan.md`:
+
+**Update the plan when:**
+- Completing a story (mark checkboxes as done)
+- Completing an epic (update Progress Summary table)
+- Making scope changes (add notes)
+- At session end (update status and last modified date)
+
+**Format for story completion:**
+```markdown
+- [x] Acceptance criteria item (was [ ])
+**Status:** ✅ DONE
+```
+
+**Keep Progress Summary current:**
+```markdown
+| Epic | Status | Notes |
+|------|--------|-------|
+| E1: Backend | ✅ DONE | All models and APIs |
+| E2: AI | ⏳ PARTIAL | Mock only, GPT-4V pending |
+```
+
+This ensures implementation plans serve as living documentation, not stale specs.
+
 ### Major Feature Workflow
 
 For features involving new functionality + UI changes:
