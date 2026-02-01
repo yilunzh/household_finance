@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BankImportSessionsView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(AuthManager.self) private var authManager
     @State private var viewModel = BankImportViewModel()
     @State private var showCapture = false
     @State private var selectedSession: ImportSession?
@@ -74,6 +75,10 @@ struct BankImportSessionsView: View {
                 BankImportSelectView(viewModel: viewModel, sessionId: session.id)
             }
             .task {
+                // Set household context before any API calls
+                if let householdId = authManager.currentHouseholdId {
+                    await NetworkManager.shared.setHouseholdId(householdId)
+                }
                 await viewModel.loadSessions()
                 startPollingIfNeeded()
             }
