@@ -8,124 +8,35 @@ struct BankImportCaptureView: View {
     @Bindable var viewModel: BankImportViewModel
     var onSessionCreated: ((ImportSession) -> Void)?
 
-    @State private var showImagePicker = false
-    @State private var showFilePicker = false
     @State private var showCamera = false
+    @State private var isDragging = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: Spacing.xl) {
-                    // Header illustration
-                    VStack(spacing: Spacing.md) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.terracotta100)
-                                .frame(width: 120, height: 120)
+                    // Hero Section
+                    heroSection
 
-                            CatIcon(name: .sparkle, size: .xl, color: .terracotta500)
-                        }
+                    // Drop Zone
+                    dropZone
 
-                        Text("Import Bank Statement")
-                            .font(.displayMedium)
-                            .foregroundColor(textColor)
+                    // Action Buttons Row
+                    actionButtons
 
-                        Text("Upload photos or PDFs of your bank statements and we'll extract the transactions automatically.")
-                            .font(.bodyMedium)
-                            .foregroundColor(.textSecondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, Spacing.lg)
-                    }
-                    .padding(.top, Spacing.lg)
-
-                    // Upload options
-                    VStack(spacing: Spacing.md) {
-                        // Camera option
-                        UploadOptionCard(
-                            icon: .happy,
-                            title: "Take Photo",
-                            description: "Use your camera to capture a statement",
-                            action: { showCamera = true }
-                        )
-
-                        // Photo Library option
-                        PhotosPicker(
-                            selection: $viewModel.selectedPhotos,
-                            maxSelectionCount: 10,
-                            matching: .images
-                        ) {
-                            UploadOptionCardContent(
-                                icon: .clipboard,
-                                title: "Photo Library",
-                                description: "Select photos from your library"
-                            )
-                        }
-                        .buttonStyle(.plain)
-
-                        // Files option
-                        UploadOptionCard(
-                            icon: .folder,
-                            title: "Choose File",
-                            description: "Select PDF or image files",
-                            action: { showFilePicker = true }
-                        )
-                    }
-                    .padding(.horizontal, Spacing.md)
-
-                    // Selected files preview
-                    if !viewModel.selectedPhotos.isEmpty || !viewModel.selectedFiles.isEmpty {
-                        VStack(alignment: .leading, spacing: Spacing.sm) {
-                            Text("Selected Files")
-                                .font(.labelLarge)
-                                .foregroundColor(textColor)
-                                .padding(.horizontal, Spacing.md)
-
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: Spacing.sm) {
-                                    ForEach(0..<viewModel.selectedPhotos.count, id: \.self) { index in
-                                        SelectedFileChip(
-                                            name: "Photo \(index + 1)",
-                                            onRemove: {
-                                                viewModel.selectedPhotos.remove(at: index)
-                                            }
-                                        )
-                                    }
-
-                                    ForEach(viewModel.selectedFiles, id: \.absoluteString) { url in
-                                        SelectedFileChip(
-                                            name: url.lastPathComponent,
-                                            onRemove: {
-                                                viewModel.selectedFiles.removeAll { $0 == url }
-                                            }
-                                        )
-                                    }
-                                }
-                                .padding(.horizontal, Spacing.md)
-                            }
-                        }
-
-                        // Upload button
-                        PrimaryButton(
-                            title: viewModel.isUploading ? "Uploading..." : "Start Import",
-                            icon: .sparkle,
-                            action: {
-                                Task {
-                                    if let session = await viewModel.uploadFiles() {
-                                        HapticManager.success()
-                                        onSessionCreated?(session)
-                                        dismiss()
-                                    } else {
-                                        HapticManager.error()
-                                    }
-                                }
-                            },
-                            isLoading: viewModel.isUploading,
-                            isDisabled: viewModel.isUploading
-                        )
-                        .padding(.horizontal, Spacing.md)
+                    // Selected Files
+                    if hasSelectedFiles {
+                        selectedFilesSection
                     }
 
                     Spacer(minLength: Spacing.xxl)
+                }
+                .padding(.horizontal, Spacing.md)
+                .padding(.top, Spacing.lg)
+            }
+            .safeAreaInset(edge: .bottom) {
+                if hasSelectedFiles {
+                    bottomAction
                 }
             }
             .background(backgroundColor.ignoresSafeArea())
@@ -141,26 +52,9 @@ struct BankImportCaptureView: View {
             }
             .sheet(isPresented: $showCamera) {
                 CameraView(onCapture: { image in
-                    if let data = image.jpegData(compressionQuality: 0.8) {
-                        // Convert to PhotosPickerItem workaround: save to temp and load
-                        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("capture_\(Date().timeIntervalSince1970).jpg")
-                        try? data.write(to: tempURL)
-                        viewModel.selectedFiles.append(tempURL)
-                    }
+                    handleCapturedImage(image)
                     showCamera = false
                 })
-            }
-            .fileImporter(
-                isPresented: $showFilePicker,
-                allowedContentTypes: [.pdf, .image],
-                allowsMultipleSelection: true
-            ) { result in
-                switch result {
-                case .success(let urls):
-                    viewModel.selectedFiles.append(contentsOf: urls)
-                case .failure(let error):
-                    viewModel.error = error.localizedDescription
-                }
             }
             .alert("Error", isPresented: .init(
                 get: { viewModel.error != nil },
@@ -173,67 +67,255 @@ struct BankImportCaptureView: View {
         }
     }
 
-    private var textColor: Color {
-        colorScheme == .dark ? .textPrimaryDark : .textPrimary
+    // MARK: - Hero Section
+
+    private var heroSection: some View {
+        VStack(spacing: Spacing.md) {
+            // Animated Icon
+            ZStack {
+                // Background glow
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color.terracotta100, Color.terracotta50.opacity(0)],
+                            center: .center,
+                            startRadius: 20,
+                            endRadius: 50
+                        )
+                    )
+                    .frame(width: 100, height: 100)
+
+                // Icon container
+                ZStack {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.terracotta100, Color.terracotta200],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 72, height: 72)
+
+                    CatIcon(name: .sparkle, size: .xl, color: .terracotta600)
+                }
+            }
+
+            Text("Add Statement")
+                .font(.displayMedium)
+                .foregroundColor(textColor)
+
+            Text("Import transactions from your bank")
+                .font(.bodyMedium)
+                .foregroundColor(.textSecondary)
+        }
     }
 
-    private var backgroundColor: Color {
-        colorScheme == .dark ? .backgroundPrimaryDark : .backgroundPrimary
-    }
-}
+    // MARK: - Drop Zone
 
-// MARK: - Upload Option Card
+    private var dropZone: some View {
+        PhotosPicker(
+            selection: $viewModel.selectedPhotos,
+            maxSelectionCount: 10,
+            matching: .images
+        ) {
+            VStack(spacing: Spacing.md) {
+                // Paper Illustration
+                paperIllustration
+                    .padding(.bottom, Spacing.xs)
 
-struct UploadOptionCard: View {
-    let icon: CatIcon.Name
-    let title: String
-    let description: String
-    let action: () -> Void
+                Text("Drop files or tap to browse")
+                    .font(.labelLarge)
+                    .foregroundColor(.warm700)
 
-    var body: some View {
-        Button(action: action) {
-            UploadOptionCardContent(icon: icon, title: title, description: description)
+                Text("PDF, PNG, or JPG")
+                    .font(.labelSmall)
+                    .foregroundColor(.warm400)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: 180)
+            .background(cardBackground)
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.xl)
+                    .strokeBorder(
+                        isDragging ? Color.terracotta400 : Color.warm200,
+                        style: StrokeStyle(lineWidth: 2, dash: [8, 4])
+                    )
+            )
+            .cornerRadius(CornerRadius.xl)
         }
         .buttonStyle(.plain)
     }
-}
 
-struct UploadOptionCardContent: View {
-    let icon: CatIcon.Name
-    let title: String
-    let description: String
-    @Environment(\.colorScheme) private var colorScheme
+    private var paperIllustration: some View {
+        ZStack {
+            // Left paper
+            PaperShape(amount: "$247")
+                .rotationEffect(.degrees(-6))
+                .offset(x: -20)
 
-    var body: some View {
-        HStack(spacing: Spacing.md) {
-            ZStack {
-                Circle()
-                    .fill(Color.terracotta100)
-                    .frame(width: 48, height: 48)
+            // Right paper
+            PaperShape(amount: "$89")
+                .rotationEffect(.degrees(4))
+                .offset(x: 20)
+        }
+        .frame(width: 100, height: 72)
+    }
 
-                CatIcon(name: icon, size: .md, color: .terracotta500)
+    // MARK: - Action Buttons
+
+    private var actionButtons: some View {
+        HStack(spacing: Spacing.sm) {
+            // Camera
+            CaptureActionButton(
+                icon: "camera.fill",
+                label: "Camera",
+                backgroundColor: .sage100,
+                iconColor: .sage600
+            ) {
+                showCamera = true
             }
 
-            VStack(alignment: .leading, spacing: Spacing.xxxs) {
-                Text(title)
+            // Photos
+            PhotosPicker(
+                selection: $viewModel.selectedPhotos,
+                maxSelectionCount: 10,
+                matching: .images
+            ) {
+                CaptureActionButtonContent(
+                    icon: "photo.fill",
+                    label: "Photos",
+                    backgroundColor: .terracotta100,
+                    iconColor: .terracotta600
+                )
+            }
+            .buttonStyle(.plain)
+
+            // Files
+            FilesButton(viewModel: viewModel)
+        }
+    }
+
+    // MARK: - Selected Files Section
+
+    @ViewBuilder
+    private var selectedFilesSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack {
+                Text("Ready to import")
                     .font(.labelLarge)
                     .foregroundColor(textColor)
 
-                Text(description)
-                    .font(.bodySmall)
-                    .foregroundColor(.textSecondary)
+                Spacer()
+
+                Text("\(totalFileCount)")
+                    .font(.labelMedium)
+                    .fontWeight(.bold)
+                    .foregroundColor(.warm600)
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, Spacing.xxs)
+                    .background(Color.warm100)
+                    .cornerRadius(CornerRadius.full)
             }
 
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundColor(.textTertiary)
+            VStack(spacing: 0) {
+                ForEach(Array(allSelectedFiles.enumerated()), id: \.element.id) { index, file in
+                    FileRow(
+                        name: file.name,
+                        type: file.type,
+                        isLast: index == allSelectedFiles.count - 1
+                    ) {
+                        removeFile(file)
+                    }
+                }
+            }
+            .background(cardBackground)
+            .cornerRadius(CornerRadius.large)
+            .subtleShadow()
         }
-        .padding(Spacing.md)
+    }
+
+    private struct SelectedFile: Identifiable {
+        let id: String
+        let name: String
+        let type: FileRow.FileType
+        let isPhoto: Bool
+        let photoIndex: Int?
+        let fileURL: URL?
+    }
+
+    private var allSelectedFiles: [SelectedFile] {
+        var files: [SelectedFile] = []
+
+        for (index, _) in viewModel.selectedPhotos.enumerated() {
+            files.append(SelectedFile(
+                id: "photo_\(index)",
+                name: "Photo \(index + 1)",
+                type: .image,
+                isPhoto: true,
+                photoIndex: index,
+                fileURL: nil
+            ))
+        }
+
+        for url in viewModel.selectedFiles {
+            files.append(SelectedFile(
+                id: url.absoluteString,
+                name: url.lastPathComponent,
+                type: url.pathExtension.lowercased() == "pdf" ? .pdf : .image,
+                isPhoto: false,
+                photoIndex: nil,
+                fileURL: url
+            ))
+        }
+
+        return files
+    }
+
+    private func removeFile(_ file: SelectedFile) {
+        if file.isPhoto, let index = file.photoIndex, index < viewModel.selectedPhotos.count {
+            viewModel.selectedPhotos.remove(at: index)
+        } else if let url = file.fileURL {
+            viewModel.selectedFiles.removeAll { $0 == url }
+        }
+    }
+
+    // MARK: - Bottom Action
+
+    private var bottomAction: some View {
+        VStack(spacing: 0) {
+            Divider()
+
+            PrimaryButton(
+                title: viewModel.isUploading ? "Uploading..." : "Continue",
+                icon: .sparkle,
+                action: {
+                    Task {
+                        if let session = await viewModel.uploadFiles() {
+                            HapticManager.success()
+                            onSessionCreated?(session)
+                            dismiss()
+                        } else {
+                            HapticManager.error()
+                        }
+                    }
+                },
+                isLoading: viewModel.isUploading,
+                isDisabled: viewModel.isUploading
+            )
+            .padding(Spacing.md)
+        }
         .background(cardBackground)
-        .cornerRadius(CornerRadius.large)
-        .subtleShadow()
+    }
+
+    // MARK: - Helpers
+
+    private var hasSelectedFiles: Bool {
+        !viewModel.selectedPhotos.isEmpty || !viewModel.selectedFiles.isEmpty
+    }
+
+    private var totalFileCount: Int {
+        viewModel.selectedPhotos.count + viewModel.selectedFiles.count
     }
 
     private var textColor: Color {
@@ -241,35 +323,211 @@ struct UploadOptionCardContent: View {
     }
 
     private var cardBackground: Color {
-        colorScheme == .dark ? .backgroundSecondaryDark : .backgroundCard
+        colorScheme == .dark ? .backgroundSecondaryDark : .white
+    }
+
+    private var backgroundColor: Color {
+        colorScheme == .dark ? .backgroundPrimaryDark : .backgroundPrimary
+    }
+
+    private func handleCapturedImage(_ image: UIImage) {
+        if let data = image.jpegData(compressionQuality: 0.8) {
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("capture_\(Date().timeIntervalSince1970).jpg")
+            try? data.write(to: tempURL)
+            viewModel.selectedFiles.append(tempURL)
+        }
     }
 }
 
-// MARK: - Selected File Chip
+// MARK: - Paper Shape Illustration
 
-struct SelectedFileChip: View {
-    let name: String
-    let onRemove: () -> Void
+private struct PaperShape: View {
+    let amount: String
 
     var body: some View {
-        HStack(spacing: Spacing.xs) {
-            CatIcon(name: .folder, size: .sm, color: .terracotta500)
+        VStack(alignment: .leading, spacing: 5) {
+            // Lines
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Color.warm200)
+                .frame(width: 25, height: 3)
 
-            Text(name)
-                .font(.labelMedium)
-                .foregroundColor(.textPrimary)
-                .lineLimit(1)
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Color.warm200)
+                .frame(width: 40, height: 3)
 
-            Button(action: onRemove) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 16))
-                    .foregroundColor(.warm400)
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Color.warm200)
+                .frame(width: 30, height: 3)
+
+            Spacer()
+
+            // Amount
+            HStack {
+                Spacer()
+                Text(amount)
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(.terracotta500)
             }
         }
-        .padding(.horizontal, Spacing.sm)
-        .padding(.vertical, Spacing.xs)
-        .background(Color.terracotta100)
-        .cornerRadius(CornerRadius.medium)
+        .padding(10)
+        .frame(width: 56, height: 72)
+        .background(Color.cream100)
+        .cornerRadius(8)
+        .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
+    }
+}
+
+// MARK: - Capture Action Button
+
+private struct CaptureActionButton: View {
+    let icon: String
+    let label: String
+    let backgroundColor: Color
+    let iconColor: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            CaptureActionButtonContent(
+                icon: icon,
+                label: label,
+                backgroundColor: backgroundColor,
+                iconColor: iconColor
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct CaptureActionButtonContent: View {
+    let icon: String
+    let label: String
+    let backgroundColor: Color
+    let iconColor: Color
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        VStack(spacing: Spacing.xs) {
+            ZStack {
+                RoundedRectangle(cornerRadius: CornerRadius.medium)
+                    .fill(backgroundColor)
+                    .frame(width: 44, height: 44)
+
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(iconColor)
+            }
+
+            Text(label)
+                .font(.labelMedium)
+                .foregroundColor(colorScheme == .dark ? .warm300 : .warm700)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.md)
+        .background(colorScheme == .dark ? Color.backgroundSecondaryDark : .white)
+        .cornerRadius(CornerRadius.large)
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.large)
+                .stroke(Color.warm200, lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Files Button
+
+private struct FilesButton: View {
+    @Bindable var viewModel: BankImportViewModel
+    @State private var showFilePicker = false
+
+    var body: some View {
+        Button {
+            showFilePicker = true
+        } label: {
+            CaptureActionButtonContent(
+                icon: "doc.fill",
+                label: "Files",
+                backgroundColor: .cream200,
+                iconColor: .warm600
+            )
+        }
+        .buttonStyle(.plain)
+        .fileImporter(
+            isPresented: $showFilePicker,
+            allowedContentTypes: [.pdf, .image],
+            allowsMultipleSelection: true
+        ) { result in
+            switch result {
+            case .success(let urls):
+                viewModel.selectedFiles.append(contentsOf: urls)
+            case .failure(let error):
+                viewModel.error = error.localizedDescription
+            }
+        }
+    }
+}
+
+// MARK: - File Row
+
+private struct FileRow: View {
+    let name: String
+    let type: FileType
+    let isLast: Bool
+    let onRemove: () -> Void
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    enum FileType {
+        case pdf, image
+
+        var icon: String {
+            switch self {
+            case .pdf: return "doc.fill"
+            case .image: return "photo.fill"
+            }
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: Spacing.sm) {
+            // Thumbnail
+            ZStack {
+                RoundedRectangle(cornerRadius: CornerRadius.small)
+                    .fill(Color.cream100)
+                    .frame(width: 40, height: 40)
+
+                Image(systemName: type.icon)
+                    .font(.system(size: 16))
+                    .foregroundColor(.terracotta500)
+            }
+
+            // File info
+            VStack(alignment: .leading, spacing: 2) {
+                Text(name)
+                    .font(.labelLarge)
+                    .foregroundColor(colorScheme == .dark ? .textPrimaryDark : .textPrimary)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            // Remove button
+            Button(action: onRemove) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(.warm400)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.sm)
+        .overlay(alignment: .bottom) {
+            if !isLast {
+                Divider()
+                    .padding(.leading, 56)
+            }
+        }
     }
 }
 

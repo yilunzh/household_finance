@@ -182,7 +182,7 @@ struct TransactionReviewCard: View {
             if !transaction.flags.isEmpty {
                 HStack(spacing: Spacing.xs) {
                     ForEach(transaction.flags, id: \.self) { flag in
-                        FlagBadge(flags: [flag])
+                        ReviewFlagBadge(flags: [flag])
                     }
                 }
             }
@@ -469,6 +469,49 @@ struct ReviewNavigationBar: View {
             .padding(.bottom, Spacing.md)
         }
         .background(Color.backgroundCard)
+    }
+}
+
+// MARK: - Flag Badge
+
+private struct ReviewFlagBadge: View {
+    let flags: [String]
+
+    var body: some View {
+        HStack(spacing: Spacing.xxs) {
+            Image(systemName: iconName)
+                .font(.system(size: 10))
+
+            Text(displayText)
+                .font(.labelSmall)
+        }
+        .foregroundColor(flagColor)
+        .padding(.horizontal, Spacing.xs)
+        .padding(.vertical, Spacing.xxxs)
+        .background(flagColor.opacity(0.15))
+        .cornerRadius(CornerRadius.small)
+    }
+
+    private var iconName: String {
+        if flags.contains("ocr_failure") { return "exclamationmark.triangle" }
+        if flags.contains("low_confidence") { return "questionmark.circle" }
+        if flags.contains("uncertain_category") { return "tag" }
+        if flags.contains("potential_duplicate") { return "doc.on.doc" }
+        return "exclamationmark.circle"
+    }
+
+    private var displayText: String {
+        if flags.contains("ocr_failure") { return "OCR Issue" }
+        if flags.contains("low_confidence") { return "Low Confidence" }
+        if flags.contains("uncertain_category") { return "Uncategorized" }
+        if flags.contains("potential_duplicate") { return "Duplicate?" }
+        return "Review"
+    }
+
+    private var flagColor: Color {
+        if flags.contains("ocr_failure") { return .rose500 }
+        if flags.contains("potential_duplicate") { return .amber500 }
+        return .amber500
     }
 }
 
