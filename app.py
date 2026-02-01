@@ -215,6 +215,7 @@ def init_scheduler():
     """Initialize APScheduler for background cleanup tasks.
 
     Only runs in production mode to avoid duplicate jobs during development.
+    Passes the app explicitly to ensure proper Flask context in background threads.
     """
     if app.debug or os.environ.get('FLASK_ENV') == 'testing':
         logger.info("Scheduler disabled in debug/testing mode")
@@ -222,13 +223,14 @@ def init_scheduler():
 
     try:
         from apscheduler.schedulers.background import BackgroundScheduler
-        from services.cleanup_service import run_daily_cleanup
+        from services.cleanup_service import run_cleanup_with_app
 
         scheduler = BackgroundScheduler()
 
         # Run cleanup at 2 AM UTC daily
+        # Pass app explicitly to ensure proper context in background thread
         scheduler.add_job(
-            func=lambda: run_daily_cleanup(),
+            func=lambda: run_cleanup_with_app(app, run_all=True),
             trigger='cron',
             hour=2,
             minute=0,

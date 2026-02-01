@@ -118,7 +118,13 @@ def generate_secure_filename(original_filename, session_id):
 
 
 def secure_delete(file_path):
-    """Securely delete a file by overwriting with random data before removal."""
+    """Securely delete a file by overwriting with random data before removal.
+
+    Note: This provides defense-in-depth but is NOT cryptographically secure
+    erasure on modern filesystems. Journaling, copy-on-write (ZFS, APFS), and
+    SSD wear-leveling may retain original data. For sensitive data, use
+    filesystem-level encryption (e.g., LUKS, FileVault).
+    """
     if not os.path.exists(file_path):
         return
 
@@ -268,6 +274,11 @@ Important:
 
     def __init__(self, api_key=None):
         self.api_key = api_key or os.environ.get('OPENAI_API_KEY')
+        # Basic format validation - OpenAI keys typically start with 'sk-'
+        if self.api_key and not self.api_key.startswith('sk-'):
+            logger.warning(
+                "OpenAI API key does not match expected format (should start with 'sk-')"
+            )
         self._client = None
 
     @property
@@ -446,8 +457,14 @@ Important:
 
             except Exception as e:
                 delay = self.BASE_DELAY * (2 ** attempt)
+                # Sanitize error message to avoid leaking sensitive API details
+                error_msg = str(e)
+                sensitive_terms = ['api_key', 'api-key', 'token', 'secret', 'password']
+                if any(term in error_msg.lower() for term in sensitive_terms):
+                    error_msg = 'API error (details redacted for security)'
                 logger.warning(
-                    f"GPT-4V API call failed (attempt {attempt + 1}/{self.MAX_RETRIES}): {e}"
+                    f"GPT-4V API call failed (attempt {attempt + 1}/{self.MAX_RETRIES}): "
+                    f"{error_msg}"
                 )
                 if attempt < self.MAX_RETRIES - 1:
                     logger.info(f"Retrying in {delay} seconds...")

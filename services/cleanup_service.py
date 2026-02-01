@@ -23,6 +23,11 @@ def cleanup_expired_sessions(days=7):
     for longer than the specified number of days. Also securely deletes
     any associated source files.
 
+    Note: This is a global cleanup (no household_id filter) because:
+    - ImportSession is user-scoped (user_id), not household-scoped
+    - This is a system maintenance task, not a user-facing query
+    - Each user's sessions are cleaned independently by status/age
+
     Args:
         days: Number of days after which to clean up incomplete sessions.
 
@@ -31,6 +36,8 @@ def cleanup_expired_sessions(days=7):
     """
     cutoff = datetime.utcnow() - timedelta(days=days)
 
+    # Global query across all users - intentional for maintenance task
+    # ImportSession uses user_id scoping, not household_id
     expired_sessions = ImportSession.query.filter(
         ImportSession.status.in_([
             ImportSession.STATUS_PENDING,
@@ -64,6 +71,11 @@ def cleanup_expired_sessions(days=7):
 def cleanup_old_audit_logs(days=90):
     """Delete audit logs older than retention period.
 
+    Note: This is a global cleanup (no household_id filter) because:
+    - ImportAuditLog is scoped by session_id, which links to user_id
+    - This is a system maintenance task for log retention compliance
+    - Deleting old logs system-wide is the intended behavior
+
     Args:
         days: Number of days to retain audit logs.
 
@@ -72,7 +84,8 @@ def cleanup_old_audit_logs(days=90):
     """
     cutoff = datetime.utcnow() - timedelta(days=days)
 
-    # Use bulk delete for efficiency
+    # Global bulk delete for efficiency - intentional for maintenance task
+    # Audit logs are retention-based, not user-isolated
     count = ImportAuditLog.query.filter(
         ImportAuditLog.created_at < cutoff
     ).delete(synchronize_session=False)
