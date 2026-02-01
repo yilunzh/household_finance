@@ -324,7 +324,7 @@ Important:
         # Convert file to images
         images = self._prepare_images(file_path, file_type)
         if not images:
-            logger.error(f"Failed to prepare images from {file_path}")
+            logger.error("Failed to prepare images for extraction")
             raise ExtractionError(
                 "Failed to process document. Please enter transactions manually."
             )
@@ -377,8 +377,8 @@ Important:
             from pdf2image import convert_from_path
             import io
 
-            # Convert PDF to images (one per page)
-            images = convert_from_path(pdf_path, dpi=150)
+            # Convert PDF to images (limit to first 10 pages to prevent DoS)
+            images = convert_from_path(pdf_path, dpi=150, first_page=1, last_page=10)
 
             base64_images = []
             for img in images:
@@ -509,7 +509,7 @@ Important:
                 if json_match:
                     json_str = json_match.group(0)
                 else:
-                    logger.warning(f"No JSON found in response: {content[:200]}")
+                    logger.warning("No JSON array found in GPT-4V response")
                     return []
 
             transactions = json.loads(json_str)
