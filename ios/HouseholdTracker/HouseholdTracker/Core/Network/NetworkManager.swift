@@ -374,6 +374,56 @@ actor NetworkManager {
         )
         return response.transaction
     }
+
+    // MARK: - Bank Import Upload
+
+    /// Upload bank statement files to create an import session
+    func uploadBankStatements(files: [(data: Data, filename: String, mimeType: String)]) async throws -> ImportSessionResponse {
+        let accessToken = try await getValidAccessToken()
+
+        guard let householdId = householdId else {
+            throw APIError.noHouseholdSelected
+        }
+
+        guard let url = URL(string: "\(baseURL)/import/sessions") else {
+            throw APIError.invalidURL
+        }
+
+        // Create multipart form data
+        let boundary = UUID().uuidString
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("\(householdId)", forHTTPHeaderField: "X-Household-ID")
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        var body = Data()
+
+        // Add each file
+        for file in files {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"files\"; filename=\"\(file.filename)\"\r\n".data(using: .utf8)!)
+            body.append("Content-Type: \(file.mimeType)\r\n\r\n".data(using: .utf8)!)
+            body.append(file.data)
+            body.append("\r\n".data(using: .utf8)!)
+        }
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+
+        request.httpBody = body
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let errorMessage = try? decoder.decode(APIErrorResponse.self, from: data).error
+            throw APIError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
+        }
+
+        return try decoder.decode(ImportSessionResponse.self, from: data)
+    }
 }
 
 // MARK: - HTTP Method

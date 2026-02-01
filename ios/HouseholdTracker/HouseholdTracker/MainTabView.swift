@@ -193,13 +193,27 @@ struct SettingsView: View {
                                 .buttonStyle(.plain)
                             }
 
-                            SectionRow(showDivider: false) {
+                            SectionRow {
                                 NavigationLink {
                                     ExportView()
                                 } label: {
                                     SettingsRowContent(
                                         icon: .download,
                                         title: "Export Data",
+                                        showChevron: true,
+                                        iconTint: .terracotta500
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+
+                            SectionRow(showDivider: false) {
+                                NavigationLink {
+                                    BankImportSessionsView()
+                                } label: {
+                                    SettingsRowContent(
+                                        icon: .sparkle,
+                                        title: "Bank Import",
                                         showChevron: true,
                                         iconTint: .terracotta500
                                     )

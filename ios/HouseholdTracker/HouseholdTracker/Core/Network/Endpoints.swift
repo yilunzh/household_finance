@@ -56,4 +56,14 @@ enum Endpoints {
     // Export
     static let exportTransactions = "/export/transactions"
     static func exportMonthlyTransactions(_ month: String) -> String { "/export/transactions/\(month)" }
+
+    // Bank Import
+    static let importSessions = "/import/sessions"
+    static func importSession(_ id: Int) -> String { "/import/sessions/\(id)" }
+    static func importSessionTransactions(_ sessionId: Int) -> String { "/import/sessions/\(sessionId)/transactions" }
+    static func importSessionTransaction(_ sessionId: Int, transactionId: Int) -> String { "/import/sessions/\(sessionId)/transactions/\(transactionId)" }
+    static func importSessionImport(_ sessionId: Int) -> String { "/import/sessions/\(sessionId)/import" }
+    static let importRules = "/import/rules"
+    static func importRule(_ id: Int) -> String { "/import/rules/\(id)" }
+    static let importSettings = "/import/settings"
 }
