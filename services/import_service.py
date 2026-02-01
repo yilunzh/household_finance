@@ -15,13 +15,13 @@ from abc import ABC, abstractmethod
 from flask import current_app
 from werkzeug.utils import secure_filename
 
-logger = logging.getLogger(__name__)
-
 from extensions import db
 from models import (
     ImportSession, ExtractedTransaction, ImportSettings, ImportAuditLog,
     Transaction, AutoCategoryRule, ExpenseType
 )
+
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -351,7 +351,6 @@ Important:
         """
         try:
             from pdf2image import convert_from_path
-            from PIL import Image
             import io
 
             # Convert PDF to images (one per page)
