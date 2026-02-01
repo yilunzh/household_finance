@@ -42,6 +42,11 @@
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-commit-check.py\"",
             "timeout": 120000
+          },
+          {
+            "type": "command",
+            "command": "CLAUDE_HOOK_TYPE=PreToolUse python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/implementation-plan-check.py\"",
+            "timeout": 5000
           }
         ]
       },
@@ -95,6 +100,15 @@
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/completion-checklist.py\"",
             "timeout": 10000
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CLAUDE_HOOK_TYPE=Stop python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/implementation-plan-check.py\"",
+            "timeout": 5000
           }
         ]
       },

@@ -154,6 +154,32 @@ What we're trying to accomplish
 
 See global `~/.claude/CLAUDE.md` for full context management details.
 
+### Implementation Plan Updates (Features with Ideation Docs)
+
+When working on features that have an implementation plan in `.claude/ideation/<feature>/implementation-plan.md`:
+
+**Update the plan when:**
+- Completing a story (mark checkboxes as done)
+- Completing an epic (update Progress Summary table)
+- Making scope changes (add notes)
+- At session end (update status and last modified date)
+
+**Format for story completion:**
+```markdown
+- [x] Acceptance criteria item (was [ ])
+**Status:** ✅ DONE
+```
+
+**Keep Progress Summary current:**
+```markdown
+| Epic | Status | Notes |
+|------|--------|-------|
+| E1: Backend | ✅ DONE | All models and APIs |
+| E2: AI | ⏳ PARTIAL | Mock only, GPT-4V pending |
+```
+
+This ensures implementation plans serve as living documentation, not stale specs.
+
 ### Major Feature Workflow
 
 For features involving new functionality + UI changes:
@@ -516,6 +542,7 @@ Custom hooks are in `.claude/hooks/`:
 - `session-handoff.py` - **Blocking**: Detects incomplete work via git/step count/todos
 - `spec-update-check.py` - Triggers SPEC.md updates on key phrases
 - `sync-structure.py` - Generates project tree for SPEC.md
+- `implementation-plan-check.py` - **Advisory**: Reminds to update implementation plan when feature code changes but plan doesn't (pre-commit + session end)
 
 ### Subagents
 Custom subagents are in `.claude/agents/`:
@@ -636,6 +663,17 @@ cd ios/HouseholdTracker
 3. **Wrong Maestro installed**
    - Do NOT install via `brew install maestro` (installs wrong app)
    - Use the curl command above for the mobile testing tool
+
+4. **`scrollUntilVisible` doesn't work for Settings ScrollView**
+   - `scrollUntilVisible` claims success but doesn't actually scroll
+   - **Solution**: Use direct `swipe` gestures instead:
+     ```yaml
+     # Instead of scrollUntilVisible, use swipe:
+     - swipe:
+         start: 50%, 70%
+         end: 50%, 30%
+     ```
+   - This applies to navigating to items in Settings like "Bank Import", "Log Out", etc.
 
 ### Debug Output
 

@@ -591,3 +591,284 @@ class DeviceToken(db.Model):
 
     def __repr__(self):
         return f'<DeviceToken {self.id}: {self.platform} for User {self.user_id}>'
+
+
+# =============================================================================
+# Bank Import Models
+# =============================================================================
+
+class ImportSession(db.Model):
+    """Tracks a bank statement import from upload through completion."""
+
+    __tablename__ = 'import_sessions'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    household_id = db.Column(db.Integer, db.ForeignKey('households.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+
+    # Status workflow: pending → processing → ready → completed | failed
+    status = db.Column(db.String(20), nullable=False, default='pending')
+
+    # File references (JSON array of paths/metadata)
+    # Format: [{"path": "...", "original_name": "...", "type": "pdf|image", "size": 12345}]
+    source_files = db.Column(db.Text, nullable=False, default='[]')
+
+    # Processing metadata
+    error_message = db.Column(db.Text, nullable=True)
+
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    processing_started_at = db.Column(db.DateTime, nullable=True)
+    processing_completed_at = db.Column(db.DateTime, nullable=True)
+    imported_at = db.Column(db.DateTime, nullable=True)
+
+    # Relationships
+    household = db.relationship('Household')
+    user = db.relationship('User')
+    extracted_transactions = db.relationship(
+        'ExtractedTransaction',
+        back_populates='session',
+        cascade='all, delete-orphan'
+    )
+
+    # Valid status values
+    STATUS_PENDING = 'pending'
+    STATUS_PROCESSING = 'processing'
+    STATUS_READY = 'ready'
+    STATUS_COMPLETED = 'completed'
+    STATUS_FAILED = 'failed'
+
+    def __repr__(self):
+        return f'<ImportSession {self.id}: {self.status}>'
+
+    def to_dict(self):
+        """Convert to dictionary for JSON serialization."""
+        import json
+        return {
+            'id': self.id,
+            'household_id': self.household_id,
+            'user_id': self.user_id,
+            'status': self.status,
+            'source_files': json.loads(self.source_files) if self.source_files else [],
+            'error_message': self.error_message,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'processing_started_at': self.processing_started_at.isoformat() if self.processing_started_at else None,
+            'processing_completed_at': self.processing_completed_at.isoformat() if self.processing_completed_at else None,
+            'imported_at': self.imported_at.isoformat() if self.imported_at else None,
+            'transaction_counts': self.get_transaction_counts()
+        }
+
+    def get_transaction_counts(self):
+        """Get counts of transactions by status."""
+        from sqlalchemy import func
+        counts = db.session.query(
+            ExtractedTransaction.status,
+            func.count(ExtractedTransaction.id)
+        ).filter(
+            ExtractedTransaction.session_id == self.id
+        ).group_by(ExtractedTransaction.status).all()
+
+        result = {'total': 0, 'pending': 0, 'reviewed': 0, 'imported': 0, 'skipped': 0}
+        for status, count in counts:
+            result[status] = count
+            result['total'] += count
+        return result
+
+
+class ExtractedTransaction(db.Model):
+    """Individual transaction extracted from a bank statement."""
+
+    __tablename__ = 'extracted_transactions'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('import_sessions.id'), nullable=False, index=True)
+
+    # Extracted data
+    merchant = db.Column(db.String(200), nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    currency = db.Column(db.String(3), nullable=False, default='USD')
+    date = db.Column(db.Date, nullable=False)
+    raw_text = db.Column(db.Text, nullable=True)  # Original OCR text
+
+    # AI confidence (0.0-1.0)
+    confidence = db.Column(db.Float, nullable=False, default=1.0)
+
+    # Categorization (can be auto-filled by rules or manually set)
+    expense_type_id = db.Column(db.Integer, db.ForeignKey('expense_types.id'), nullable=True, index=True)
+    split_category = db.Column(db.String(20), nullable=False, default='SHARED')
+
+    # Selection and review
+    is_selected = db.Column(db.Boolean, nullable=False, default=True)
+    status = db.Column(db.String(20), nullable=False, default='pending')  # pending, reviewed, imported, skipped
+
+    # Flags (JSON for flexibility)
+    # e.g., {"needs_review": true, "duplicate_of": 123, "ocr_uncertain": true, "low_confidence": true}
+    flags = db.Column(db.Text, nullable=False, default='{}')
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships
+    session = db.relationship('ImportSession', back_populates='extracted_transactions')
+    expense_type = db.relationship('ExpenseType')
+
+    # Valid status values
+    STATUS_PENDING = 'pending'
+    STATUS_REVIEWED = 'reviewed'
+    STATUS_IMPORTED = 'imported'
+    STATUS_SKIPPED = 'skipped'
+
+    def __repr__(self):
+        return f'<ExtractedTransaction {self.id}: {self.merchant} ${self.amount}>'
+
+    def to_dict(self):
+        """Convert to dictionary for JSON serialization."""
+        import json
+        return {
+            'id': self.id,
+            'session_id': self.session_id,
+            'merchant': self.merchant,
+            'amount': float(self.amount),
+            'currency': self.currency,
+            'date': self.date.isoformat() if self.date else None,
+            'raw_text': self.raw_text,
+            'confidence': self.confidence,
+            'expense_type_id': self.expense_type_id,
+            'expense_type_name': self.expense_type.name if self.expense_type else None,
+            'split_category': self.split_category,
+            'is_selected': self.is_selected,
+            'status': self.status,
+            'flags': json.loads(self.flags) if self.flags else {},
+            'needs_review': self.needs_review(),
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+    def needs_review(self):
+        """Check if this transaction needs manual review."""
+        import json
+        flags = json.loads(self.flags) if self.flags else {}
+        return (
+            flags.get('needs_review', False)
+            or flags.get('ocr_uncertain', False)
+            or flags.get('low_confidence', False)
+            or flags.get('duplicate_of') is not None
+            or self.confidence < 0.7
+        )
+
+    def set_flag(self, key, value):
+        """Set a flag value."""
+        import json
+        flags = json.loads(self.flags) if self.flags else {}
+        flags[key] = value
+        self.flags = json.dumps(flags)
+
+    def get_flag(self, key, default=None):
+        """Get a flag value."""
+        import json
+        flags = json.loads(self.flags) if self.flags else {}
+        return flags.get(key, default)
+
+
+class ImportSettings(db.Model):
+    """User preferences for bank import behavior."""
+
+    __tablename__ = 'import_settings'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True, index=True)
+
+    # Default values for imports
+    default_currency = db.Column(db.String(3), nullable=False, default='USD')
+    default_split_category = db.Column(db.String(20), nullable=False, default='SHARED')
+
+    # Automation settings
+    auto_skip_duplicates = db.Column(db.Boolean, nullable=False, default=True)
+    auto_select_high_confidence = db.Column(db.Boolean, nullable=False, default=True)
+    confidence_threshold = db.Column(db.Float, nullable=False, default=0.7)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships
+    user = db.relationship('User', backref=db.backref('import_settings', uselist=False))
+
+    def __repr__(self):
+        return f'<ImportSettings for User {self.user_id}>'
+
+    def to_dict(self):
+        """Convert to dictionary for JSON serialization."""
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'default_currency': self.default_currency,
+            'default_split_category': self.default_split_category,
+            'auto_skip_duplicates': self.auto_skip_duplicates,
+            'auto_select_high_confidence': self.auto_select_high_confidence,
+            'confidence_threshold': self.confidence_threshold
+        }
+
+    @staticmethod
+    def get_or_create(user_id):
+        """Get settings for user, creating defaults if not exists."""
+        settings = ImportSettings.query.filter_by(user_id=user_id).first()
+        if not settings:
+            settings = ImportSettings(user_id=user_id)
+            db.session.add(settings)
+            db.session.commit()
+        return settings
+
+
+class ImportAuditLog(db.Model):
+    """Audit log for bank import operations (security/compliance)."""
+
+    __tablename__ = 'import_audit_logs'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('import_sessions.id'), nullable=True, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+
+    # Action tracking
+    action = db.Column(db.String(50), nullable=False)  # upload, process, import, delete, etc.
+    details = db.Column(db.Text, nullable=True)  # JSON with additional context
+
+    # Request metadata
+    ip_address = db.Column(db.String(45), nullable=True)
+    user_agent = db.Column(db.String(500), nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    session = db.relationship('ImportSession')
+    user = db.relationship('User')
+
+    # Action types
+    ACTION_UPLOAD = 'upload'
+    ACTION_PROCESS_START = 'process_start'
+    ACTION_PROCESS_COMPLETE = 'process_complete'
+    ACTION_PROCESS_FAIL = 'process_fail'
+    ACTION_IMPORT = 'import'
+    ACTION_DELETE_SESSION = 'delete_session'
+    ACTION_DELETE_FILES = 'delete_files'
+
+    def __repr__(self):
+        return f'<ImportAuditLog {self.id}: {self.action}>'
+
+    @staticmethod
+    def log(user_id, action, session_id=None, details=None, request=None):
+        """Create an audit log entry."""
+        import json
+        from flask import request as flask_request
+
+        req = request or flask_request
+
+        log_entry = ImportAuditLog(
+            session_id=session_id,
+            user_id=user_id,
+            action=action,
+            details=json.dumps(details) if details else None,
+            ip_address=req.remote_addr if req else None,
+            user_agent=req.headers.get('User-Agent', '')[:500] if req else None
+        )
+        db.session.add(log_entry)
+        db.session.commit()
+        return log_entry

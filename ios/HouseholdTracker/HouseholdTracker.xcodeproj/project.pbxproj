@@ -8,6 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		ASSETS002BUILDFILE00000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = ASSETS001FILEREF000000001 /* Assets.xcassets */; };
+		BI001BUILDFILE0000000001 /* BankImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI001FILEREF00000000001 /* BankImport.swift */; };
+		BI002BUILDFILE0000000001 /* BankImportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI002FILEREF00000000001 /* BankImportViewModel.swift */; };
+		BI003BUILDFILE0000000001 /* BankImportCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI003FILEREF00000000001 /* BankImportCaptureView.swift */; };
+		BI004BUILDFILE0000000001 /* BankImportSessionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI004FILEREF00000000001 /* BankImportSessionsView.swift */; };
+		BI005BUILDFILE0000000001 /* BankImportSelectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI005FILEREF00000000001 /* BankImportSelectView.swift */; };
+		BI006BUILDFILE0000000001 /* BankImportCategorizeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI006FILEREF00000000001 /* BankImportCategorizeView.swift */; };
 		067B9FE148E60A6945DC5E6D /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEEAB43A77CED49CDB6B53F7 /* KeychainManager.swift */; };
 		1E5B0695D9DDBB8EA95DBD92 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3859398FB33A7F40B8AD952 /* User.swift */; };
 		21BE821F3941416A98A182E7 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDB15C10C0B84A3CB0DB669F /* MainTabView.swift */; };
@@ -69,6 +75,12 @@
 
 /* Begin PBXFileReference section */
 		ASSETS001FILEREF000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Resources/Assets.xcassets"; sourceTree = "<group>"; };
+		BI001FILEREF00000000001 /* BankImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankImport.swift; sourceTree = "<group>"; };
+		BI002FILEREF00000000001 /* BankImportViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankImportViewModel.swift; sourceTree = "<group>"; };
+		BI003FILEREF00000000001 /* BankImportCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankImportCaptureView.swift; sourceTree = "<group>"; };
+		BI004FILEREF00000000001 /* BankImportSessionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankImportSessionsView.swift; sourceTree = "<group>"; };
+		BI005FILEREF00000000001 /* BankImportSelectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankImportSelectView.swift; sourceTree = "<group>"; };
+		BI006FILEREF00000000001 /* BankImportCategorizeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankImportCategorizeView.swift; sourceTree = "<group>"; };
 		0A4DE11B426ECCDE54253DFF /* HouseholdSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseholdSelectionView.swift; sourceTree = "<group>"; };
 		2A2EED4210B3AE751F8C4D59 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		2C5089125C09B275B1450445 /* HouseholdTrackerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HouseholdTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -209,6 +221,7 @@
 			isa = PBXGroup;
 			children = (
 				96DC82F42B98A911C52DA9B0 /* Auth */,
+				BI000GROUP000000000001 /* BankImport */,
 				Q7E8F9A0B1C2D3E4F5A6B7C8 /* Budget */,
 				531095CC2A2B0C84BC100468 /* Households */,
 				6870150CBA9385FF4D2D38A5 /* Reconciliation */,
@@ -216,6 +229,18 @@
 				F71FCE927431CBAAE4983BCF /* Transactions */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		BI000GROUP000000000001 /* BankImport */ = {
+			isa = PBXGroup;
+			children = (
+				BI002FILEREF00000000001 /* BankImportViewModel.swift */,
+				BI003FILEREF00000000001 /* BankImportCaptureView.swift */,
+				BI004FILEREF00000000001 /* BankImportSessionsView.swift */,
+				BI005FILEREF00000000001 /* BankImportSelectView.swift */,
+				BI006FILEREF00000000001 /* BankImportCategorizeView.swift */,
+			);
+			path = BankImport;
 			sourceTree = "<group>";
 		};
 		6870150CBA9385FF4D2D38A5 /* Reconciliation */ = {
@@ -239,6 +264,7 @@
 		A0DEE58D5BF3FF94C98D89E7 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				BI001FILEREF00000000001 /* BankImport.swift */,
 				DB476DC0E240B038A15B4918 /* Config.swift */,
 				4750318152BACB7BC18A198E /* Household.swift */,
 				CA493A1D3B27A2D55279A0F8 /* Reconciliation.swift */,
@@ -397,6 +423,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BI001BUILDFILE0000000001 /* BankImport.swift in Sources */,
+				BI002BUILDFILE0000000001 /* BankImportViewModel.swift in Sources */,
+				BI003BUILDFILE0000000001 /* BankImportCaptureView.swift in Sources */,
+				BI004BUILDFILE0000000001 /* BankImportSessionsView.swift in Sources */,
+				BI005BUILDFILE0000000001 /* BankImportSelectView.swift in Sources */,
+				BI006BUILDFILE0000000001 /* BankImportCategorizeView.swift in Sources */,
 				D2A3A1173BE84D8C9A9072BC /* TransactionComponents.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* AcceptInvitationView.swift in Sources */,
 				B6253C5CA81EA1F3CDDCDD97 /* APIError.swift in Sources */,
