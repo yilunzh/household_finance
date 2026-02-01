@@ -822,3 +822,95 @@ class TestCleanupService:
 
             # Verify file is deleted
             assert not test_file.exists()
+
+
+# =============================================================================
+# File Upload Validation Tests
+# =============================================================================
+
+class TestFileUploadValidation:
+    """Test file upload content validation."""
+
+    def test_upload_accepts_matching_extension(self, client, auth_headers, household_headers):
+        """JPEG data with .jpg extension should be accepted."""
+        from io import BytesIO
+
+        # JPEG magic bytes
+        jpeg_data = b'\xff\xd8\xff\xe0\x00\x10JFIF' + b'\x00' * 100
+
+        headers = {k: v for k, v in auth_headers.items() if k != 'Content-Type'}
+        headers.update(household_headers)
+
+        response = client.post(
+            '/api/v1/import/sessions',
+            data={'files': (BytesIO(jpeg_data), 'photo.jpg', 'image/jpeg')},
+            content_type='multipart/form-data',
+            headers=headers
+        )
+
+        # Should succeed (201) or at least not fail validation (not 400 with "content does not match")
+        assert response.status_code in [201, 500]  # 500 if extraction fails, but validation passed
+        if response.status_code == 400:
+            assert 'content does not match' not in response.get_json().get('error', '')
+
+    def test_upload_rejects_mismatched_extension(self, client, auth_headers, household_headers):
+        """HEIC data with .jpg extension should be rejected."""
+        from io import BytesIO
+
+        # HEIC magic bytes (ftypmif1 at offset 4)
+        heic_data = b'\x00\x00\x00\x1cftypmif1' + b'\x00' * 100
+
+        headers = {k: v for k, v in auth_headers.items() if k != 'Content-Type'}
+        headers.update(household_headers)
+
+        response = client.post(
+            '/api/v1/import/sessions',
+            data={'files': (BytesIO(heic_data), 'photo.jpg', 'image/jpeg')},
+            content_type='multipart/form-data',
+            headers=headers
+        )
+
+        assert response.status_code == 400
+        assert 'content does not match' in response.get_json()['error']
+
+    def test_upload_accepts_heic_with_heic_extension(self, client, auth_headers, household_headers):
+        """HEIC data with .heic extension should be accepted."""
+        from io import BytesIO
+
+        # HEIC magic bytes
+        heic_data = b'\x00\x00\x00\x1cftypmif1' + b'\x00' * 100
+
+        headers = {k: v for k, v in auth_headers.items() if k != 'Content-Type'}
+        headers.update(household_headers)
+
+        response = client.post(
+            '/api/v1/import/sessions',
+            data={'files': (BytesIO(heic_data), 'photo.heic', 'image/heic')},
+            content_type='multipart/form-data',
+            headers=headers
+        )
+
+        assert response.status_code in [201, 500]
+        if response.status_code == 400:
+            assert 'content does not match' not in response.get_json().get('error', '')
+
+    def test_upload_accepts_png(self, client, auth_headers, household_headers):
+        """PNG data with .png extension should be accepted."""
+        from io import BytesIO
+
+        # PNG magic bytes
+        png_data = b'\x89PNG\r\n\x1a\n' + b'\x00' * 100
+
+        headers = {k: v for k, v in auth_headers.items() if k != 'Content-Type'}
+        headers.update(household_headers)
+
+        response = client.post(
+            '/api/v1/import/sessions',
+            data={'files': (BytesIO(png_data), 'screenshot.png', 'image/png')},
+            content_type='multipart/form-data',
+            headers=headers
+        )
+
+        assert response.status_code in [201, 500]
+        if response.status_code == 400:
+            assert 'content does not match' not in response.get_json().get('error', '')

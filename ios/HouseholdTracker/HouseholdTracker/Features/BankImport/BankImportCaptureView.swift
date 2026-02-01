@@ -56,14 +56,8 @@ struct BankImportCaptureView: View {
                     showCamera = false
                 })
             }
-            .alert("Error", isPresented: .init(
-                get: { viewModel.error != nil },
-                set: { if !$0 { viewModel.clearError() } }
-            )) {
-                Button("OK") { viewModel.clearError() }
-            } message: {
-                Text(viewModel.error ?? "")
-            }
+            // Note: Error alerts are handled by the parent BankImportSessionsView
+            // to avoid duplicate alerts that dismiss immediately
         }
     }
 
