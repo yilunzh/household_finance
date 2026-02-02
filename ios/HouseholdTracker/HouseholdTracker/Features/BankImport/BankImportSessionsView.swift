@@ -178,12 +178,12 @@ struct ImportSessionCard: View {
                     HStack(spacing: Spacing.md) {
                         CountChip(count: counts.total, label: "Total")
 
-                        if counts.selected > 0 {
-                            CountChip(count: counts.selected, label: "Selected", color: .terracotta500)
+                        if counts.pending > 0 {
+                            CountChip(count: counts.pending, label: "Pending", color: .terracotta500)
                         }
 
-                        if counts.needsReview > 0 {
-                            CountChip(count: counts.needsReview, label: "Review", color: .amber500)
+                        if counts.reviewed > 0 {
+                            CountChip(count: counts.reviewed, label: "Reviewed", color: .amber500)
                         }
                     }
                 }

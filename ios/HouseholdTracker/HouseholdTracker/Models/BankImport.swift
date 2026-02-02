@@ -31,18 +31,10 @@ struct ImportSession: Codable, Identifiable, Hashable {
 
     struct TransactionCounts: Codable, Hashable {
         let total: Int
-        let selected: Int
-        let needsReview: Int
+        let pending: Int
+        let reviewed: Int
         let imported: Int
         let skipped: Int
-
-        enum CodingKeys: String, CodingKey {
-            case total
-            case selected
-            case needsReview = "needs_review"
-            case imported
-            case skipped
-        }
     }
 }
 
@@ -104,7 +96,7 @@ struct ExtractedTransaction: Codable, Identifiable {
     var splitCategory: String
     var isSelected: Bool
     var status: ExtractedTransactionStatus
-    let flags: [String]
+    let flags: [String: Bool]
     let expenseTypeName: String?
 
     enum CodingKeys: String, CodingKey {
@@ -125,9 +117,9 @@ struct ExtractedTransaction: Codable, Identifiable {
     }
 
     var needsReview: Bool {
-        if flags.contains("low_confidence") { return true }
-        if flags.contains("ocr_failure") { return true }
-        if flags.contains("uncertain_category") { return true }
+        if flags["low_confidence"] == true { return true }
+        if flags["ocr_failure"] == true { return true }
+        if flags["uncertain_category"] == true { return true }
         if expenseTypeId == nil && status != .skipped { return true }
         return false
     }
