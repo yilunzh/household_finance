@@ -25,15 +25,8 @@ struct StyledTextField: View {
 
                 Group {
                     if isSecure {
-                        // DEBUG: Use TextField for E2E testing (Maestro can't interact with SecureField on iOS 26)
-                        #if DEBUG
-                        TextField(placeholder, text: $text)
-                            .accessibilityIdentifier(accessibilityId ?? "")
-                            .autocorrectionDisabled()
-                        #else
                         SecureField(placeholder, text: $text)
                             .accessibilityIdentifier(accessibilityId ?? "")
-                        #endif
                     } else {
                         TextField(placeholder, text: $text)
                             .accessibilityIdentifier(accessibilityId ?? "")

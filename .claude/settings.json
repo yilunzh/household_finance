@@ -11,9 +11,20 @@
       "Bash(git log:*)",
       "Bash(git stash:*)",
       "Bash(git reset:*)",
+      "Bash(git rm:*)",
       "Bash(gh pr create:*)",
       "Bash(gh pr merge:*)",
-      "Bash(gh pr checks:*)"
+      "Bash(gh pr checks:*)",
+      "Bash(pytest:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(pip install:*)",
+      "Bash(pip install -r:*)",
+      "Bash(python app.py:*)",
+      "Bash(source venv/bin/activate:*)",
+      "Bash(./scripts/ios-test.sh:*)",
+      "Bash(lsof -i:*)",
+      "Bash(touch .playwright-verified:*)",
+      "Bash(touch .ios-verified:*)"
     ]
   },
   "mcpServers": {
@@ -65,6 +76,11 @@
       {
         "matcher": "Edit|Write",
         "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/auto-format.py\"",
+            "timeout": 30000
+          },
           {
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-edit-verify.py\"",

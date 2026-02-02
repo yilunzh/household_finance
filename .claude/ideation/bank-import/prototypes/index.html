@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bank Import - Prototypes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --terracotta-50: #FEF6F3; --terracotta-100: #FCE8E0; --terracotta-400: #ED9370;
+      --terracotta-500: #E4714A; --terracotta-600: #D05A34;
+      --sage-50: #F4F8F4; --sage-100: #E8F0E8; --sage-400: #8DB88D;
+      --sage-500: #6B9B6B; --sage-600: #558055;
+      --warm-50: #FAFAF9; --warm-100: #F5F5F4; --warm-200: #E7E5E4; --warm-300: #D6D3D1;
+      --warm-400: #A8A29E; --warm-500: #78716C; --warm-600: #57534E;
+      --warm-700: #44403C; --warm-800: #292524; --warm-900: #1C1917;
+      --cream-50: #FFFDF9; --cream-100: #FEF9F0; --cream-200: #FDF3E3;
+      --amber-100: #FEF3C7; --amber-500: #F59E0B;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Nunito', -apple-system, sans-serif;
+      background: var(--warm-100);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+    .phone-frame {
+      width: 100%; max-width: 390px;
+      background: var(--cream-50);
+      border-radius: 40px;
+      box-shadow: 0 25px 50px -12px rgba(28, 25, 23, 0.15);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      max-height: 844px;
+    }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 24px;
+    }
+
+    .header {
+      margin-bottom: 24px;
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--warm-900);
+      margin-bottom: 8px;
+    }
+    .header p {
+      font-size: 15px;
+      color: var(--warm-500);
+      line-height: 1.5;
+    }
+
+    .screen-links {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .screen-link {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 18px;
+      background: white;
+      border-radius: 16px;
+      text-decoration: none;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      transition: all 0.2s;
+    }
+    .screen-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .link-number {
+      width: 36px; height: 36px;
+      background: var(--terracotta-50);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--terracotta-500);
+      flex-shrink: 0;
+    }
+    .link-content {
+      flex: 1;
+    }
+    .link-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--warm-800);
+    }
+    .link-subtitle {
+      font-size: 13px;
+      color: var(--warm-400);
+      margin-top: 2px;
+    }
+    .link-arrow {
+      color: var(--terracotta-400);
+      flex-shrink: 0;
+    }
+    .link-arrow svg { width: 20px; height: 20px; }
+
+    .section {
+      margin-bottom: 28px;
+    }
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--warm-600);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      padding-left: 4px;
+    }
+
+    .flow-diagram {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      position: relative;
+    }
+    .flow-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 14px;
+      top: 40px;
+      width: 2px;
+      height: calc(100% - 10px);
+      background: var(--warm-200);
+    }
+    .flow-dot {
+      width: 30px; height: 30px;
+      background: var(--sage-50);
+      border: 2px solid var(--sage-100);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--sage-600);
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    .flow-text {
+      padding-top: 4px;
+    }
+    .flow-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--warm-800);
+    }
+    .flow-desc {
+      font-size: 13px;
+      color: var(--warm-400);
+      margin-top: 2px;
+    }
+
+    .color-swatches {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .swatch {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      position: relative;
+    }
+    .swatch::after {
+      content: attr(data-label);
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--warm-400);
+      white-space: nowrap;
+    }
+    .swatch.terracotta { background: var(--terracotta-500); }
+    .swatch.sage { background: var(--sage-500); }
+    .swatch.cream { background: var(--cream-200); border: 1px solid var(--warm-200); }
+    .swatch.warm { background: var(--warm-500); }
+    .swatch.amber { background: var(--amber-500); }
+
+    .design-note {
+      font-size: 13px;
+      color: var(--warm-500);
+      line-height: 1.6;
+      margin-top: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="content">
+      <div class="header">
+        <h1>Bank Import</h1>
+        <p>Interactive prototypes for the bank statement import feature. Tap to explore each screen.</p>
+      </div>
+
+      <div class="screen-links">
+        <a href="capture-screen.html" class="screen-link">
+          <div class="link-number">1</div>
+          <div class="link-content">
+            <div class="link-title">Capture Screen</div>
+            <div class="link-subtitle">Upload bank statements</div>
+          </div>
+          <div class="link-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </a>
+
+        <a href="select-screen.html" class="screen-link">
+          <div class="link-number">2</div>
+          <div class="link-content">
+            <div class="link-title">Select Transactions</div>
+            <div class="link-subtitle">Choose which to import</div>
+          </div>
+          <div class="link-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </a>
+
+        <a href="categorize-screen.html" class="screen-link">
+          <div class="link-number">3</div>
+          <div class="link-content">
+            <div class="link-title">Review Items</div>
+            <div class="link-subtitle">Fix flagged transactions</div>
+          </div>
+          <div class="link-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </a>
+
+        <a href="rules-screen.html" class="screen-link">
+          <div class="link-number">4</div>
+          <div class="link-content">
+            <div class="link-title">Rules Management</div>
+            <div class="link-subtitle">Configure auto-categorization</div>
+          </div>
+          <div class="link-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </a>
+      </div>
+
+      <div class="section">
+        <div class="section-title">User Flow</div>
+        <div class="flow-diagram">
+          <div class="flow-step">
+            <div class="flow-dot">1</div>
+            <div class="flow-text">
+              <div class="flow-label">Capture</div>
+              <div class="flow-desc">Upload bank statement</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-dot">2</div>
+            <div class="flow-text">
+              <div class="flow-label">Processing</div>
+              <div class="flow-desc">AI extracts transactions</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-dot">3</div>
+            <div class="flow-text">
+              <div class="flow-label">Select</div>
+              <div class="flow-desc">Check which to import</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-dot">4</div>
+            <div class="flow-text">
+              <div class="flow-label">Categorize</div>
+              <div class="flow-desc">Fix flagged items</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-dot">5</div>
+            <div class="flow-text">
+              <div class="flow-label">Import</div>
+              <div class="flow-desc">Confirm & done</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Design System</div>
+        <div class="color-swatches">
+          <div class="swatch terracotta" data-label="Terracotta"></div>
+          <div class="swatch sage" data-label="Sage"></div>
+          <div class="swatch cream" data-label="Cream"></div>
+          <div class="swatch warm" data-label="Warm"></div>
+          <div class="swatch amber" data-label="Amber"></div>
+        </div>
+        <p class="design-note">
+          Colors and typography match the existing Household Tracker iOS app palette for visual consistency.
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

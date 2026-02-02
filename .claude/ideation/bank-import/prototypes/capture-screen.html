@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bank Import - Capture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Terracotta - Brand/Primary */
+      --terracotta-50: #FEF6F3;
+      --terracotta-100: #FCE8E0;
+      --terracotta-200: #F9D5C7;
+      --terracotta-400: #ED9370;
+      --terracotta-500: #E4714A;
+      --terracotta-600: #D05A34;
+      --terracotta-700: #AE4728;
+
+      /* Sage - Success */
+      --sage-100: #E8F0E8;
+      --sage-500: #6B9B6B;
+      --sage-600: #558055;
+
+      /* Warm Gray - Neutrals */
+      --warm-50: #FAFAF9;
+      --warm-100: #F5F5F4;
+      --warm-200: #E7E5E4;
+      --warm-300: #D6D3D1;
+      --warm-400: #A8A29E;
+      --warm-500: #78716C;
+      --warm-600: #57534E;
+      --warm-700: #44403C;
+      --warm-800: #292524;
+      --warm-900: #1C1917;
+
+      /* Cream - Backgrounds */
+      --cream-50: #FFFDF9;
+      --cream-100: #FEF9F0;
+      --cream-200: #FDF3E3;
+
+      /* Amber - Warning */
+      --amber-100: #FEF3C7;
+      --amber-500: #F59E0B;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--warm-100);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .phone-frame {
+      width: 100%;
+      max-width: 390px;
+      background: var(--cream-50);
+      border-radius: 40px;
+      box-shadow: 0 25px 50px -12px rgba(28, 25, 23, 0.15);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Navigation */
+    .nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: var(--cream-50);
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--terracotta-500);
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .back-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .nav-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--warm-900);
+    }
+
+    /* Content */
+    .content {
+      padding: 8px 20px 24px;
+      min-height: 580px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .hero-icon {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, var(--terracotta-100) 0%, var(--terracotta-200) 100%);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-icon svg {
+      width: 32px;
+      height: 32px;
+      color: var(--terracotta-600);
+    }
+
+    .hero-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--warm-900);
+      margin-bottom: 4px;
+    }
+
+    .hero-subtitle {
+      font-size: 15px;
+      color: var(--warm-500);
+    }
+
+    /* Drop Zone */
+    .drop-zone {
+      flex: 1;
+      min-height: 180px;
+      background: white;
+      border: 2px dashed var(--warm-200);
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 28px 24px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.drag-over {
+      border-color: var(--terracotta-400);
+      background: var(--terracotta-50);
+    }
+
+    .drop-illustration {
+      width: 100px;
+      height: 72px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .drop-paper {
+      position: absolute;
+      width: 56px;
+      height: 72px;
+      background: var(--cream-100);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      padding: 10px 8px;
+      gap: 5px;
+      transition: transform 0.3s ease;
+    }
+
+    .drop-paper:nth-child(1) {
+      left: 0;
+      transform: rotate(-6deg);
+      z-index: 1;
+    }
+
+    .drop-paper:nth-child(2) {
+      right: 0;
+      transform: rotate(4deg);
+      z-index: 2;
+    }
+
+    .drop-zone:hover .drop-paper:nth-child(1) {
+      transform: rotate(-10deg) translateY(-3px);
+    }
+
+    .drop-zone:hover .drop-paper:nth-child(2) {
+      transform: rotate(8deg) translateY(-3px);
+    }
+
+    .paper-line {
+      height: 3px;
+      background: var(--warm-200);
+      border-radius: 2px;
+    }
+
+    .paper-line:nth-child(1) { width: 50%; }
+    .paper-line:nth-child(2) { width: 100%; }
+    .paper-line:nth-child(3) { width: 70%; }
+
+    .paper-amount {
+      margin-top: auto;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--terracotta-500);
+      text-align: right;
+    }
+
+    .drop-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--warm-700);
+    }
+
+    .drop-text strong {
+      color: var(--terracotta-500);
+    }
+
+    .drop-hint {
+      font-size: 13px;
+      color: var(--warm-400);
+      margin-top: 4px;
+    }
+
+    /* Action Buttons */
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .action-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 12px;
+      background: white;
+      border: 1px solid var(--warm-200);
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+      border-color: var(--terracotta-400);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(228, 113, 74, 0.15);
+    }
+
+    .action-btn:active {
+      transform: translateY(0);
+    }
+
+    .action-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .action-btn:nth-child(1) .action-icon {
+      background: var(--sage-100);
+    }
+    .action-btn:nth-child(1) .action-icon svg {
+      color: var(--sage-600);
+    }
+
+    .action-btn:nth-child(2) .action-icon {
+      background: var(--terracotta-100);
+    }
+    .action-btn:nth-child(2) .action-icon svg {
+      color: var(--terracotta-600);
+    }
+
+    .action-btn:nth-child(3) .action-icon {
+      background: var(--cream-200);
+    }
+    .action-btn:nth-child(3) .action-icon svg {
+      color: var(--warm-600);
+    }
+
+    .action-icon svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .action-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--warm-700);
+    }
+
+    /* File List */
+    .file-section {
+      margin-top: 20px;
+      animation: slideUp 0.25s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .file-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .file-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--warm-700);
+    }
+
+    .file-count {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--warm-500);
+      background: var(--warm-100);
+      padding: 2px 10px;
+      border-radius: 99px;
+    }
+
+    .file-list {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--warm-100);
+    }
+
+    .file-item:last-child {
+      border-bottom: none;
+    }
+
+    .file-thumb {
+      width: 40px;
+      height: 40px;
+      background: var(--cream-100);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .file-thumb svg {
+      width: 20px;
+      height: 20px;
+      color: var(--terracotta-500);
+    }
+
+    .file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--warm-800);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-meta {
+      font-size: 12px;
+      color: var(--warm-400);
+      margin-top: 1px;
+    }
+
+    .file-remove {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--warm-400);
+      transition: all 0.2s;
+    }
+
+    .file-remove:hover {
+      background: #FEE2E2;
+      color: #DC2626;
+    }
+
+    .file-remove svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Bottom Action */
+    .bottom-action {
+      padding: 16px 20px 28px;
+      background: var(--cream-50);
+    }
+
+    .continue-btn {
+      width: 100%;
+      padding: 16px 24px;
+      background: var(--terracotta-500);
+      border: none;
+      border-radius: 14px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .continue-btn:hover {
+      background: var(--terracotta-600);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(228, 113, 74, 0.3);
+    }
+
+    .continue-btn:active {
+      transform: translateY(0);
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <nav class="nav-bar">
+      <a href="index.html" class="back-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+        Cancel
+      </a>
+      <span class="nav-title">Import</span>
+      <span style="width: 70px;"></span>
+    </nav>
+
+    <div class="content">
+      <div class="hero">
+        <div class="hero-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h1 class="hero-title">Add Statement</h1>
+        <p class="hero-subtitle">Import transactions from your bank</p>
+      </div>
+
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <div class="drop-illustration">
+          <div class="drop-paper">
+            <div class="paper-line"></div>
+            <div class="paper-line"></div>
+            <div class="paper-line"></div>
+            <div class="paper-amount">$247</div>
+          </div>
+          <div class="drop-paper">
+            <div class="paper-line"></div>
+            <div class="paper-line"></div>
+            <div class="paper-line"></div>
+            <div class="paper-amount">$89</div>
+          </div>
+        </div>
+        <p class="drop-text"><strong>Drop files</strong> or tap to browse</p>
+        <p class="drop-hint">PDF, PNG, or JPG</p>
+      </div>
+
+      <div class="actions">
+        <button class="action-btn" onclick="event.stopPropagation(); takePhoto()">
+          <div class="action-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+          <span class="action-label">Camera</span>
+        </button>
+        <button class="action-btn" onclick="event.stopPropagation(); document.getElementById('photo-input').click()">
+          <div class="action-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </div>
+          <span class="action-label">Photos</span>
+        </button>
+        <button class="action-btn" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+          <div class="action-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+          </div>
+          <span class="action-label">Files</span>
+        </button>
+      </div>
+
+      <div class="file-section hidden" id="file-section">
+        <div class="file-header">
+          <span class="file-title">Ready to import</span>
+          <span class="file-count" id="file-count">0</span>
+        </div>
+        <div class="file-list" id="file-list"></div>
+      </div>
+    </div>
+
+    <div class="bottom-action hidden" id="bottom-action">
+      <button class="continue-btn" onclick="processFiles()">Continue</button>
+    </div>
+
+    <input type="file" id="file-input" class="hidden" accept=".pdf,.png,.jpg,.jpeg" multiple onchange="handleFiles(this.files)">
+    <input type="file" id="photo-input" class="hidden" accept="image/*" multiple onchange="handleFiles(this.files)">
+    <input type="file" id="camera-input" class="hidden" accept="image/*" capture="environment" onchange="handleFiles(this.files)">
+  </div>
+
+  <script>
+    let files = [];
+    const dropZone = document.getElementById('drop-zone');
+
+    ['dragover', 'dragenter'].forEach(e => {
+      dropZone.addEventListener(e, (ev) => { ev.preventDefault(); dropZone.classList.add('drag-over'); });
+    });
+    ['dragleave', 'dragend'].forEach(e => {
+      dropZone.addEventListener(e, () => { dropZone.classList.remove('drag-over'); });
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault(); dropZone.classList.remove('drag-over');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    document.addEventListener('dragover', (e) => e.preventDefault());
+    document.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+    });
+
+    function takePhoto() { document.getElementById('camera-input').click(); }
+
+    function handleFiles(fileList) {
+      for (let file of fileList) {
+        const isImage = file.type.startsWith('image/');
+        const isPDF = file.type === 'application/pdf';
+        if (!isImage && !isPDF) continue;
+        files.push({ id: Date.now() + Math.random(), name: file.name, size: formatSize(file.size), type: isPDF ? 'pdf' : 'image' });
+      }
+      renderFiles();
+    }
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function removeFile(id) { files = files.filter(f => f.id !== id); renderFiles(); }
+
+    function renderFiles() {
+      const section = document.getElementById('file-section');
+      const list = document.getElementById('file-list');
+      const count = document.getElementById('file-count');
+      const action = document.getElementById('bottom-action');
+
+      if (files.length === 0) { section.classList.add('hidden'); action.classList.add('hidden'); return; }
+
+      section.classList.remove('hidden'); action.classList.remove('hidden');
+      count.textContent = files.length;
+
+      const iconSvg = (type) => type === 'pdf'
+        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`
+        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+
+      list.innerHTML = files.map(f => `
+        <div class="file-item">
+          <div class="file-thumb">${iconSvg(f.type)}</div>
+          <div class="file-info"><div class="file-name">${f.name}</div><div class="file-meta">${f.size}</div></div>
+          <button class="file-remove" onclick="removeFile(${f.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+      `).join('');
+    }
+
+    function processFiles() { window.location.href = 'select-screen.html'; }
+  </script>
+</body>
+</html>
