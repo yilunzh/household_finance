@@ -12,3 +12,4 @@ playwright==1.40.0
 # Code quality tools
 flake8>=6.0.0
 black>=23.0.0
+isort>=5.12.0

@@ -27,10 +27,66 @@ You implement NEW features using strict TDD. Auto-invoked when request matches:
 
 ## Test Patterns in This Project
 
+### Python Unit Tests
 - Unit tests: `tests/test_models.py`, `tests/test_utils.py`, `tests/test_budget.py`
 - Always filter queries by `household_id`
 - Always add `@household_required` decorator to routes
 - Use existing test fixtures from `conftest.py`
+
+### iOS Maestro Tests (IMPORTANT)
+Location: `ios/HouseholdTracker/maestro/`
+
+**NEVER use coordinates** - Always use accessibility IDs or text labels:
+
+```yaml
+# ✅ CORRECT - Use accessibility ID
+- tapOn:
+    id: "save-button"
+
+# ✅ CORRECT - Use text label
+- tapOn: "Add Transaction"
+
+# ✅ CORRECT - Use text + index for disambiguation
+- tapOn:
+    text: "Delete"
+    index: 0
+
+# ❌ WRONG - Coordinates are fragile
+- tapOn:
+    point: "200,350"
+```
+
+**Swipes and scrolls** - Use direction, not coordinates:
+```yaml
+# ✅ CORRECT
+- swipe:
+    direction: UP
+    duration: 500
+
+- scrollUntilVisible:
+    element: "Log Out"
+    direction: DOWN
+
+# ❌ WRONG
+- swipe:
+    start: "200,600"
+    end: "200,200"
+```
+
+**When writing Maestro tests**, if the needed accessibility ID doesn't exist in Swift, **add it**:
+```swift
+// Add .accessibilityIdentifier() to the element you need to target
+Button("Save") { ... }
+    .accessibilityIdentifier("save-button")
+
+TextField("Amount", text: $amount)
+    .accessibilityIdentifier("amount-field")
+
+NavigationLink { ... }
+    .accessibilityIdentifier("transaction-row-\(transaction.id)")
+```
+
+This is part of the TDD workflow: test requirements drive code changes, including adding accessibility IDs.
 
 ## Example Test Structure
 

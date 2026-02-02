@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bank Import - Select</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --terracotta-50: #FEF6F3; --terracotta-100: #FCE8E0; --terracotta-400: #ED9370;
+      --terracotta-500: #E4714A; --terracotta-600: #D05A34;
+      --sage-100: #E8F0E8; --sage-500: #6B9B6B; --sage-600: #558055;
+      --warm-50: #FAFAF9; --warm-100: #F5F5F4; --warm-200: #E7E5E4; --warm-300: #D6D3D1;
+      --warm-400: #A8A29E; --warm-500: #78716C; --warm-600: #57534E;
+      --warm-700: #44403C; --warm-800: #292524; --warm-900: #1C1917;
+      --cream-50: #FFFDF9; --cream-100: #FEF9F0; --cream-200: #FDF3E3;
+      --amber-100: #FEF3C7; --amber-500: #F59E0B; --amber-600: #D97706;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Nunito', -apple-system, sans-serif;
+      background: var(--warm-100);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+    .phone-frame {
+      width: 100%; max-width: 390px;
+      background: var(--cream-50);
+      border-radius: 40px;
+      box-shadow: 0 25px 50px -12px rgba(28, 25, 23, 0.15);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      max-height: 844px;
+    }
+    .nav-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px;
+      background: var(--cream-50);
+      border-bottom: 1px solid var(--warm-100);
+    }
+    .back-btn {
+      display: flex; align-items: center; gap: 2px;
+      color: var(--terracotta-500);
+      text-decoration: none;
+      font-size: 16px; font-weight: 600;
+    }
+    .back-btn svg { width: 20px; height: 20px; }
+    .nav-title { font-size: 17px; font-weight: 700; color: var(--warm-900); }
+    .nav-action {
+      color: var(--terracotta-500);
+      font-size: 16px; font-weight: 600;
+      background: none; border: none; cursor: pointer;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex; gap: 4px;
+      padding: 12px 16px;
+      background: var(--cream-50);
+    }
+    .tab {
+      flex: 1;
+      padding: 10px 8px;
+      background: transparent;
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13px; font-weight: 600;
+      color: var(--warm-500);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .tab:hover { background: var(--warm-100); }
+    .tab.active {
+      background: white;
+      color: var(--warm-800);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .tab-badge {
+      padding: 2px 7px;
+      background: var(--warm-200);
+      border-radius: 99px;
+      font-size: 11px; font-weight: 700;
+      color: var(--warm-600);
+    }
+    .tab.active .tab-badge {
+      background: var(--terracotta-500);
+      color: white;
+    }
+    .tab.attention .tab-badge {
+      background: var(--amber-500);
+      color: white;
+    }
+
+    /* Filters */
+    .filters {
+      display: flex; gap: 10px;
+      padding: 0 16px 12px;
+    }
+    .filter-select {
+      flex: 1;
+      padding: 10px 14px;
+      background: white;
+      border: 1px solid var(--warm-200);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 14px; font-weight: 500;
+      color: var(--warm-700);
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2378716C' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+
+    /* Select All */
+    .select-all {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px;
+      background: var(--warm-50);
+      font-size: 14px; font-weight: 600;
+      color: var(--warm-600);
+    }
+
+    /* Transaction List */
+    .transaction-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 16px;
+    }
+    .transaction-card {
+      background: white;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .transaction-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--warm-100);
+      transition: background 0.15s;
+    }
+    .transaction-row:last-child { border-bottom: none; }
+    .transaction-row:hover { background: var(--warm-50); }
+    .transaction-row.flagged { background: var(--amber-100); }
+
+    .checkbox {
+      width: 22px; height: 22px;
+      accent-color: var(--terracotta-500);
+      cursor: pointer;
+    }
+
+    .transaction-info { flex: 1; min-width: 0; }
+    .transaction-merchant {
+      font-size: 15px; font-weight: 600;
+      color: var(--warm-800);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .transaction-meta {
+      display: flex; gap: 6px; align-items: center;
+      margin-top: 2px;
+      font-size: 13px; color: var(--warm-500);
+    }
+    .transaction-meta .dot { color: var(--warm-300); }
+    .meta-uncertain {
+      color: var(--amber-600) !important;
+      font-weight: 600;
+    }
+
+    .transaction-amount-col { text-align: right; }
+    .transaction-amount {
+      font-size: 15px; font-weight: 700;
+      color: var(--warm-800);
+    }
+    .transaction-date {
+      font-size: 12px;
+      color: var(--warm-400);
+      margin-top: 2px;
+    }
+
+    /* Bottom Action */
+    .bottom-action {
+      padding: 16px 20px 28px;
+      background: var(--cream-50);
+      border-top: 1px solid var(--warm-100);
+    }
+    .primary-btn {
+      width: 100%;
+      padding: 16px 24px;
+      background: var(--terracotta-500);
+      border: none;
+      border-radius: 14px;
+      font-family: inherit;
+      font-size: 16px; font-weight: 700;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .primary-btn:hover {
+      background: var(--terracotta-600);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(228, 113, 74, 0.3);
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--warm-400);
+    }
+    .empty-state svg {
+      width: 48px; height: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+    .empty-state p {
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <nav class="nav-bar">
+      <a href="capture-screen.html" class="back-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </a>
+      <span class="nav-title">Select Transactions</span>
+      <button class="nav-action">Done</button>
+    </nav>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('ready', this)">
+        Ready <span class="tab-badge">12</span>
+      </button>
+      <button class="tab attention" onclick="switchTab('attention', this)">
+        Review <span class="tab-badge">3</span>
+      </button>
+      <button class="tab" onclick="switchTab('skipped', this)">Skipped</button>
+      <button class="tab" onclick="switchTab('imported', this)">Done</button>
+    </div>
+
+    <div class="filters">
+      <select class="filter-select">
+        <option>All Types</option>
+        <option>Groceries</option>
+        <option>Gas</option>
+        <option>Shopping</option>
+        <option>Subscriptions</option>
+      </select>
+      <select class="filter-select">
+        <option>All Splits</option>
+        <option>Shared</option>
+        <option>Mine</option>
+        <option>Partner's</option>
+      </select>
+    </div>
+
+    <div class="select-all">
+      <input type="checkbox" class="checkbox" id="select-all" checked onchange="toggleAll()">
+      <label for="select-all">Select All (12)</label>
+    </div>
+
+    <div class="transaction-list" id="tab-ready">
+      <div class="transaction-card">
+        <div class="transaction-row">
+          <input type="checkbox" class="checkbox" checked>
+          <div class="transaction-info">
+            <div class="transaction-merchant">Whole Foods Market</div>
+            <div class="transaction-meta">
+              <span>Groceries</span>
+              <span class="dot">·</span>
+              <span>Shared</span>
+            </div>
+          </div>
+          <div class="transaction-amount-col">
+            <div class="transaction-amount">$87.34</div>
+            <div class="transaction-date">Jan 15</div>
+          </div>
+        </div>
+
+        <div class="transaction-row">
+          <input type="checkbox" class="checkbox" checked>
+          <div class="transaction-info">
+            <div class="transaction-merchant">Shell Gas Station</div>
+            <div class="transaction-meta">
+              <span>Gas</span>
+              <span class="dot">·</span>
+              <span>Mine</span>
+            </div>
+          </div>
+          <div class="transaction-amount-col">
+            <div class="transaction-amount">$45.00</div>
+            <div class="transaction-date">Jan 14</div>
+          </div>
+        </div>
+
+        <div class="transaction-row">
+          <input type="checkbox" class="checkbox" checked>
+          <div class="transaction-info">
+            <div class="transaction-merchant">Amazon.com</div>
+            <div class="transaction-meta">
+              <span>Shopping</span>
+              <span class="dot">·</span>
+              <span>Shared</span>
+            </div>
+          </div>
+          <div class="transaction-amount-col">
+            <div class="transaction-amount">$32.99</div>
+            <div class="transaction-date">Jan 14</div>
+          </div>
+        </div>
+
+        <div class="transaction-row">
+          <input type="checkbox" class="checkbox" checked>
+          <div class="transaction-info">
+            <div class="transaction-merchant">Netflix</div>
+            <div class="transaction-meta">
+              <span>Subscriptions</span>
+              <span class="dot">·</span>
+              <span>Shared</span>
+            </div>
+          </div>
+          <div class="transaction-amount-col">
+            <div class="transaction-amount">$15.99</div>
+            <div class="transaction-date">Jan 12</div>
+          </div>
+        </div>
+
+        <div class="transaction-row">
+          <input type="checkbox" class="checkbox" checked>
+          <div class="transaction-info">
+            <div class="transaction-merchant">Trader Joe's</div>
+            <div class="transaction-meta">
+              <span>Groceries</span>
+              <span class="dot">·</span>
+              <span>Shared</span>
+            </div>
+          </div>
+          <div class="transaction-amount-col">
+            <div class="transaction-amount">$63.21</div>
+            <div class="transaction-date">Jan 11</div>
+          </div>
+        </div>
+
+        <div class="transaction-row">
+          <input type="checkbox" class="checkbox" checked>
+          <div class="transaction-info">
+            <div class="transaction-merchant">Costco</div>
+            <div class="transaction-meta">
+              <span>Groceries</span>
+              <span class="dot">·</span>
+              <span>Shared</span>
+            </div>
+          </div>
+          <div class="transaction-amount-col">
+            <div class="transaction-amount">$156.78</div>
+            <div class="transaction-date">Jan 8</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="transaction-list" id="tab-attention" style="display: none;">
+      <div class="transaction-card">
+        <div class="transaction-row flagged">
+          <input type="checkbox" class="checkbox" checked>
+          <div class="transaction-info">
+            <div class="transaction-merchant">Venmo Payment</div>
+            <div class="transaction-meta">
+              <span class="meta-uncertain">?</span>
+              <span class="dot">·</span>
+              <span class="meta-uncertain">?</span>
+            </div>
+          </div>
+          <div class="transaction-amount-col">
+            <div class="transaction-amount">$50.00</div>
+            <div class="transaction-date">Jan 13</div>
+          </div>
+        </div>
+
+        <div class="transaction-row flagged">
+          <input type="checkbox" class="checkbox" checked>
+          <div class="transaction-info">
+            <div class="transaction-merchant">SQ *COFFEE SHOP</div>
+            <div class="transaction-meta">
+              <span>Dining</span>
+              <span class="dot">·</span>
+              <span class="meta-uncertain">?</span>
+            </div>
+          </div>
+          <div class="transaction-amount-col">
+            <div class="transaction-amount">$8.50</div>
+            <div class="transaction-date">Jan 9</div>
+          </div>
+        </div>
+
+        <div class="transaction-row flagged">
+          <input type="checkbox" class="checkbox" checked>
+          <div class="transaction-info">
+            <div class="transaction-merchant">CHECKCARD 1234</div>
+            <div class="transaction-meta">
+              <span class="meta-uncertain">OCR Error</span>
+            </div>
+          </div>
+          <div class="transaction-amount-col">
+            <div class="transaction-amount">$27.00</div>
+            <div class="transaction-date">Jan 7</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="transaction-list" id="tab-skipped" style="display: none;">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <p>No skipped transactions</p>
+      </div>
+    </div>
+
+    <div class="transaction-list" id="tab-imported" style="display: none;">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <p>No duplicates found</p>
+      </div>
+    </div>
+
+    <div class="bottom-action">
+      <button class="primary-btn" onclick="goToReview()">
+        Review 3 Flagged Items
+      </button>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tab, btn) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.transaction-list').forEach(l => l.style.display = 'none');
+      document.getElementById('tab-' + tab).style.display = 'block';
+      document.querySelector('.select-all').style.display = (tab === 'ready' || tab === 'attention') ? 'flex' : 'none';
+    }
+    function toggleAll() {
+      const checked = document.getElementById('select-all').checked;
+      document.querySelectorAll('.checkbox').forEach(cb => { if (cb.id !== 'select-all') cb.checked = checked; });
+    }
+    function goToReview() { window.location.href = 'categorize-screen.html'; }
+  </script>
+</body>
+</html>

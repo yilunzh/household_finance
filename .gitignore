@@ -61,3 +61,6 @@ ios/HouseholdTracker/*.png
 
 # Maestro test screenshots
 ios/HouseholdTracker/maestro/*.png
+
+# Sample test documents (local only)
+tests/sample_docs/
