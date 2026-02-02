@@ -197,7 +197,7 @@ struct TransactionReviewCard: View {
                     .font(.bodyLarge)
                     .foregroundColor(textColor)
                     .padding(Spacing.sm)
-                    .background(Color.backgroundInput)
+                    .background(inputBackgroundColor)
                     .cornerRadius(CornerRadius.medium)
                     .onChange(of: merchant) { _, newValue in
                         if newValue != transaction.merchant {
@@ -232,7 +232,7 @@ struct TransactionReviewCard: View {
                         }
                 }
                 .padding(Spacing.sm)
-                .background(Color.backgroundInput)
+                .background(inputBackgroundColor)
                 .cornerRadius(CornerRadius.medium)
             }
 
@@ -302,7 +302,7 @@ struct TransactionReviewCard: View {
                             .foregroundColor(.warm400)
                     }
                     .padding(Spacing.sm)
-                    .background(Color.backgroundInput)
+                    .background(inputBackgroundColor)
                     .cornerRadius(CornerRadius.medium)
                 }
             }
@@ -340,7 +340,7 @@ struct TransactionReviewCard: View {
                             .foregroundColor(.warm400)
                     }
                     .padding(Spacing.sm)
-                    .background(Color.backgroundInput)
+                    .background(inputBackgroundColor)
                     .cornerRadius(CornerRadius.medium)
                 }
             }
@@ -378,6 +378,10 @@ struct TransactionReviewCard: View {
 
     private var cardBackground: Color {
         colorScheme == .dark ? .backgroundSecondaryDark : .backgroundCard
+    }
+
+    private var inputBackgroundColor: Color {
+        colorScheme == .dark ? .backgroundInputDark : .backgroundInput
     }
 }
 
