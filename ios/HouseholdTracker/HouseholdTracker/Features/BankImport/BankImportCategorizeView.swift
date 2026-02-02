@@ -181,8 +181,8 @@ struct TransactionReviewCard: View {
             // Flags
             if !transaction.flags.isEmpty {
                 HStack(spacing: Spacing.xs) {
-                    ForEach(transaction.flags, id: \.self) { flag in
-                        ReviewFlagBadge(flags: [flag])
+                    ForEach(transaction.flags.filter { $0.value }.map { $0.key }, id: \.self) { flag in
+                        ReviewFlagBadge(flags: [flag: true])
                     }
                 }
             }
@@ -475,7 +475,7 @@ struct ReviewNavigationBar: View {
 // MARK: - Flag Badge
 
 private struct ReviewFlagBadge: View {
-    let flags: [String]
+    let flags: [String: Bool]
 
     var body: some View {
         HStack(spacing: Spacing.xxs) {
@@ -493,24 +493,24 @@ private struct ReviewFlagBadge: View {
     }
 
     private var iconName: String {
-        if flags.contains("ocr_failure") { return "exclamationmark.triangle" }
-        if flags.contains("low_confidence") { return "questionmark.circle" }
-        if flags.contains("uncertain_category") { return "tag" }
-        if flags.contains("potential_duplicate") { return "doc.on.doc" }
+        if flags["ocr_failure"] == true { return "exclamationmark.triangle" }
+        if flags["low_confidence"] == true { return "questionmark.circle" }
+        if flags["uncertain_category"] == true { return "tag" }
+        if flags["potential_duplicate"] == true { return "doc.on.doc" }
         return "exclamationmark.circle"
     }
 
     private var displayText: String {
-        if flags.contains("ocr_failure") { return "OCR Issue" }
-        if flags.contains("low_confidence") { return "Low Confidence" }
-        if flags.contains("uncertain_category") { return "Uncategorized" }
-        if flags.contains("potential_duplicate") { return "Duplicate?" }
+        if flags["ocr_failure"] == true { return "OCR Issue" }
+        if flags["low_confidence"] == true { return "Low Confidence" }
+        if flags["uncertain_category"] == true { return "Uncategorized" }
+        if flags["potential_duplicate"] == true { return "Duplicate?" }
         return "Review"
     }
 
     private var flagColor: Color {
-        if flags.contains("ocr_failure") { return .rose500 }
-        if flags.contains("potential_duplicate") { return .amber500 }
+        if flags["ocr_failure"] == true { return .rose500 }
+        if flags["potential_duplicate"] == true { return .amber500 }
         return .amber500
     }
 }
