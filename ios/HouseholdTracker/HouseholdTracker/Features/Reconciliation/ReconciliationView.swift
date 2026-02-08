@@ -37,7 +37,17 @@ struct ReconciliationView: View {
 
                             // Category Breakdown
                             if !reconciliation.summary.breakdown.isEmpty {
-                                StyledBreakdownCard(breakdown: reconciliation.summary.breakdown)
+                                StyledBreakdownCard(
+                                    breakdown: reconciliation.summary.breakdown,
+                                    transactions: reconciliation.transactions
+                                )
+                            }
+
+                            // Expense Type Breakdown
+                            if !reconciliation.transactions.isEmpty {
+                                StyledExpenseTypeCard(
+                                    transactions: reconciliation.transactions
+                                )
                             }
 
                             // Budget Status
@@ -251,6 +261,25 @@ struct StyledSummaryCard: View {
                 }
             }
 
+            Divider()
+                .background(Color.warm200)
+
+            // Fair Shares
+            ForEach(Array(summary.userShares.keys.sorted()), id: \.self) { userId in
+                if let share = summary.userShares[userId],
+                   let name = summary.memberNames[userId] {
+                    HStack {
+                        Text("\(name)'s share")
+                            .font(.labelMedium)
+                            .foregroundColor(.textSecondary)
+                        Spacer()
+                        Text(formatCurrency(share))
+                            .font(.amountSmall)
+                            .foregroundColor(textColor)
+                    }
+                }
+            }
+
             // Balances
             ForEach(Array(summary.balances.keys.sorted()), id: \.self) { userId in
                 if let balance = summary.balances[userId],
@@ -294,8 +323,10 @@ struct StyledSummaryCard: View {
 
 struct StyledBreakdownCard: View {
     let breakdown: [CategoryBreakdown]
+    let transactions: [Transaction]
 
     @Environment(\.colorScheme) private var colorScheme
+    @State private var expandedCategory: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
@@ -308,34 +339,123 @@ struct StyledBreakdownCard: View {
             }
 
             ForEach(breakdown) { category in
-                HStack(spacing: Spacing.sm) {
-                    // Category icon circle
-                    ZStack {
-                        Circle()
-                            .fill(categoryColor(for: category.categoryName).opacity(0.15))
-                            .frame(width: 32, height: 32)
+                VStack(spacing: 0) {
+                    // Category row - tappable
+                    Button {
+                        HapticManager.selection()
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            if expandedCategory == category.category {
+                                expandedCategory = nil
+                            } else {
+                                expandedCategory = category.category
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: Spacing.sm) {
+                            // Category icon circle
+                            ZStack {
+                                Circle()
+                                    .fill(categoryColor(for: category.categoryName).opacity(0.15))
+                                    .frame(width: 32, height: 32)
 
-                        CatIcon(name: categoryIcon(for: category.categoryName), size: .sm, color: categoryColor(for: category.categoryName))
+                                CatIcon(name: categoryIcon(for: category.categoryName), size: .sm, color: categoryColor(for: category.categoryName))
+                            }
+
+                            Text(category.categoryName)
+                                .font(.labelMedium)
+                                .foregroundColor(textColor)
+
+                            Spacer()
+
+                            Text("\(category.count)")
+                                .font(.labelSmall)
+                                .foregroundColor(.textSecondary)
+                                .padding(.horizontal, Spacing.xs)
+                                .padding(.vertical, Spacing.xxxs)
+                                .background(Color.warm200)
+                                .cornerRadius(CornerRadius.full)
+
+                            Text(formatCurrency(category.total))
+                                .font(.amountSmall)
+                                .foregroundColor(textColor)
+                                .frame(width: 80, alignment: .trailing)
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.textSecondary)
+                                .rotationEffect(.degrees(expandedCategory == category.category ? 90 : 0))
+                        }
                     }
+                    .buttonStyle(.plain)
 
-                    Text(category.categoryName)
-                        .font(.labelMedium)
-                        .foregroundColor(textColor)
+                    // Expanded transaction list
+                    if expandedCategory == category.category {
+                        let categoryTransactions = transactions.filter { $0.category == category.category }
 
-                    Spacer()
+                        if !categoryTransactions.isEmpty {
+                            VStack(spacing: 0) {
+                                ForEach(categoryTransactions) { txn in
+                                    HStack(spacing: Spacing.sm) {
+                                        Text(formatShortDate(txn.date))
+                                            .font(.labelSmall)
+                                            .foregroundColor(.textSecondary)
+                                            .frame(width: 46, alignment: .leading)
 
-                    Text("\(category.count)")
-                        .font(.labelSmall)
-                        .foregroundColor(.textSecondary)
-                        .padding(.horizontal, Spacing.xs)
-                        .padding(.vertical, Spacing.xxxs)
-                        .background(Color.warm200)
-                        .cornerRadius(CornerRadius.full)
+                                        Text(txn.merchant)
+                                            .font(.labelSmall)
+                                            .foregroundColor(textColor)
+                                            .lineLimit(1)
 
-                    Text(formatCurrency(category.total))
-                        .font(.amountSmall)
-                        .foregroundColor(textColor)
-                        .frame(width: 80, alignment: .trailing)
+                                        Spacer()
+
+                                        if let paidBy = txn.paidByName {
+                                            Text(paidBy)
+                                                .font(.caption2)
+                                                .foregroundColor(.textTertiary)
+                                        }
+
+                                        Text(formatCurrency(txn.amountInUsd))
+                                            .font(.amountSmall)
+                                            .foregroundColor(textColor)
+                                            .frame(width: 70, alignment: .trailing)
+                                    }
+                                    .padding(.vertical, Spacing.xs)
+
+                                    if txn.id != categoryTransactions.last?.id {
+                                        Divider()
+                                            .background(Color.warm200.opacity(0.5))
+                                    }
+                                }
+
+                                Divider()
+                                    .background(Color.warm200)
+
+                                HStack(spacing: Spacing.sm) {
+                                    Text("Total")
+                                        .font(.labelSmall)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(textColor)
+
+                                    Spacer()
+
+                                    Text(formatCurrency(category.total))
+                                        .font(.amountSmall)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(textColor)
+                                        .frame(width: 70, alignment: .trailing)
+                                }
+                                .padding(.vertical, Spacing.xs)
+                            }
+                            .padding(Spacing.sm)
+                            .background(
+                                colorScheme == .dark
+                                    ? Color.white.opacity(0.03)
+                                    : Color.warm100.opacity(0.5)
+                            )
+                            .cornerRadius(CornerRadius.medium)
+                            .padding(.top, Spacing.xs)
+                        }
+                    }
                 }
             }
         }
@@ -383,6 +503,200 @@ struct StyledBreakdownCard: View {
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
         return formatter.string(from: NSNumber(value: amount)) ?? "$\(amount)"
+    }
+
+    private func formatShortDate(_ dateString: String) -> String {
+        let inputFormatter = DateFormatter()
+        inputFormatter.dateFormat = "yyyy-MM-dd"
+        let outputFormatter = DateFormatter()
+        outputFormatter.dateFormat = "M/d"
+        if let date = inputFormatter.date(from: dateString) {
+            return outputFormatter.string(from: date)
+        }
+        return dateString
+    }
+}
+
+// MARK: - Styled Expense Type Card
+
+struct StyledExpenseTypeCard: View {
+    let transactions: [Transaction]
+
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var expandedType: String?
+
+    private var expenseTypeGroups: [(name: String, total: Double, count: Int, transactions: [Transaction])] {
+        var grouped: [String: [Transaction]] = [:]
+        for txn in transactions {
+            let typeName = txn.expenseTypeName ?? "Uncategorized"
+            grouped[typeName, default: []].append(txn)
+        }
+        return grouped.keys.sorted().map { name in
+            let txns = grouped[name]!
+            let total = txns.reduce(0) { $0 + $1.amountInUsd }
+            return (name: name, total: total, count: txns.count, transactions: txns)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            // Header
+            HStack {
+                CatIcon(name: .coins, size: .md, color: .brandPrimary)
+                Text("By Expense Type")
+                    .font(.labelLarge)
+                    .foregroundColor(textColor)
+            }
+
+            ForEach(expenseTypeGroups, id: \.name) { group in
+                VStack(spacing: 0) {
+                    // Expense type row - tappable
+                    Button {
+                        HapticManager.selection()
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            if expandedType == group.name {
+                                expandedType = nil
+                            } else {
+                                expandedType = group.name
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: Spacing.sm) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.sage200.opacity(0.3))
+                                    .frame(width: 32, height: 32)
+
+                                CatIcon(name: .clipboard, size: .sm, color: .sage500)
+                            }
+
+                            Text(group.name)
+                                .font(.labelMedium)
+                                .foregroundColor(textColor)
+
+                            Spacer()
+
+                            Text("\(group.count)")
+                                .font(.labelSmall)
+                                .foregroundColor(.textSecondary)
+                                .padding(.horizontal, Spacing.xs)
+                                .padding(.vertical, Spacing.xxxs)
+                                .background(Color.warm200)
+                                .cornerRadius(CornerRadius.full)
+
+                            Text(formatCurrency(group.total))
+                                .font(.amountSmall)
+                                .foregroundColor(textColor)
+                                .frame(width: 80, alignment: .trailing)
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.textSecondary)
+                                .rotationEffect(.degrees(expandedType == group.name ? 90 : 0))
+                        }
+                    }
+                    .buttonStyle(.plain)
+
+                    // Expanded transaction list
+                    if expandedType == group.name {
+                        if !group.transactions.isEmpty {
+                            VStack(spacing: 0) {
+                                ForEach(group.transactions) { txn in
+                                    HStack(spacing: Spacing.sm) {
+                                        Text(formatShortDate(txn.date))
+                                            .font(.labelSmall)
+                                            .foregroundColor(.textSecondary)
+                                            .frame(width: 46, alignment: .leading)
+
+                                        Text(txn.merchant)
+                                            .font(.labelSmall)
+                                            .foregroundColor(textColor)
+                                            .lineLimit(1)
+
+                                        Spacer()
+
+                                        if let paidBy = txn.paidByName {
+                                            Text(paidBy)
+                                                .font(.caption2)
+                                                .foregroundColor(.textTertiary)
+                                        }
+
+                                        Text(formatCurrency(txn.amountInUsd))
+                                            .font(.amountSmall)
+                                            .foregroundColor(textColor)
+                                            .frame(width: 70, alignment: .trailing)
+                                    }
+                                    .padding(.vertical, Spacing.xs)
+
+                                    if txn.id != group.transactions.last?.id {
+                                        Divider()
+                                            .background(Color.warm200.opacity(0.5))
+                                    }
+                                }
+
+                                Divider()
+                                    .background(Color.warm200)
+
+                                HStack(spacing: Spacing.sm) {
+                                    Text("Total")
+                                        .font(.labelSmall)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(textColor)
+
+                                    Spacer()
+
+                                    Text(formatCurrency(group.total))
+                                        .font(.amountSmall)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(textColor)
+                                        .frame(width: 70, alignment: .trailing)
+                                }
+                                .padding(.vertical, Spacing.xs)
+                            }
+                            .padding(Spacing.sm)
+                            .background(
+                                colorScheme == .dark
+                                    ? Color.white.opacity(0.03)
+                                    : Color.warm100.opacity(0.5)
+                            )
+                            .cornerRadius(CornerRadius.medium)
+                            .padding(.top, Spacing.xs)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(Spacing.md)
+        .background(cardBackground)
+        .cornerRadius(CornerRadius.large)
+        .subtleShadow()
+        .padding(.horizontal, Spacing.md)
+    }
+
+    private var textColor: Color {
+        colorScheme == .dark ? .textPrimaryDark : .textPrimary
+    }
+
+    private var cardBackground: Color {
+        colorScheme == .dark ? .backgroundSecondaryDark : .backgroundSecondary
+    }
+
+    private func formatCurrency(_ amount: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "USD"
+        return formatter.string(from: NSNumber(value: amount)) ?? "$\(amount)"
+    }
+
+    private func formatShortDate(_ dateString: String) -> String {
+        let inputFormatter = DateFormatter()
+        inputFormatter.dateFormat = "yyyy-MM-dd"
+        let outputFormatter = DateFormatter()
+        outputFormatter.dateFormat = "M/d"
+        if let date = inputFormatter.date(from: dateString) {
+            return outputFormatter.string(from: date)
+        }
+        return dateString
     }
 }
 
