@@ -119,6 +119,16 @@ def reconciliation(month=None):
     ).all()
     months = [m[0] for m in all_months]
 
+    # Always ensure current month is in list (matches transactions page behavior)
+    current_month_str = datetime.now().strftime('%Y-%m')
+    if current_month_str not in months:
+        months.insert(0, current_month_str)
+
+    # If viewing a month not in list (e.g. manually typed URL), add it
+    if month not in months:
+        months.append(month)
+        months.sort(reverse=True)
+
     # Check if month is settled (HOUSEHOLD-SCOPED)
     settlement = Settlement.get_settlement(household_id, month)
 
